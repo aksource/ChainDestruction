@@ -22,6 +22,7 @@ import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent.Action;
 import net.minecraftforge.event.world.BlockEvent.HarvestDropsEvent;
 
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 
@@ -135,10 +136,7 @@ public class InteractBlockHook
 			ChainDestroyBlock(event.world,event.harvester,event.block, event.harvester.getCurrentEquippedItem());
 			getFirstDestroyedBlock(event.world,event.harvester,event.block,  event.harvester.getCurrentEquippedItem());
 
-			for(int i = 0;i<5;i++)
-			{
-				blockPos[i] = 0;
-			}
+			Arrays.fill(blockPos, 0);
 			doChain = false;
 		}
 	}
@@ -233,10 +231,11 @@ public class InteractBlockHook
 			}
 		}
 	}
-	private boolean destroyBlockAtPosition(World world, Block block, EntityPlayer player, ChunkPosition chunk, ItemStack item)
+	private boolean destroyBlockAtPosition(World world, EntityPlayer player, ChunkPosition chunk, ItemStack item)
 	{
 		boolean isMultiToolHolder = false;
 		int slotNum = 0;
+        Block block = world.getBlock(chunk.chunkPosX, chunk.chunkPosY, chunk.chunkPosZ);
 		IInventory tooldata = null;
         if (ChainDestruction.loadMTH && item.getItem() instanceof ItemMultiToolHolder)
         {
@@ -251,8 +250,11 @@ public class InteractBlockHook
 		}
 		if(item.getItem().onBlockDestroyed(item, world, block, chunk.chunkPosX, chunk.chunkPosY, chunk.chunkPosZ, player)){
 			if(world.setBlockToAir(chunk.chunkPosX, chunk.chunkPosY, chunk.chunkPosZ)){
+                block.onBlockHarvested(world, chunk.chunkPosX, chunk.chunkPosY, chunk.chunkPosZ, meta, player);
 				block.onBlockDestroyedByPlayer(world,chunk.chunkPosX, chunk.chunkPosY, chunk.chunkPosZ, meta);
 				block.harvestBlock(world, player, MathHelper.ceiling_double_int( player.posX), MathHelper.ceiling_double_int( player.posY), MathHelper.ceiling_double_int( player.posZ), meta);
+                int exp = block.getExpDrop(world, meta, EnchantmentHelper.getFortuneModifier(player));
+                block.dropXpOnBlockBreak(world, MathHelper.ceiling_double_int( player.posX), MathHelper.ceiling_double_int( player.posY), MathHelper.ceiling_double_int( player.posZ), exp);
 				if(item.stackSize == 0){
 					destroyItem(player, item, isMultiToolHolder, tooldata, slotNum);
 					return true;
@@ -273,7 +275,7 @@ public class InteractBlockHook
 	{
 		Block id;
 		ChunkPosition chunk;
-		if(this.destroyBlockAtPosition(world, block, player, chunkpos, heldItem)){
+		if(this.destroyBlockAtPosition(world,player, chunkpos, heldItem)){
 			return;
 		}
         int sideNumber = treeMode ? this.diagonalDirection : this.sideDirection;
