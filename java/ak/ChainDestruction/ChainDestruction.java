@@ -22,7 +22,7 @@ import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.common.registry.GameRegistry;
 import cpw.mods.fml.common.registry.GameRegistry.UniqueIdentifier;
 
-@Mod(modid="ChainDestruction", name="ChainDestruction", version="1.1a")
+@Mod(modid="ChainDestruction", name="ChainDestruction", version="1.1b")
 public class ChainDestruction
 {
 	@Instance("ChainDestruction")
