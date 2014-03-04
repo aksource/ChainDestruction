@@ -1,6 +1,7 @@
 package ak.ChainDestruction;
 
 import java.util.HashSet;
+import java.util.Iterator;
 
 import net.minecraft.block.Block;
 import net.minecraft.init.Blocks;
@@ -22,7 +23,7 @@ import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.common.registry.GameRegistry;
 import cpw.mods.fml.common.registry.GameRegistry.UniqueIdentifier;
 
-@Mod(modid="ChainDestruction", name="ChainDestruction", version="1.1b")
+@Mod(modid="ChainDestruction", name="ChainDestruction", version="1.1b", useMetadata = true)
 public class ChainDestruction
 {
 	@Instance("ChainDestruction")
@@ -32,6 +33,7 @@ public class ChainDestruction
 	public static HashSet<String> enableItems = new HashSet();
 	public static HashSet<String> enableBlocks = new HashSet();
     public static HashSet<String> enableLogBlocks = new HashSet();
+    public static HashSet<String> dropItemSet = new HashSet();
     public static String[] itemsConfig;
 	public static String[] blocksConfig;
     public static String[] logBlocksConfig;
@@ -51,13 +53,12 @@ public class ChainDestruction
 	{
 		config = new ConfigSavable(event.getSuggestedConfigurationFile());
 		config.load();
-		maxDestroyedBlock = config.get(Configuration.CATEGORY_GENERAL, "Maximum Destroued Block Counts", 100).getInt();
+		maxDestroyedBlock = config.get(Configuration.CATEGORY_GENERAL, "Maximum Destroyed Block Counts", 100).getInt();
 		itemsConfig = config.get(Configuration.CATEGORY_GENERAL, "toolItemsId", vanillaTools).getStringList();
 		blocksConfig = config.get(Configuration.CATEGORY_GENERAL, "chainDestroyedBlockIdConfig", vanillaBlocks).getStringList();
         logBlocksConfig = config.get(Configuration.CATEGORY_GENERAL, "chainDestroyedLogBlockIdConfig", vanillaLogs).getStringList();
         digUnder = config.get(Configuration.CATEGORY_GENERAL, "digUnder", true).getBoolean(true);
 		config.save();
-
 	}
 	@Mod.EventHandler
 	public void load(FMLInitializationEvent event)
@@ -72,7 +73,7 @@ public class ChainDestruction
 
 	}
 	@Mod.EventHandler
-	public void postInit(FMLPostInitializationEvent evet)
+	public void postInit(FMLPostInitializationEvent event)
 	{
 		addItemsAndBlocks();
 		this.loadMTH = Loader.isModLoaded("MultiToolHolders");
