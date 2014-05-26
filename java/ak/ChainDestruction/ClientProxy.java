@@ -8,9 +8,9 @@ import cpw.mods.fml.client.registry.ClientRegistry;
 
 public class ClientProxy extends CommonProxy
 {
-	public static KeyBinding registItemKey = new KeyBinding("Key.CDRegistItem",Keyboard.KEY_K, "CD:KeyRegItem");
-	public static KeyBinding digUnderKey = new KeyBinding("Key.CDDIgUnder",Keyboard.KEY_U, "CD:KeyDigUnder");
-    public static KeyBinding treeKey = new KeyBinding("Key.CDTree", Keyboard.KEY_COLON, "CD:KeyTree");
+	public static KeyBinding registItemKey = new KeyBinding("Key.CDRegistItem",Keyboard.KEY_K, "ChainDestruction");
+	public static KeyBinding digUnderKey = new KeyBinding("Key.CDDIgUnder",Keyboard.KEY_U, "ChainDestruction");
+    public static KeyBinding treeKey = new KeyBinding("Key.CDTree", Keyboard.KEY_COLON, "ChainDestruction");
 	@Override
 	public void registerClientInfo(){
 		ClientRegistry.registerKeyBinding(registItemKey);
