@@ -1,6 +1,9 @@
 package ak.ChainDestruction;
 
+import ak.ChainDestruction.network.MessageKeyPressed;
+import ak.ChainDestruction.network.PacketHandler;
 import ak.MultiToolHolders.ItemMultiToolHolder;
+import cpw.mods.fml.client.FMLClientHandler;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.common.gameevent.InputEvent.KeyInputEvent;
 import cpw.mods.fml.common.registry.GameRegistry;
@@ -33,6 +36,11 @@ public class InteractBlockHook {
     private int maxY;
     private int minZ;
     private int maxZ;
+
+    private static final byte RegKEY = 0;
+    private static final byte DigKEY = 1;
+    private static final byte TreeKEY = 2;
+
     public boolean toggle = false;
     public boolean digUnderToggle = false;
     public boolean treeToggle = false;
@@ -40,23 +48,65 @@ public class InteractBlockHook {
     private boolean treeMode = ChainDestruction.treeMode;
     private boolean doChain = false;
 
-    private boolean pressRegisterKey = false;
-    private boolean pressDigUnderKey = false;
-    private boolean pressTreeKey = false;
+//    private boolean pressRegisterKey = false;
+//    private boolean pressDigUnderKey = false;
+//    private boolean pressTreeKey = false;
 
-    private int sideDirection = 6;
-    private int diagonalDirection = 26;
+    private static final int sideDirection = 6;
+    private static final int diagonalDirection = 26;
+
+    private byte getKeyIndex() {
+        byte key = -1;
+        if (ClientProxy.registItemKey.isPressed()) {
+            key = RegKEY;
+        } else if (ClientProxy.digUnderKey.isPressed()) {
+            key = DigKEY;
+        } else if (ClientProxy.treeKey.isPressed()) {
+            key = TreeKEY;
+        }
+        return key;
+    }
 
     @SubscribeEvent
     public void KeyPressEvent(KeyInputEvent event) {
-        while (ClientProxy.registItemKey.isPressed()) {
-            this.pressRegisterKey = true;
+        if (FMLClientHandler.instance().getClient().inGameHasFocus && FMLClientHandler.instance().getClientPlayerEntity() != null) {
+            byte keyIndex = getKeyIndex();
+            if (keyIndex != -1) {
+                EntityPlayer player = FMLClientHandler.instance().getClientPlayerEntity();
+                doKeyClient(null, player, keyIndex);
+                PacketHandler.INSTANCE.sendToServer(new MessageKeyPressed(keyIndex));
+            }
         }
-        while (ClientProxy.digUnderKey.isPressed()) {
-            this.pressDigUnderKey = true;
+    }
+
+    public void doKeyClient(ItemStack item, EntityPlayer player, byte key) {
+        if (key == DigKEY) {
+            ChainDestruction.digUnder = this.digUnder;
         }
-        while (ClientProxy.treeKey.isPressed()) {
-            this.pressTreeKey = true;
+    }
+
+    public void doKeyEvent(ItemStack item, EntityPlayer player, byte key) {
+        String chat;
+        if (key == RegKEY) {
+            if (player.isSneaking() && ChainDestruction.enableItems.contains(ChainDestruction.getUniqueStrings(item))) {
+                ChainDestruction.enableItems.remove(ChainDestruction.getUniqueStrings(item));
+                chat = String.format("Remove Tool : %s", ChainDestruction.getUniqueStrings(item));
+                player.addChatMessage(new ChatComponentText(chat));
+            }
+            if (!player.isSneaking() && !ChainDestruction.enableItems.contains(ChainDestruction.getUniqueStrings(item))) {
+                ChainDestruction.enableItems.add(ChainDestruction.getUniqueStrings(item));
+                chat = String.format("Add Tool : %s", ChainDestruction.getUniqueStrings(item));
+                player.addChatMessage(new ChatComponentText(chat));
+            }
+        } else if (key == DigKEY) {
+            this.digUnder = !this.digUnder;
+            chat = String.format("Dig Under %b", this.digUnder);
+            player.addChatMessage(new ChatComponentText(chat));
+            ChainDestruction.digUnder = this.digUnder;
+        } else if (key == TreeKEY) {
+            this.treeMode = !this.treeMode;
+            chat = String.format("Tree Mode %b", this.treeMode);
+            player.addChatMessage(new ChatComponentText(chat));
         }
     }
 
@@ -110,7 +160,7 @@ public class InteractBlockHook {
 
     @SubscribeEvent
     public void HarvestEvent(HarvestDropsEvent event) {
-        if (!event.world.isRemote && !doChain && checkBlockValidate(GameRegistry.findUniqueIdentifierFor(event.block).toString()) && event.harvester.getCurrentEquippedItem() != null && ChainDestruction.enableItems.contains(ChainDestruction.getUniqueStrings(event.harvester.getCurrentEquippedItem().getItem()))) {
+        if (!event.world.isRemote && !doChain && checkBlockValidate(GameRegistry.findUniqueIdentifierFor(event.block).toString()) && event.harvester != null && event.harvester.getCurrentEquippedItem() != null && ChainDestruction.enableItems.contains(ChainDestruction.getUniqueStrings(event.harvester.getCurrentEquippedItem().getItem()))) {
             doChain = true;
             setBlockBounds(event.harvester);
             EntityItem ei;
@@ -128,50 +178,51 @@ public class InteractBlockHook {
         }
     }
 
-    @SubscribeEvent
-    public void LivingUpdate(LivingUpdateEvent event) {
-        if (event.entityLiving instanceof EntityPlayer) {
-            EntityPlayer player = (EntityPlayer) event.entityLiving;
-            ItemStack item = player.getCurrentEquippedItem();
-            World world = event.entityLiving.worldObj;
-            String chat;
-            if (world.isRemote) {
-                this.toggle = this.pressRegisterKey;
-                this.digUnderToggle = this.pressDigUnderKey;
-                this.treeToggle = this.pressTreeKey;
-                //キー判定のboolean変数をpacketに載せて、サーバーに送信。
-                ChainDestruction.packetPipeline.sendToServer(new KeyHandlingPacket(toggle, digUnderToggle, treeToggle));
-            }
-            if (this.toggle && item != null) {
-                pressRegisterKey = false;
-                if (player.isSneaking() && ChainDestruction.enableItems.contains(ChainDestruction.getUniqueStrings(item))) {
-                    ChainDestruction.enableItems.remove(ChainDestruction.getUniqueStrings(item));
-                    chat = String.format("Remove Tool : %s", ChainDestruction.getUniqueStrings(item));
-                    player.addChatMessage(new ChatComponentText(chat));
-                }
-                if (!player.isSneaking() && !ChainDestruction.enableItems.contains(ChainDestruction.getUniqueStrings(item))) {
-                    ChainDestruction.enableItems.add(ChainDestruction.getUniqueStrings(item));
-                    chat = String.format("Add Tool : %s", ChainDestruction.getUniqueStrings(item));
-                    player.addChatMessage(new ChatComponentText(chat));
-                }
-            }
-            if (this.digUnderToggle && !world.isRemote) {
-                pressDigUnderKey = false;
-                this.digUnder = !this.digUnder;
-                chat = String.format("Dig Under %b", this.digUnder);
-                player.addChatMessage(new ChatComponentText(chat));
-            }
-            if (this.treeToggle && !world.isRemote) {
-                pressTreeKey = false;
-                this.treeMode = !this.treeMode;
-                chat = String.format("Tree Mode %b", this.treeMode);
-                player.addChatMessage(new ChatComponentText(chat));
-            }
-            ChainDestruction.digUnder = this.digUnder;
-        }
-    }
+//    @SubscribeEvent
+//    public void LivingUpdate(LivingUpdateEvent event) {
+//        if (event.entityLiving instanceof EntityPlayer) {
+//            EntityPlayer player = (EntityPlayer) event.entityLiving;
+//            ItemStack item = player.getCurrentEquippedItem();
+//            World world = event.entityLiving.worldObj;
+//            String chat;
+//            if (world.isRemote) {
+//                this.toggle = this.pressRegisterKey;
+//                this.digUnderToggle = this.pressDigUnderKey;
+//                this.treeToggle = this.pressTreeKey;
+//                //キー判定のboolean変数をpacketに載せて、サーバーに送信。
+//                ChainDestruction.packetPipeline.sendToServer(new KeyHandlingPacket(toggle, digUnderToggle, treeToggle));
+//            }
+//            if (this.toggle && item != null) {
+//                pressRegisterKey = false;
+//                if (player.isSneaking() && ChainDestruction.enableItems.contains(ChainDestruction.getUniqueStrings(item))) {
+//                    ChainDestruction.enableItems.remove(ChainDestruction.getUniqueStrings(item));
+//                    chat = String.format("Remove Tool : %s", ChainDestruction.getUniqueStrings(item));
+//                    player.addChatMessage(new ChatComponentText(chat));
+//                }
+//                if (!player.isSneaking() && !ChainDestruction.enableItems.contains(ChainDestruction.getUniqueStrings(item))) {
+//                    ChainDestruction.enableItems.add(ChainDestruction.getUniqueStrings(item));
+//                    chat = String.format("Add Tool : %s", ChainDestruction.getUniqueStrings(item));
+//                    player.addChatMessage(new ChatComponentText(chat));
+//                }
+//            }
+//            if (this.digUnderToggle && !world.isRemote) {
+//                pressDigUnderKey = false;
+//                this.digUnder = !this.digUnder;
+//                chat = String.format("Dig Under %b", this.digUnder);
+//                player.addChatMessage(new ChatComponentText(chat));
+//            }
+//            if (this.treeToggle && !world.isRemote) {
+//                pressTreeKey = false;
+//                this.treeMode = !this.treeMode;
+//                chat = String.format("Tree Mode %b", this.treeMode);
+//                player.addChatMessage(new ChatComponentText(chat));
+//            }
+//            ChainDestruction.digUnder = this.digUnder;
+//        }
+//    }
 
     public void getFirstDestroyedBlock(World world, EntityPlayer player, Block block) {
+        @SuppressWarnings("unchecked")
         List<EntityItem> list = world.getEntitiesWithinAABB(EntityItem.class, player.boundingBox.expand(2d, 2d, 2d));
         if (list == null) return;
         double d0, d1, d2;
@@ -193,7 +244,7 @@ public class InteractBlockHook {
         ChunkPosition chunk;
         Block id;
 
-        int sideNumber = treeMode ? this.diagonalDirection : this.sideDirection;
+        int sideNumber = treeMode ? diagonalDirection : sideDirection;
 
         for (int side = 0; side < sideNumber; side++) {
             if (side == blockPos[3]) continue;
@@ -246,7 +297,7 @@ public class InteractBlockHook {
         Block id;
         ChunkPosition chunk;
         if (this.destroyBlockAtPosition(world, player, chunkPos, heldItem))  return;
-        int sideNumber = treeMode ? this.diagonalDirection : this.sideDirection;
+        int sideNumber = treeMode ? diagonalDirection : sideDirection;
 
         for (int side = 0; side < sideNumber; side++) {
             if (side == face) continue;

@@ -1,8 +1,10 @@
 package ak.ChainDestruction;
 
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 
+import ak.ChainDestruction.network.PacketHandler;
 import net.minecraft.block.Block;
 import net.minecraft.init.Blocks;
 import net.minecraft.item.Item;
@@ -23,17 +25,17 @@ import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.common.registry.GameRegistry;
 import cpw.mods.fml.common.registry.GameRegistry.UniqueIdentifier;
 
-@Mod(modid="ChainDestruction", name="ChainDestruction", version="1.1b", useMetadata = true)
+@Mod(modid="ChainDestruction", name="ChainDestruction", version="1.1c", useMetadata = true)
 public class ChainDestruction
 {
 	@Instance("ChainDestruction")
 	public static ChainDestruction instance;
 	@SidedProxy(clientSide = "ak.ChainDestruction.ClientProxy", serverSide = "ak.ChainDestruction.CommonProxy")
 	public static CommonProxy proxy;
-	public static HashSet<String> enableItems = new HashSet();
-	public static HashSet<String> enableBlocks = new HashSet();
-    public static HashSet<String> enableLogBlocks = new HashSet();
-    public static HashSet<String> dropItemSet = new HashSet();
+	public static HashSet<String> enableItems = new HashSet<>();
+	public static HashSet<String> enableBlocks = new HashSet<>();
+    public static HashSet<String> enableLogBlocks = new HashSet<>();
+    public static HashSet<String> dropItemSet = new HashSet<>();
     public static String[] itemsConfig;
 	public static String[] blocksConfig;
     public static String[] logBlocksConfig;
@@ -47,7 +49,7 @@ public class ChainDestruction
 	public ConfigSavable config;
 	public static InteractBlockHook interactblockhook = new InteractBlockHook();
 	public static boolean loadMTH = false;
-	public static final PacketPipeline packetPipeline = new PacketPipeline();
+//	public static final PacketPipeline packetPipeline = new PacketPipeline();
 	@Mod.EventHandler
 	public void preInit(FMLPreInitializationEvent event)
 	{
@@ -59,6 +61,7 @@ public class ChainDestruction
         logBlocksConfig = config.get(Configuration.CATEGORY_GENERAL, "chainDestroyedLogBlockIdConfig", vanillaLogs).getStringList();
         digUnder = config.get(Configuration.CATEGORY_GENERAL, "digUnder", true).getBoolean(true);
 		config.save();
+        PacketHandler.init();
 	}
 	@Mod.EventHandler
 	public void load(FMLInitializationEvent event)
@@ -66,9 +69,9 @@ public class ChainDestruction
 		proxy.registerClientInfo();
 		MinecraftForge.EVENT_BUS.register(interactblockhook);
 		FMLCommonHandler.instance().bus().register(interactblockhook);
-		MinecraftForge.EVENT_BUS.register(new SaveConfig());
+		MinecraftForge.EVENT_BUS.register(this);
 		
-		packetPipeline.initialise();
+//		packetPipeline.initialise();
 
 
 	}
@@ -76,35 +79,27 @@ public class ChainDestruction
 	public void postInit(FMLPostInitializationEvent event)
 	{
 		addItemsAndBlocks();
-		this.loadMTH = Loader.isModLoaded("MultiToolHolders");
-		packetPipeline.postInitialise();
+	    loadMTH = Loader.isModLoaded("MultiToolHolders");
+//		packetPipeline.postInitialise();
 	}
+
 	private void addItemsAndBlocks()
 	{
-		for(int i = 0;i< itemsConfig.length;i++)
-		{
-			enableItems.add(itemsConfig[i]);
-		}
-		for(int i = 0;i< blocksConfig.length;i++)
-		{
-			enableBlocks.add(blocksConfig[i]);
-		}
-        for (int i = 0; i < logBlocksConfig.length; i++) {
-            enableLogBlocks.add(logBlocksConfig[i]);
-        }
+        enableItems.addAll(Arrays.asList(itemsConfig));
+        enableBlocks.addAll(Arrays.asList(blocksConfig));
+        enableLogBlocks.addAll(Arrays.asList(logBlocksConfig));
 	}
-	public class SaveConfig
-	{
-		@SubscribeEvent
-		public void WorldSave(Save event)
-		{
-			config.set(Configuration.CATEGORY_GENERAL, "toolItemsId", enableItems);
-			config.set(Configuration.CATEGORY_GENERAL, "chainDestroyedBlockIdConfig", enableBlocks);
-            config.set(Configuration.CATEGORY_GENERAL, "chainDestroyedLogBlockIdConfig", enableLogBlocks);
-			config.set(Configuration.CATEGORY_GENERAL, "digUnder", digUnder);
-			config.save();
-		}
-	}
+
+    @SubscribeEvent
+    public void WorldSave(Save event)
+    {
+        config.set(Configuration.CATEGORY_GENERAL, "toolItemsId", enableItems);
+        config.set(Configuration.CATEGORY_GENERAL, "chainDestroyedBlockIdConfig", enableBlocks);
+        config.set(Configuration.CATEGORY_GENERAL, "chainDestroyedLogBlockIdConfig", enableLogBlocks);
+        config.set(Configuration.CATEGORY_GENERAL, "digUnder", digUnder);
+        config.save();
+    }
+
 	public static String getUniqueStrings(Object obj)
 	{
 		UniqueIdentifier uId;
