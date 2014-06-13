@@ -1,17 +1,6 @@
 package ak.ChainDestruction;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Iterator;
-
 import ak.ChainDestruction.network.PacketHandler;
-import net.minecraft.block.Block;
-import net.minecraft.init.Blocks;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.common.config.Configuration;
-import net.minecraftforge.event.world.WorldEvent.Save;
 import ak.akapi.ConfigSavable;
 import cpw.mods.fml.common.FMLCommonHandler;
 import cpw.mods.fml.common.Loader;
@@ -24,8 +13,18 @@ import cpw.mods.fml.common.event.FMLPreInitializationEvent;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.common.registry.GameRegistry;
 import cpw.mods.fml.common.registry.GameRegistry.UniqueIdentifier;
+import net.minecraft.block.Block;
+import net.minecraft.init.Blocks;
+import net.minecraft.item.Item;
+import net.minecraft.item.ItemStack;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.common.config.Configuration;
+import net.minecraftforge.event.world.WorldEvent.Save;
 
-@Mod(modid="ChainDestruction", name="ChainDestruction", version="1.1c", useMetadata = true)
+import java.util.Arrays;
+import java.util.HashSet;
+
+@Mod(modid="ChainDestruction", name="ChainDestruction", version="1.1e", dependencies = "required-after:Forge@[10.12.1.1090,)", useMetadata = true)
 public class ChainDestruction
 {
 	@Instance("ChainDestruction")
@@ -49,13 +48,13 @@ public class ChainDestruction
 	public ConfigSavable config;
 	public static InteractBlockHook interactblockhook = new InteractBlockHook();
 	public static boolean loadMTH = false;
-//	public static final PacketPipeline packetPipeline = new PacketPipeline();
+
 	@Mod.EventHandler
 	public void preInit(FMLPreInitializationEvent event)
 	{
 		config = new ConfigSavable(event.getSuggestedConfigurationFile());
 		config.load();
-		maxDestroyedBlock = config.get(Configuration.CATEGORY_GENERAL, "Maximum Destroyed Block Counts", 100).getInt();
+		maxDestroyedBlock = config.get(Configuration.CATEGORY_GENERAL, "Maximum Destroyed Block Counts", 10).getInt();
 		itemsConfig = config.get(Configuration.CATEGORY_GENERAL, "toolItemsId", vanillaTools).getStringList();
 		blocksConfig = config.get(Configuration.CATEGORY_GENERAL, "chainDestroyedBlockIdConfig", vanillaBlocks).getStringList();
         logBlocksConfig = config.get(Configuration.CATEGORY_GENERAL, "chainDestroyedLogBlockIdConfig", vanillaLogs).getStringList();
@@ -70,17 +69,12 @@ public class ChainDestruction
 		MinecraftForge.EVENT_BUS.register(interactblockhook);
 		FMLCommonHandler.instance().bus().register(interactblockhook);
 		MinecraftForge.EVENT_BUS.register(this);
-		
-//		packetPipeline.initialise();
-
-
 	}
 	@Mod.EventHandler
 	public void postInit(FMLPostInitializationEvent event)
 	{
 		addItemsAndBlocks();
 	    loadMTH = Loader.isModLoaded("MultiToolHolders");
-//		packetPipeline.postInitialise();
 	}
 
 	private void addItemsAndBlocks()
