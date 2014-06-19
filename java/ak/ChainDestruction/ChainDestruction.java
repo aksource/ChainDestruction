@@ -24,7 +24,7 @@ import net.minecraftforge.event.world.WorldEvent.Save;
 import java.util.Arrays;
 import java.util.HashSet;
 
-@Mod(modid="ChainDestruction", name="ChainDestruction", version="1.1e", dependencies = "required-after:Forge@[10.12.1.1090,)", useMetadata = true)
+@Mod(modid="ChainDestruction", name="ChainDestruction", version="@VERSION@", dependencies = "required-after:Forge@[10.12.1.1090,)", useMetadata = true)
 public class ChainDestruction
 {
 	@Instance("ChainDestruction")
