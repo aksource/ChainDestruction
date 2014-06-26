@@ -219,8 +219,8 @@ public class InteractBlockHook {
         Block block = world.getBlock(chunk.chunkPosX, chunk.chunkPosY, chunk.chunkPosZ);
         IInventory tooldata = null;
         if (ChainDestruction.loadMTH && item.getItem() instanceof ItemMultiToolHolder) {
-            tooldata = ((ItemMultiToolHolder) item.getItem()).tools;
-            slotNum = ((ItemMultiToolHolder) item.getItem()).SlotNum;
+            tooldata = ((ItemMultiToolHolder) item.getItem()).getInventoryFromItemStack(item);
+            slotNum = ((ItemMultiToolHolder) item.getItem()).getSlotNumFromItemStack(item);
             item = tooldata.getStackInSlot(slotNum);
             isMultiToolHolder = true;
         }
