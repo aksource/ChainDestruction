@@ -10,7 +10,7 @@ public class ClientProxy extends CommonProxy
 {
 	public static final KeyBinding registItemKey = new KeyBinding("Key.CDRegistItem",Keyboard.KEY_K, "ChainDestruction");
 	public static final KeyBinding digUnderKey = new KeyBinding("Key.CDDIgUnder",Keyboard.KEY_U, "ChainDestruction");
-    public static final KeyBinding treeKey = new KeyBinding("Key.CDTree", Keyboard.KEY_COLON, "ChainDestruction");
+    public static final KeyBinding treeKey = new KeyBinding("Key.CDTree", Keyboard.KEY_SEMICOLON, "ChainDestruction");
 	@Override
 	public void registerClientInfo(){
 		ClientRegistry.registerKeyBinding(registItemKey);

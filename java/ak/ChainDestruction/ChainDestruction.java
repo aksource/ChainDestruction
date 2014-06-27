@@ -20,9 +20,9 @@ import net.minecraft.item.ItemStack;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.config.Configuration;
 import net.minecraftforge.event.world.WorldEvent.Save;
+import net.minecraftforge.oredict.OreDictionary;
 
-import java.util.Arrays;
-import java.util.HashSet;
+import java.util.*;
 
 @Mod(modid="ChainDestruction", name="ChainDestruction", version="@VERSION@", dependencies = "required-after:Forge@[10.12.1.1090,)", useMetadata = true)
 public class ChainDestruction
@@ -35,6 +35,7 @@ public class ChainDestruction
 	public static HashSet<String> enableBlocks = new HashSet<>();
     public static HashSet<String> enableLogBlocks = new HashSet<>();
     public static HashSet<String> dropItemSet = new HashSet<>();
+
     public static String[] itemsConfig;
 	public static String[] blocksConfig;
     public static String[] logBlocksConfig;
@@ -81,8 +82,31 @@ public class ChainDestruction
 	{
         enableItems.addAll(Arrays.asList(itemsConfig));
         enableBlocks.addAll(Arrays.asList(blocksConfig));
+        changeStringsProperName(enableBlocks);
         enableLogBlocks.addAll(Arrays.asList(logBlocksConfig));
+        changeStringsProperName(enableLogBlocks);
 	}
+
+    private void changeStringsProperName(Set<String> set) {
+        Set<String> subSet = new HashSet<>();
+        subSet.addAll(set);
+        List<String> oreList = Arrays.asList(OreDictionary.getOreNames());
+
+        for (String str : set) {
+            if (str.contains(":") || oreList.contains(str)) subSet.remove(str);
+        }
+
+        for (String str : subSet) {
+            boolean removeString = false;
+            for (String oreName : oreList) {
+                if (oreName.contains(str)) {
+                    removeString = true;
+                    set.add(oreName);
+                }
+            }
+            if (removeString) set.remove(str);
+        }
+    }
 
     @SubscribeEvent
     public void WorldSave(Save event)
@@ -106,21 +130,30 @@ public class ChainDestruction
 			uId = GameRegistry.findUniqueIdentifierFor((Item) obj);
 		}
 		return uId.toString();
-
 	}
+
+    public static List<String> makeStringDataFromBlockAndMeta(Block block, int meta) {
+        ItemStack itemStack = new ItemStack(block, 1, meta);
+        int[] oreIDs = OreDictionary.getOreIDs(itemStack);
+        if (oreIDs.length > 0) {
+            List<String> oreNames = new ArrayList<>(oreIDs.length);
+            for (int id : oreIDs) {
+                oreNames.add(OreDictionary.getOreName(id));
+            }
+            return oreNames;
+        } else {
+            String s = String.format("%s:%d", GameRegistry.findUniqueIdentifierFor(block).toString(), meta);
+            return Arrays.asList(s);
+        }
+
+    }
+
 	static{
 		vanillaTools = new String[]{
 				"minecraft:diamond_axe","minecraft:golden_axe","minecraft:iron_axe","minecraft:stone_axe","minecraft:wooden_axe",
 				"minecraft:diamond_shovel","minecraft:golden_shovel","minecraft:iron_shovel","minecraft:stone_shovel","minecraft:wooden_shovel",
 				"minecraft:diamond_pickaxe","minecraft:golden_pickaxe","minecraft:iron_pickaxe","minecraft:stone_pickaxe","minecraft:wooden_pickaxe"};
-		vanillaBlocks = new String[]{
-				getUniqueStrings(Blocks.obsidian),getUniqueStrings(Blocks.coal_ore),getUniqueStrings(Blocks.diamond_ore),getUniqueStrings(Blocks.emerald_ore),
-				getUniqueStrings(Blocks.gold_ore),getUniqueStrings(Blocks.iron_ore),getUniqueStrings(Blocks.lapis_ore), getUniqueStrings(Blocks.quartz_ore),getUniqueStrings(Blocks.redstone_ore),getUniqueStrings(Blocks.lit_redstone_ore)};
-        vanillaLogs = new String[] {
-                getUniqueStrings(Blocks.log),
-                getUniqueStrings(Blocks.log2),
-                getUniqueStrings(Blocks.leaves),
-                getUniqueStrings(Blocks.leaves2)
-        };
+		vanillaBlocks = new String[]{getUniqueStrings(Blocks.obsidian), "glowstone", "ore"};
+        vanillaLogs = new String[] {"logWood","treeLeaves"};
 	}
 }
