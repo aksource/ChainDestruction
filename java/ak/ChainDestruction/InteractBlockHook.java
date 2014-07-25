@@ -11,6 +11,7 @@ import net.minecraft.block.Block;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.entity.item.EntityItem;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.init.Blocks;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.ChatComponentText;
@@ -325,6 +326,7 @@ public class InteractBlockHook {
 
     /*第一引数は最初に壊したブロック。第二引数は壊そうとしているブロック*/
     private boolean checkBlock(Block target, Block check, int targetMeta, int checkMeta) {
+        if (check == Blocks.air) return false;
         if (treeMode) {
             return match(ChainDestruction.enableLogBlocks, check, checkMeta);
         } else {
