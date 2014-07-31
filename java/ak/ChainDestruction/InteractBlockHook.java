@@ -1,11 +1,7 @@
 package ak.ChainDestruction;
 
-import ak.ChainDestruction.network.MessageKeyPressed;
-import ak.ChainDestruction.network.PacketHandler;
 import ak.MultiToolHolders.ItemMultiToolHolder;
-import cpw.mods.fml.client.FMLClientHandler;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
-import cpw.mods.fml.common.gameevent.InputEvent.KeyInputEvent;
 import cpw.mods.fml.common.registry.GameRegistry;
 import net.minecraft.block.Block;
 import net.minecraft.enchantment.EnchantmentHelper;
@@ -37,48 +33,18 @@ public class InteractBlockHook {
     private int minZ;
     private int maxZ;
 
-    private static final byte RegKEY = 0;
-    private static final byte DigKEY = 1;
-    private static final byte TreeKEY = 2;
+    public static final byte RegKEY = 0;
+    public static final byte DigKEY = 1;
+    public static final byte TreeKEY = 2;
 
 //    public boolean toggle = false;
 
-    private boolean digUnder = ChainDestruction.digUnder;
+    public boolean digUnder = ChainDestruction.digUnder;
     private boolean treeMode = ChainDestruction.treeMode;
     private boolean doChain = false;
 
     private static final int sideDirection = 6;
     private static final int diagonalDirection = 26;
-
-    private byte getKeyIndex() {
-        byte key = -1;
-        if (ClientProxy.registItemKey.isPressed()) {
-            key = RegKEY;
-        } else if (ClientProxy.digUnderKey.isPressed()) {
-            key = DigKEY;
-        } else if (ClientProxy.treeKey.isPressed()) {
-            key = TreeKEY;
-        }
-        return key;
-    }
-
-    @SubscribeEvent
-    public void KeyPressEvent(KeyInputEvent event) {
-        if (FMLClientHandler.instance().getClient().inGameHasFocus && FMLClientHandler.instance().getClientPlayerEntity() != null) {
-            byte keyIndex = getKeyIndex();
-            if (keyIndex != -1) {
-                EntityPlayer player = FMLClientHandler.instance().getClientPlayerEntity();
-                doKeyClient(null, player, keyIndex);
-                PacketHandler.INSTANCE.sendToServer(new MessageKeyPressed(keyIndex));
-            }
-        }
-    }
-
-    public void doKeyClient(ItemStack item, EntityPlayer player, byte key) {
-        if (key == DigKEY) {
-            ChainDestruction.digUnder = this.digUnder;
-        }
-    }
 
     public void doKeyEvent(ItemStack item, EntityPlayer player, byte key) {
         String chat;
