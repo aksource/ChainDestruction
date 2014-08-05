@@ -1,16 +1,16 @@
 package ak.akapi;
 
-import static net.minecraftforge.common.config.Property.Type.*;
+import cpw.mods.fml.common.ObfuscationReflectionHelper;
+import net.minecraftforge.common.config.ConfigCategory;
+import net.minecraftforge.common.config.Configuration;
+import net.minecraftforge.common.config.Property;
 
 import java.io.File;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 
-import net.minecraftforge.common.config.ConfigCategory;
-import net.minecraftforge.common.config.Configuration;
-import net.minecraftforge.common.config.Property;
-import cpw.mods.fml.common.ObfuscationReflectionHelper;
+import static net.minecraftforge.common.config.Property.Type.*;
 
 public class ConfigSavable extends Configuration
 {
