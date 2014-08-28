@@ -132,7 +132,9 @@ public class ChainDestruction
 		return uId.toString();
 	}
 
-    public static List<String> makeStringDataFromBlockAndMeta(Block block, int meta) {
+    public static List<String> makeStringDataFromBlockAndMeta(BlockMetaPair blockMetaPair) {
+        Block block = blockMetaPair.getBlock();
+        int meta = blockMetaPair.getMeta();
         ItemStack itemStack = new ItemStack(block, 1, meta);
         int[] oreIDs = OreDictionary.getOreIDs(itemStack);
         if (oreIDs.length > 0) {

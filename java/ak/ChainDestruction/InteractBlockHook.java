@@ -18,20 +18,21 @@ import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.player.PlayerDestroyItemEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent.Action;
+import net.minecraftforge.event.world.BlockEvent;
 import net.minecraftforge.event.world.BlockEvent.HarvestDropsEvent;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
 public class InteractBlockHook {
-    private int[] blockPos = new int[]{0, 0, 0, 0, 0};
+    private int face;
     private int minX;
     private int maxX;
     private int minY;
     private int maxY;
     private int minZ;
     private int maxZ;
+    private BlockMetaPair blockmeta = null;
 
     public static final byte RegKEY = 0;
     public static final byte DigKEY = 1;
@@ -81,38 +82,38 @@ public class InteractBlockHook {
             int meta = world.getBlockMetadata(event.x, event.y, event.z);
             if (event.action == Action.RIGHT_CLICK_BLOCK) {
                 if (treeMode) {
-                    addAndRemoveBlocks(ChainDestruction.enableLogBlocks, player, block, meta);
+                    addAndRemoveBlocks(ChainDestruction.enableLogBlocks, player, BlockMetaPair.getPair(block, meta));
                 } else {
-                    addAndRemoveBlocks(ChainDestruction.enableBlocks, player, block, meta);
+                    addAndRemoveBlocks(ChainDestruction.enableBlocks, player, BlockMetaPair.getPair(block, meta));
                 }
             } else if (event.action == Action.LEFT_CLICK_BLOCK
-                    && checkBlockValidate(block, meta)
+                    && checkBlockValidate(BlockMetaPair.getPair(block, meta))
                     && ChainDestruction.enableItems.contains(GameRegistry.findUniqueIdentifierFor(item.getItem()).toString())) {
-                blockPos[0] = event.x;
-                blockPos[1] = event.y;
-                blockPos[2] = event.z;
-                blockPos[3] = event.face;
-                blockPos[4] = meta;
+                face = event.face;
             }
         }
     }
 
     /*引数はブロックとMeta値。モード別に文字列セットに含まれているかを返す。*/
-    private boolean checkBlockValidate(Block block, int meta) {
+    private boolean checkBlockValidate(BlockMetaPair blockMetaPair) {
+        if (blockMetaPair == null)
+            return false;
         if (treeMode) {
-            return match(ChainDestruction.enableLogBlocks, block, meta);
+            return match(ChainDestruction.enableLogBlocks, blockMetaPair);
         } else {
-            return  match(ChainDestruction.enableBlocks, block, meta);
+            return  match(ChainDestruction.enableBlocks, blockMetaPair);
         }
     }
 
-    private void addAndRemoveBlocks(Set<String> set, EntityPlayer player, Block block, int meta) {
+    private void addAndRemoveBlocks(Set<String> set, EntityPlayer player, BlockMetaPair blockMetaPair) {
+        Block block = blockMetaPair.getBlock();
+        int meta = blockMetaPair.getMeta();
         //ブロックの固有文字列
         String uidStr = GameRegistry.findUniqueIdentifierFor(block).toString();
         //Meta値付き固有文字列
         String uidMetaStr = String.format("%s:%d", uidStr, meta);
         //鉱石辞書名かMeta値付き固有文字列のリスト
-        List<String> oreNames = ChainDestruction.makeStringDataFromBlockAndMeta(block, meta);
+        List<String> oreNames = ChainDestruction.makeStringDataFromBlockAndMeta(blockMetaPair);
         String chat;
         if (player.isSneaking()) {
             //鉱石辞書名かmeta値付き固有文字列があって、登録されて無ければ、そちらを登録。
@@ -125,7 +126,7 @@ public class InteractBlockHook {
             }
         } else {
             //文字列がマッチした場合のみ、チャット出力。
-            if (match(set, block, meta)) {
+            if (match(set, blockMetaPair)) {
                 chat = String.format("Remove Block and its OreDictionary Names: %s", uidMetaStr);
                 player.addChatMessage(new ChatComponentText(chat));
             }
@@ -145,16 +146,18 @@ public class InteractBlockHook {
         return false;
     }
 
-    private boolean match(Set<String> set, Block block, int meta) {
+    private boolean match(Set<String> set, BlockMetaPair blockMetaPair) {
+        Block block = blockMetaPair.getBlock();
+        int meta = blockMetaPair.getMeta();
         String uidStr = GameRegistry.findUniqueIdentifierFor(block).toString();
         String uidMetaStr = String.format("%s:%d", uidStr, meta);
-        List<String> oreNames = ChainDestruction.makeStringDataFromBlockAndMeta(block, meta);
+        List<String> oreNames = ChainDestruction.makeStringDataFromBlockAndMeta(blockMetaPair);
         return matchOreNames(set, oreNames) || matchBlockMetaNames(set, uidStr, uidMetaStr);
     }
 
-    private boolean matchTwoBlocks(Block block1, Block block2, int meta1, int meta2) {
-        List<String> targetOreNames = ChainDestruction.makeStringDataFromBlockAndMeta(block1, meta1);
-        List<String> checkOreNames = ChainDestruction.makeStringDataFromBlockAndMeta(block2, meta2);
+    private boolean matchTwoBlocks(BlockMetaPair pair1, BlockMetaPair pair2) {
+        List<String> targetOreNames = ChainDestruction.makeStringDataFromBlockAndMeta(pair1);
+        List<String> checkOreNames = ChainDestruction.makeStringDataFromBlockAndMeta(pair2);
         for (String str : checkOreNames) {
             if (targetOreNames.contains(str)) return true;
         }
@@ -162,14 +165,19 @@ public class InteractBlockHook {
     }
 
     @SubscribeEvent
+    public void breakBlockEvent(BlockEvent.BreakEvent event) {
+        this.blockmeta = BlockMetaPair.getPair(event.block, event.blockMetadata);
+    }
+
+    @SubscribeEvent
     public void HarvestEvent(HarvestDropsEvent event) {
         if (!event.world.isRemote && !doChain
-                && checkBlockValidate(event.block, event.blockMetadata)
+                && (checkBlockValidate(BlockMetaPair.getPair(event.block, event.blockMetadata)) || checkBlockValidate(blockmeta))
                 && event.harvester != null
                 && event.harvester.getCurrentEquippedItem() != null
                 && ChainDestruction.enableItems.contains(ChainDestruction.getUniqueStrings(event.harvester.getCurrentEquippedItem().getItem()))) {
             doChain = true;
-            setBlockBounds(event.harvester);
+            setBlockBounds(event.harvester, event.x, event.y, event.z);
             EntityItem ei;
             for (ItemStack stack : event.drops) {
                 ei = new EntityItem(event.world, event.harvester.posX, event.harvester.posY, event.harvester.posZ, stack);
@@ -178,10 +186,10 @@ public class InteractBlockHook {
             }
             event.drops.clear();
             ChunkPosition blockChunk = new ChunkPosition(event.x, event.y, event.z);
-            ChainDestroyBlock(event.world, event.harvester, event.block, event.blockMetadata, blockChunk, event.harvester.getCurrentEquippedItem());
+            ChainDestroyBlock(event.world, event.harvester, blockmeta, blockChunk, event.harvester.getCurrentEquippedItem());
             getFirstDestroyedBlock(event.world, event.harvester, event.block);
 
-            Arrays.fill(blockPos, 0);
+            face = 0;
             doChain = false;
         }
     }
@@ -205,7 +213,7 @@ public class InteractBlockHook {
         }
     }
 
-    private void ChainDestroyBlock(World world, EntityPlayer player, Block targetBlock, int targetMeta, ChunkPosition blockChunk, ItemStack item) {
+    private void ChainDestroyBlock(World world, EntityPlayer player, BlockMetaPair target, ChunkPosition blockChunk, ItemStack item) {
         ChunkPosition chunk;
         Block checkingBlock;
         int checkingMeta;
@@ -214,12 +222,12 @@ public class InteractBlockHook {
         boolean checkBreak = false;
 
         for (int side = 0; side < sideNumber; side++) {
-            if (side == blockPos[3]) continue;
+            if (side == face) continue;
             chunk = this.getNextChunkPosition(new ChunkPosition(blockChunk.chunkPosX, blockChunk.chunkPosY, blockChunk.chunkPosZ), side);
             checkingBlock = world.getBlock(chunk.chunkPosX, chunk.chunkPosY, chunk.chunkPosZ);
             checkingMeta = world.getBlockMetadata(chunk.chunkPosX, chunk.chunkPosY, chunk.chunkPosZ);
-            if (checkChunkInBounds(chunk) && checkBlock(targetBlock, checkingBlock, targetMeta, checkingMeta)) {
-                checkBreak = this.searchBlock(world, player, targetBlock, targetMeta, chunk, ChainDirection.OPPOSITES[side], item);
+            if (checkChunkInBounds(chunk) && checkBlock(target, BlockMetaPair.getPair(checkingBlock, checkingMeta))) {
+                checkBreak = this.searchBlock(world, player, target, chunk, ChainDirection.OPPOSITES[side], item);
             }
             if (checkBreak) break;
         }
@@ -232,7 +240,7 @@ public class InteractBlockHook {
         IInventory tooldata = null;
         if (ChainDestruction.loadMTH && item.getItem() instanceof ItemMultiToolHolder) {
             tooldata = ((ItemMultiToolHolder) item.getItem()).getInventoryFromItemStack(item);
-            slotNum = ((ItemMultiToolHolder) item.getItem()).getSlotNumFromItemStack(item);
+            slotNum = ItemMultiToolHolder.getSlotNumFromItemStack(item);
             item = tooldata.getStackInSlot(slotNum);
             isMultiToolHolder = true;
         }
@@ -263,7 +271,7 @@ public class InteractBlockHook {
     }
 
     /*trueで処理の中止。手持ちアイテムが壊れたらtrueを返す*/
-    public boolean searchBlock(World world, EntityPlayer player, Block targetBlock, int targetMeta, ChunkPosition chunkPos, int face, ItemStack heldItem) {
+    public boolean searchBlock(World world, EntityPlayer player, BlockMetaPair target, ChunkPosition chunkPos, int face, ItemStack heldItem) {
         Block checkingBlock;
         ChunkPosition chunk;
         int checkingMeta;
@@ -275,8 +283,8 @@ public class InteractBlockHook {
             chunk = getNextChunkPosition(chunkPos, side);
             checkingBlock = world.getBlock(chunk.chunkPosX, chunk.chunkPosY, chunk.chunkPosZ);
             checkingMeta = world.getBlockMetadata(chunk.chunkPosX, chunk.chunkPosY, chunk.chunkPosZ);
-            if (checkChunkInBounds(chunk) && checkBlock(targetBlock, checkingBlock, targetMeta, checkingMeta)) {
-                checkBreak = this.searchBlock(world, player, targetBlock, targetMeta, chunk, ChainDirection.OPPOSITES[side], heldItem);
+            if (checkChunkInBounds(chunk) && checkBlock(target, BlockMetaPair.getPair(checkingBlock, checkingMeta))) {
+                checkBreak = this.searchBlock(world, player, target, chunk, ChainDirection.OPPOSITES[side], heldItem);
             }
             if (checkBreak) break;
         }
@@ -291,12 +299,12 @@ public class InteractBlockHook {
     }
 
     /*第一引数は最初に壊したブロック。第二引数は壊そうとしているブロック*/
-    private boolean checkBlock(Block target, Block check, int targetMeta, int checkMeta) {
-        if (check == Blocks.air) return false;
+    private boolean checkBlock(BlockMetaPair target, BlockMetaPair check) {
+        if (check.getBlock() == Blocks.air) return false;
         if (treeMode) {
-            return match(ChainDestruction.enableLogBlocks, check, checkMeta);
+            return match(ChainDestruction.enableLogBlocks, check);
         } else {
-            return matchTwoBlocks(target, check, targetMeta, checkMeta);
+            return matchTwoBlocks(target, check);
         }
     }
 
@@ -309,18 +317,18 @@ public class InteractBlockHook {
         return bx && by && bz;
     }
 
-    private void setBlockBounds(EntityPlayer player) {
-        minX = blockPos[0] - ChainDestruction.maxDestroyedBlock;
-        maxX = blockPos[0] + ChainDestruction.maxDestroyedBlock;
+    private void setBlockBounds(EntityPlayer player, int x, int y, int z) {
+        minX = x - ChainDestruction.maxDestroyedBlock;
+        maxX = x + ChainDestruction.maxDestroyedBlock;
         if (ChainDestruction.digUnder)
-            minY = blockPos[1] - ChainDestruction.maxDestroyedBlock;
-        else if (blockPos[3] != 1)
+            minY = y - ChainDestruction.maxDestroyedBlock;
+        else if (face != 1)
             minY = MathHelper.floor_double(player.posY);
         else
             minY = MathHelper.floor_double(player.posY) - 1;
-        maxY = blockPos[1] + ChainDestruction.maxDestroyedBlock;
-        minZ = blockPos[2] - ChainDestruction.maxDestroyedBlock;
-        maxZ = blockPos[2] + ChainDestruction.maxDestroyedBlock;
+        maxY = y + ChainDestruction.maxDestroyedBlock;
+        minZ = z - ChainDestruction.maxDestroyedBlock;
+        maxZ = z + ChainDestruction.maxDestroyedBlock;
     }
 
     /*26方向走査できるようにForgeDirectionを拡張。*/
