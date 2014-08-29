@@ -1,5 +1,6 @@
 package ak.ChainDestruction;
 
+import com.google.common.base.Optional;
 import net.minecraft.block.Block;
 
 /**
@@ -16,6 +17,14 @@ public class BlockMetaPair {
 
     public static BlockMetaPair getPair(Block block, int meta) {
         return new BlockMetaPair(block, meta);
+    }
+
+    public static BlockMetaPair setPair(BlockMetaPair pair, Block block, int meta) {
+        return Optional.fromNullable(pair).or(getPair(block, meta)).setPair(block, meta);
+    }
+
+    public BlockMetaPair setPair(Block block, int meta) {
+        return this.setBlock(block).setMeta(meta);
     }
 
     @Override
@@ -55,7 +64,17 @@ public class BlockMetaPair {
         return block;
     }
 
+    public BlockMetaPair setBlock(Block block) {
+        this.block = block;
+        return this;
+    }
+
     public int getMeta() {
         return meta;
+    }
+
+    public BlockMetaPair setMeta(int meta) {
+        this.meta = meta;
+        return this;
     }
 }
