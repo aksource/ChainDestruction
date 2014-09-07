@@ -2,6 +2,7 @@ package ak.ChainDestruction;
 
 import ak.ChainDestruction.network.PacketHandler;
 import ak.akapi.ConfigSavable;
+import com.google.common.base.Optional;
 import cpw.mods.fml.common.FMLCommonHandler;
 import cpw.mods.fml.common.Loader;
 import cpw.mods.fml.common.Mod;
@@ -120,16 +121,17 @@ public class ChainDestruction
 
 	public static String getUniqueStrings(Object obj)
 	{
-		UniqueIdentifier uId;
-		if(obj instanceof ItemStack) {
+		UniqueIdentifier uId = null;
+		if (obj instanceof ItemStack) {
 			obj = ((ItemStack)obj).getItem();
 		}
-		if(obj instanceof Block) {
+		if (obj instanceof Block) {
 			uId = GameRegistry.findUniqueIdentifierFor((Block) obj);
-		}else {
+		}
+        if (obj instanceof Item){
 			uId = GameRegistry.findUniqueIdentifierFor((Item) obj);
 		}
-		return uId.toString();
+		return Optional.fromNullable(uId).or(new UniqueIdentifier("none:dummy")).toString();
 	}
 
     public static List<String> makeStringDataFromBlockAndMeta(BlockMetaPair blockMetaPair) {

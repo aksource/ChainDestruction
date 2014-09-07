@@ -240,12 +240,12 @@ public class InteractBlockHook {
             tooldata = ((ItemMultiToolHolder) item.getItem()).getInventoryFromItemStack(item);
             slotNum = ItemMultiToolHolder.getSlotNumFromItemStack(item);
             item = tooldata.getStackInSlot(slotNum);
+            if (item == null) {
+                return true;
+            }
             isMultiToolHolder = true;
         }
         int meta = world.getBlockMetadata(chunk.chunkPosX, chunk.chunkPosY, chunk.chunkPosZ);
-        if (item == null) {
-            return true;
-        }
         if (item.getItem().onBlockDestroyed(item, world, block, chunk.chunkPosX, chunk.chunkPosY, chunk.chunkPosZ, player)) {
             if (world.setBlockToAir(chunk.chunkPosX, chunk.chunkPosY, chunk.chunkPosZ)) {
                 block.onBlockHarvested(world, chunk.chunkPosX, chunk.chunkPosY, chunk.chunkPosZ, meta, player);
