@@ -69,7 +69,6 @@ public class ChainDestruction
 	{
 		proxy.registerClientInfo();
 		MinecraftForge.EVENT_BUS.register(interactblockhook);
-		FMLCommonHandler.instance().bus().register(new ClientEvent());
 		MinecraftForge.EVENT_BUS.register(this);
 	}
 	@Mod.EventHandler
