@@ -3,7 +3,6 @@ package ak.ChainDestruction;
 import ak.ChainDestruction.network.PacketHandler;
 import ak.akapi.ConfigSavable;
 import com.google.common.base.Optional;
-import cpw.mods.fml.common.FMLCommonHandler;
 import cpw.mods.fml.common.Loader;
 import cpw.mods.fml.common.Mod;
 import cpw.mods.fml.common.Mod.Instance;
@@ -40,11 +39,12 @@ public class ChainDestruction
     public static String[] itemsConfig;
 	public static String[] blocksConfig;
     public static String[] logBlocksConfig;
-	public static boolean digUnder;
+	public static boolean digUnder = true;
 	public static String[] vanillaTools;
 	public static String[] vanillaBlocks;
     public static String[] vanillaLogs;
-	public static int maxDestroyedBlock;
+	public static int maxDestroyedBlock = 5;
+    public static int maxYforTreeMode = 255;
 	public static boolean dropOnPlayer = true;
     public static boolean treeMode = false;
 	public ConfigSavable config;
@@ -56,12 +56,15 @@ public class ChainDestruction
 	{
 		config = new ConfigSavable(event.getSuggestedConfigurationFile());
 		config.load();
-		maxDestroyedBlock = config.get(Configuration.CATEGORY_GENERAL, "Maximum Destroyed Block Counts", 10).getInt();
-		itemsConfig = config.get(Configuration.CATEGORY_GENERAL, "toolItemsId", vanillaTools).getStringList();
-		blocksConfig = config.get(Configuration.CATEGORY_GENERAL, "chainDestroyedBlockIdConfig", vanillaBlocks).getStringList();
-        logBlocksConfig = config.get(Configuration.CATEGORY_GENERAL, "chainDestroyedLogBlockIdConfig", vanillaLogs).getStringList();
-        digUnder = config.get(Configuration.CATEGORY_GENERAL, "digUnder", true).getBoolean(true);
+		maxDestroyedBlock = config.get(Configuration.CATEGORY_GENERAL, "maxDestroyedBlock", maxDestroyedBlock, "Maximum Destroyed Block Counts. range is 2 * max + 1").getInt();
+        maxYforTreeMode = config.get(Configuration.CATEGORY_GENERAL, "maxYforTreeMode", maxYforTreeMode, "Max Height of destroyed block for tree mode. Be careful to set over 200.").getInt();
+		itemsConfig = config.get(Configuration.CATEGORY_GENERAL, "toolItemsId", vanillaTools, "Tool ids that enables chain destruction.").getStringList();
+		blocksConfig = config.get(Configuration.CATEGORY_GENERAL, "chainDestroyedBlockIdConfig", vanillaBlocks, "Ids of block that to be chain-destructed.").getStringList();
+        logBlocksConfig = config.get(Configuration.CATEGORY_GENERAL, "chainDestroyedLogBlockIdConfig", vanillaLogs, "Ids of block that to be chain-destructed in tree mode.").getStringList();
+        digUnder = config.get(Configuration.CATEGORY_GENERAL, "digUnder", digUnder, "dig blocks under your position.").getBoolean(digUnder);
 		config.save();
+        interactblockhook.setDigUnder(digUnder);
+        interactblockhook.setTreeMode(treeMode);
         PacketHandler.init();
 	}
 	@Mod.EventHandler

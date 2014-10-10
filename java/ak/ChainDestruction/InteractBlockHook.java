@@ -38,12 +38,12 @@ public class InteractBlockHook {
     public static final byte DigKEY = 1;
     public static final byte TreeKEY = 2;
 
-    public boolean digUnder = ChainDestruction.digUnder;
-    private boolean treeMode = ChainDestruction.treeMode;
+    public boolean digUnder;
+    private boolean treeMode;
     private boolean doChain = false;
 
-    private static final int sideDirection = 6;
-    private static final int diagonalDirection = 26;
+    private static final int SIDE_DIRECTION_NUMBER = 6;
+    private static final int DIAGONAL_DIRECTION_NUMBER = 26;
 
     public void doKeyEvent(ItemStack item, EntityPlayer player, byte key) {
         String chat;
@@ -215,7 +215,7 @@ public class InteractBlockHook {
         Block checkingBlock;
         int checkingMeta;
         BlockMetaPair checking = null;
-        int sideNumber = treeMode ? diagonalDirection : sideDirection;
+        int sideNumber = treeMode ? DIAGONAL_DIRECTION_NUMBER : SIDE_DIRECTION_NUMBER;
         boolean checkBreak = false;
 
         for (int side = 0; side < sideNumber; side++) {
@@ -279,7 +279,7 @@ public class InteractBlockHook {
         int checkingMeta;
         BlockMetaPair checking = null;
         if (this.destroyBlockAtPosition(world, player, chunkPos, heldItem))  return true;
-        int sideNumber = treeMode ? diagonalDirection : sideDirection;
+        int sideNumber = treeMode ? DIAGONAL_DIRECTION_NUMBER : SIDE_DIRECTION_NUMBER;
         boolean checkBreak = false;
         for (int side = 0; side < sideNumber; side++) {
             if (side == face) continue;
@@ -331,14 +331,23 @@ public class InteractBlockHook {
 
     private void setBlockBounds(EntityPlayer player, int x, int y, int z) {
         rangeX = Range.closed(x - ChainDestruction.maxDestroyedBlock, x + ChainDestruction.maxDestroyedBlock);
+        int maxY = (treeMode)? ChainDestruction.maxYforTreeMode : y + ChainDestruction.maxDestroyedBlock;
         if (ChainDestruction.digUnder) {
-            rangeY = Range.closed(y - ChainDestruction.maxDestroyedBlock, y + ChainDestruction.maxDestroyedBlock);
+            rangeY = Range.closed(y - ChainDestruction.maxDestroyedBlock, maxY);
         } else if (face != 1) {
-            rangeY = Range.closed(MathHelper.floor_double(player.posY), y + ChainDestruction.maxDestroyedBlock);
+            rangeY = Range.closed(MathHelper.floor_double(player.posY), maxY);
         } else {
-            rangeY = Range.closed(MathHelper.floor_double(player.posY) - 1, y + ChainDestruction.maxDestroyedBlock);
+            rangeY = Range.closed(MathHelper.floor_double(player.posY) - 1, maxY);
         }
         rangeZ = Range.closed(z - ChainDestruction.maxDestroyedBlock, z + ChainDestruction.maxDestroyedBlock);
+    }
+
+    public void setDigUnder(boolean digUnder) {
+        this.digUnder = digUnder;
+    }
+
+    public void setTreeMode(boolean treeMode) {
+        this.treeMode = treeMode;
     }
 
     /*26方向走査できるようにForgeDirectionを拡張。*/
