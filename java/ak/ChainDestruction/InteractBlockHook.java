@@ -45,6 +45,8 @@ public class InteractBlockHook {
     private static final int SIDE_DIRECTION_NUMBER = 6;
     private static final int DIAGONAL_DIRECTION_NUMBER = 26;
 
+    public static double dropItemGetRange = 10d;
+
     public void doKeyEvent(ItemStack item, EntityPlayer player, byte key) {
         String chat;
         if (key == RegKEY) {
@@ -197,7 +199,7 @@ public class InteractBlockHook {
 
     private void getFirstDestroyedBlock(World world, EntityPlayer player, Block block) {
         @SuppressWarnings("unchecked")
-        List<EntityItem> list = world.getEntitiesWithinAABB(EntityItem.class, player.boundingBox.expand(2d, 2d, 2d));
+        List<EntityItem> list = world.getEntitiesWithinAABB(EntityItem.class, player.boundingBox.expand(dropItemGetRange, dropItemGetRange, dropItemGetRange));
         if (list == null) return;
         double d0, d1, d2;
         float f1 = player.rotationYaw * (float)(2 * Math.PI / 360);
@@ -246,7 +248,9 @@ public class InteractBlockHook {
             isMultiToolHolder = true;
         }
         int meta = world.getBlockMetadata(chunk.chunkPosX, chunk.chunkPosY, chunk.chunkPosZ);
-        if (item.getItem().onBlockDestroyed(item, world, block, chunk.chunkPosX, chunk.chunkPosY, chunk.chunkPosZ, player)) {
+        boolean startBreakingBlock = item.getItem().onBlockStartBreak(item, chunk.chunkPosX, chunk.chunkPosY, chunk.chunkPosZ, player);
+        boolean blockDestroyed = item.getItem().onBlockDestroyed(item, world, block, chunk.chunkPosX, chunk.chunkPosY, chunk.chunkPosZ, player);
+        if (!startBreakingBlock && blockDestroyed) {
             if (world.setBlockToAir(chunk.chunkPosX, chunk.chunkPosY, chunk.chunkPosZ)) {
                 block.onBlockHarvested(world, chunk.chunkPosX, chunk.chunkPosY, chunk.chunkPosZ, meta, player);
                 block.onBlockDestroyedByPlayer(world, chunk.chunkPosX, chunk.chunkPosY, chunk.chunkPosZ, meta);
