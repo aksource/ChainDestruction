@@ -38,6 +38,9 @@ public class InteractBlockHook {
     public static final byte DigKEY = 1;
     public static final byte TreeKEY = 2;
 
+    public static final byte MIDDLE_CLICK = 2;
+    public static final byte RIGHT_CLICK_CTRL = 1 + 3;
+
     public boolean digUnder;
     private boolean treeMode;
     private boolean doChain = false;
@@ -72,11 +75,29 @@ public class InteractBlockHook {
         }
     }
 
+    public void doMouseEvent(ItemStack item, EntityPlayer player, byte mouse, boolean isFocusObject) {
+        if (!ChainDestruction.enableItems.contains(GameRegistry.findUniqueIdentifierFor(item.getItem()).toString())) {
+            return;
+        }
+        String chat;
+        if (mouse == MIDDLE_CLICK && !isFocusObject) {
+            if (player.isSneaking() && ChainDestruction.maxDestroyedBlock > 0) {
+                ChainDestruction.maxDestroyedBlock--;
+            } else {
+                ChainDestruction.maxDestroyedBlock++;
+            }
+            chat = String.format("New Max Destroyed : %d", ChainDestruction.maxDestroyedBlock);
+            player.addChatMessage(new ChatComponentText(chat));
+        }
+    }
+
+
     @SubscribeEvent
     public void PlayerInteractBlock(PlayerInteractEvent event) {
         EntityPlayer player = event.entityPlayer;
         World world = player.worldObj;
         ItemStack item = event.entityPlayer.getCurrentEquippedItem();
+        if (world.isRemote) return;
         if (item != null && ChainDestruction.enableItems.contains(ChainDestruction.getUniqueStrings(item.getItem()))) {
             Block block = world.getBlock(event.x, event.y, event.z);
             int meta = world.getBlockMetadata(event.x, event.y, event.z);
@@ -92,6 +113,17 @@ public class InteractBlockHook {
                     && ChainDestruction.enableItems.contains(GameRegistry.findUniqueIdentifierFor(item.getItem()).toString())) {
                 face = event.face;
             }
+            //RIGHT_CLICK_BLOCKと同時に呼ばれるので、気持ち悪い。要検討
+//            if (event.action == Action.RIGHT_CLICK_AIR
+//                    && ChainDestruction.enableItems.contains(GameRegistry.findUniqueIdentifierFor(item.getItem()).toString())) {
+//                if (player.isSneaking() && ChainDestruction.maxDestroyedBlock > 0) {
+//                    ChainDestruction.maxDestroyedBlock--;
+//                    player.addChatMessage(new ChatComponentText(String.format("New Max Destroyed : %d", ChainDestruction.maxDestroyedBlock)));
+//                } else {
+//                    ChainDestruction.maxDestroyedBlock++;
+//                    player.addChatMessage(new ChatComponentText(String.format("New Max Destroyed : %d", ChainDestruction.maxDestroyedBlock)));
+//                }
+//            }
         }
     }
 

@@ -119,6 +119,7 @@ public class ChainDestruction
         config.set(Configuration.CATEGORY_GENERAL, "chainDestroyedBlockIdConfig", enableBlocks);
         config.set(Configuration.CATEGORY_GENERAL, "chainDestroyedLogBlockIdConfig", enableLogBlocks);
         config.set(Configuration.CATEGORY_GENERAL, "digUnder", digUnder);
+        config.set(Configuration.CATEGORY_GENERAL, "maxDestroyedBlock", maxDestroyedBlock);
         config.save();
     }
 
