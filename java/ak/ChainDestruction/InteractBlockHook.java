@@ -78,7 +78,7 @@ public class InteractBlockHook {
     }
 
     public void doMouseEvent(ItemStack item, EntityPlayer player, byte mouse, boolean isFocusObject) {
-        if (!ChainDestruction.enableItems.contains(GameRegistry.findUniqueIdentifierFor(item.getItem()).toString())) {
+        if (!ChainDestruction.enableItems.contains(ChainDestruction.getUniqueStrings(item))) {
             return;
         }
         String chat;
