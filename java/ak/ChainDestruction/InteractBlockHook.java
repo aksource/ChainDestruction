@@ -19,6 +19,7 @@ import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.player.PlayerDestroyItemEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent.Action;
+import net.minecraftforge.event.world.BlockEvent;
 import net.minecraftforge.event.world.BlockEvent.HarvestDropsEvent;
 
 import java.util.ArrayList;
@@ -193,16 +194,22 @@ public class InteractBlockHook {
         return false;
     }
 
+    /*偽装しているブロックへの対応*/
+    @SubscribeEvent
+    public void breakBlock(BlockEvent.BreakEvent event) {
+        this.blockmeta = BlockMetaPair.getPair(event.block, event.blockMetadata);
+    }
+
     @SubscribeEvent
     public void HarvestEvent(HarvestDropsEvent event) {
         if (!event.world.isRemote && !doChain
+                /*通常は左の判定だけで良いが、別のブロックに偽装するブロックに対応するため、右の判定を追加*/
                 && (checkBlockValidate(BlockMetaPair.getPair(event.block, event.blockMetadata)) || checkBlockValidate(blockmeta))
                 && event.harvester != null
                 && event.harvester.getCurrentEquippedItem() != null
                 && ChainDestruction.enableItems.contains(ChainDestruction.getUniqueStrings(event.harvester.getCurrentEquippedItem().getItem()))) {
             //通常の破壊処理からこのイベントが呼ばれるので、連載処理を初回のみにするための処置
             doChain = true;
-            this.blockmeta = BlockMetaPair.getPair(event.block, event.blockMetadata);
             setBlockBounds(event.harvester, event.x, event.y, event.z);
             EntityItem ei;
             for (ItemStack stack : event.drops) {
@@ -222,6 +229,7 @@ public class InteractBlockHook {
 
             face = 0;
             doChain = false;
+            this.blockmeta = BlockMetaPair.getPair(Blocks.air, 0);
         }
     }
 
