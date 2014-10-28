@@ -48,9 +48,6 @@ public class InteractBlockHook {
     private boolean treeMode;
     private boolean doChain = false;
 
-    private static final int SIDE_DIRECTION_NUMBER = 6;
-    private static final int DIAGONAL_DIRECTION_NUMBER = 26;
-
     public static double dropItemGetRange = 10d;
 
     public void doKeyEvent(ItemStack item, EntityPlayer player, byte key) {
@@ -79,24 +76,27 @@ public class InteractBlockHook {
     }
 
     public void doMouseEvent(ItemStack item, EntityPlayer player, byte mouse, boolean isFocusObject) {
-        if (!ChainDestruction.enableItems.contains(ChainDestruction.getUniqueStrings(item))) {
-            return;
-        }
-        String chat;
-        if (mouse == MIDDLE_CLICK && !isFocusObject) {
-            if (player.isSneaking() && ChainDestruction.maxDestroyedBlock > 0) {
-                ChainDestruction.maxDestroyedBlock--;
-            } else {
-                ChainDestruction.maxDestroyedBlock++;
+        try {
+            if (!ChainDestruction.enableItems.contains(ChainDestruction.getUniqueStrings(item))) {
+                return;
             }
-            chat = String.format("New Max Destroyed : %d", ChainDestruction.maxDestroyedBlock);
-            player.addChatMessage(new ChatComponentText(chat));
+            String chat;
+            if (mouse == MIDDLE_CLICK && !isFocusObject) {
+                if (player.isSneaking() && ChainDestruction.maxDestroyedBlock > 0) {
+                    ChainDestruction.maxDestroyedBlock--;
+                } else {
+                    ChainDestruction.maxDestroyedBlock++;
+                }
+                chat = String.format("New Max Destroyed : %d", ChainDestruction.maxDestroyedBlock);
+                player.addChatMessage(new ChatComponentText(chat));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
-
     @SubscribeEvent
-    public void PlayerInteractBlock(PlayerInteractEvent event) {
+    public void interactBlock(PlayerInteractEvent event) {
         EntityPlayer player = event.entityPlayer;
         World world = player.worldObj;
         ItemStack item = event.entityPlayer.getCurrentEquippedItem();
@@ -249,26 +249,6 @@ public class InteractBlockHook {
         }
     }
 
-//    private void ChainDestroyBlock(World world, EntityPlayer player, BlockMetaPair target, ChunkCoordinates blockChunk, ItemStack item) {
-//        ChunkCoordinates chunk;
-//        Block checkingBlock;
-//        int checkingMeta;
-//        BlockMetaPair checking = null;
-//        int sideNumber = treeMode ? DIAGONAL_DIRECTION_NUMBER : SIDE_DIRECTION_NUMBER;
-//        boolean checkBreak = false;
-//
-//        for (int side = 0; side < sideNumber; side++) {
-//            if (side == face) continue;
-//            chunk = this.getNextChunkPosition(blockChunk, side);
-//            checkingBlock = world.getBlock(chunk.posX, chunk.posY, chunk.posZ);
-//            checkingMeta = world.getBlockMetadata(chunk.posX, chunk.posY, chunk.posZ);
-//            checking = BlockMetaPair.setPair(checking, checkingBlock, checkingMeta);
-//            if (checkChunkInBounds(chunk) && checkBlock(target, checking)) {
-//                checkBreak = this.searchBlock(world, player, target, chunk, ChainDirection.OPPOSITES[side], item);
-//            }
-//            if (checkBreak) break;
-//        }
-//    }
     /*判定アイテムがnullの時やアイテムが壊れた時はtrueを返す。falseで続行。*/
     private boolean destroyBlockAtPosition(World world, EntityPlayer player, ChunkCoordinates chunk, ItemStack item) {
         boolean isMultiToolHolder = false;
@@ -374,44 +354,6 @@ public class InteractBlockHook {
         destroyingBlockList.clear();
     }
 
-    /*trueで処理の中止。手持ちアイテムが壊れたらtrueを返す*/
-//    public boolean searchBlock(World world, EntityPlayer player, BlockMetaPair target, ChunkCoordinates chunkPos, int face, ItemStack heldItem) {
-//        Block checkingBlock;
-//        ChunkCoordinates chunk;
-//        int checkingMeta;
-//        BlockMetaPair checking = null;
-//        if (this.destroyBlockAtPosition(world, player, chunkPos, heldItem))  return true;
-//        int sideNumber = treeMode ? DIAGONAL_DIRECTION_NUMBER : SIDE_DIRECTION_NUMBER;
-//        boolean checkBreak = false;
-//        for (int side = 0; side < sideNumber; side++) {
-//            if (side == face) continue;
-//            chunk = getNextChunkPosition(chunkPos, side);
-//            checkingBlock = world.getBlock(chunk.posX, chunk.posY, chunk.posZ);
-//            checkingMeta = world.getBlockMetadata(chunk.posX, chunk.posY, chunk.posZ);
-//            checking = BlockMetaPair.setPair(checking, checkingBlock, checkingMeta);
-//            if (checkChunkInBounds(chunk) && checkBlock(target, checking)) {
-//                checkBreak = this.searchBlock(world, player, target, chunk, ChainDirection.OPPOSITES[side], heldItem);
-//            }
-//            if (checkBreak) break;
-//        }
-//        return false;
-//    }
-
-//    private ChunkCoordinates getNextChunkCoordinates(ChunkCoordinates chunk, int side) {
-//        int dx = ChainDirection.getOrientation(side).offsetX;
-//        int dy = ChainDirection.getOrientation(side).offsetY;
-//        int dz = ChainDirection.getOrientation(side).offsetZ;
-//        chunk.set(chunk.posX, chunk.posY, chunk.posZ);
-//        return chunk;
-//    }
-//
-//    private ChunkCoordinates getNextChunkPosition(ChunkCoordinates chunk, int side) {
-//        int dx = ChainDirection.getOrientation(side).offsetX;
-//        int dy = ChainDirection.getOrientation(side).offsetY;
-//        int dz = ChainDirection.getOrientation(side).offsetZ;
-//        return new ChunkCoordinates(chunk.posX + dx, chunk.posY + dy, chunk.posZ + dz);
-//    }
-
     /*第一引数は最初に壊したブロック。第二引数は壊そうとしているブロック*/
     private boolean checkBlock(BlockMetaPair target, BlockMetaPair check) {
         if (check.getBlock() == Blocks.air) return false;
@@ -421,15 +363,6 @@ public class InteractBlockHook {
             return matchTwoBlocks(target, check);
         }
     }
-
-    /*与えられた座標が採掘範囲内かどうか*/
-//    private boolean checkChunkInBounds(ChunkCoordinates chunk) {
-//        boolean bx, by, bz;
-//        bx = rangeX.contains(chunk.posX);
-//        by = rangeY.contains(chunk.posY);
-//        bz = rangeZ.contains(chunk.posZ);
-//        return bx && by && bz;
-//    }
 
     /*破壊予定ブロックの走査範囲の設定*/
     private void setBlockBounds(EntityPlayer player, int x, int y, int z) {
