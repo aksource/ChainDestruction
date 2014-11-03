@@ -75,7 +75,7 @@ public class ConfigSavable extends Configuration
 			values[i] = it.next().toString();
 			i++;
 		}
-		set(category, key, values, INTEGER);
+		set(category, key, values, STRING);
 	}
 	public void set(String category, String key, String str, Property.Type type)
 	{

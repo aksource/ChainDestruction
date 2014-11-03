@@ -22,10 +22,7 @@ import net.minecraftforge.event.entity.player.PlayerInteractEvent.Action;
 import net.minecraftforge.event.world.BlockEvent;
 import net.minecraftforge.event.world.BlockEvent.HarvestDropsEvent;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class InteractBlockHook {
     private int face;
@@ -39,13 +36,14 @@ public class InteractBlockHook {
 
     public static final byte RegKEY = 0;
     public static final byte DigKEY = 1;
-    public static final byte TreeKEY = 2;
+    public static final byte ModeKEY = 2;
 
     public static final byte MIDDLE_CLICK = 2;
     public static final byte RIGHT_CLICK_CTRL = 1 + 3;
 
     public boolean digUnder;
     private boolean treeMode;
+    public boolean privateRegisterMode;
     private boolean doChain = false;
 
     public static double dropItemGetRange = 10d;
@@ -63,15 +61,23 @@ public class InteractBlockHook {
                 chat = String.format("Add Tool : %s", ChainDestruction.getUniqueStrings(item));
                 player.addChatMessage(new ChatComponentText(chat));
             }
-        } else if (key == DigKEY) {
+        }
+        if (key == DigKEY) {
             this.digUnder = !this.digUnder;
             chat = String.format("Dig Under %b", this.digUnder);
             player.addChatMessage(new ChatComponentText(chat));
             ChainDestruction.digUnder = this.digUnder;
-        } else if (key == TreeKEY) {
-            this.treeMode = !this.treeMode;
-            chat = String.format("Tree Mode %b", this.treeMode);
-            player.addChatMessage(new ChatComponentText(chat));
+        }
+        if (key == ModeKEY) {
+            if (player.isSneaking()) {
+                this.privateRegisterMode = !this.privateRegisterMode;
+                chat = String.format("Private Register Mode %b", this.privateRegisterMode);
+                player.addChatMessage(new ChatComponentText(chat));
+            } else {
+                this.treeMode = !this.treeMode;
+                chat = String.format("Tree Mode %b", this.treeMode);
+                player.addChatMessage(new ChatComponentText(chat));
+            }
         }
     }
 
@@ -100,19 +106,27 @@ public class InteractBlockHook {
         EntityPlayer player = event.entityPlayer;
         World world = player.worldObj;
         ItemStack item = event.entityPlayer.getCurrentEquippedItem();
-        if (world.isRemote) return;
-        if (item != null && ChainDestruction.enableItems.contains(ChainDestruction.getUniqueStrings(item.getItem()))) {
+        if (world.isRemote || item == null) return;
+        String uniqueName = ChainDestruction.getUniqueStrings(item.getItem());
+        if (ChainDestruction.enableItems.contains(uniqueName)) {
             Block block = world.getBlock(event.x, event.y, event.z);
             int meta = world.getBlockMetadata(event.x, event.y, event.z);
             if (event.action == Action.RIGHT_CLICK_BLOCK) {
-                if (treeMode) {
-                    addAndRemoveBlocks(ChainDestruction.enableLogBlocks, player, BlockMetaPair.getPair(block, meta));
+                if (privateRegisterMode) {
+                    if (!ChainDestruction.privateItemBlockMap.containsKey(uniqueName)) {
+                        ChainDestruction.privateItemBlockMap.put(uniqueName, new HashSet<String>());
+                    }
+                    addAndRemoveBlocks(ChainDestruction.privateItemBlockMap.get(uniqueName), player, BlockMetaPair.getPair(block, meta));
                 } else {
-                    addAndRemoveBlocks(ChainDestruction.enableBlocks, player, BlockMetaPair.getPair(block, meta));
+                    if (treeMode) {
+                        addAndRemoveBlocks(ChainDestruction.enableLogBlocks, player, BlockMetaPair.getPair(block, meta));
+                    } else {
+                        addAndRemoveBlocks(ChainDestruction.enableBlocks, player, BlockMetaPair.getPair(block, meta));
+                    }
                 }
             }
             if (event.action == Action.LEFT_CLICK_BLOCK
-                    && checkBlockValidate(BlockMetaPair.getPair(block, meta))
+                    && checkBlockValidate(BlockMetaPair.getPair(block, meta), item)
                     && ChainDestruction.enableItems.contains(GameRegistry.findUniqueIdentifierFor(item.getItem()).toString())) {
                 face = event.face;
             }
@@ -120,15 +134,18 @@ public class InteractBlockHook {
     }
 
     /*引数はブロックとMeta値。モード別に文字列セットに含まれているかを返す。*/
-    private boolean checkBlockValidate(BlockMetaPair blockMetaPair) {
+    private boolean checkBlockValidate(BlockMetaPair blockMetaPair, ItemStack heldItem) {
         if (blockMetaPair == null) {
             return false;
         }
+        String uniqueName = ChainDestruction.getUniqueStrings(heldItem.getItem());
+        if (privateRegisterMode && ChainDestruction.privateItemBlockMap.containsKey(uniqueName)) {
+            return match(ChainDestruction.privateItemBlockMap.get(uniqueName), blockMetaPair);
+        }
         if (treeMode) {
             return match(ChainDestruction.enableLogBlocks, blockMetaPair);
-        } else {
-            return match(ChainDestruction.enableBlocks, blockMetaPair);
         }
+        return match(ChainDestruction.enableBlocks, blockMetaPair);
     }
 
     /*ブロックの登録／削除*/
@@ -203,10 +220,10 @@ public class InteractBlockHook {
     @SubscribeEvent
     public void HarvestEvent(HarvestDropsEvent event) {
         if (!event.world.isRemote && !doChain
-                /*通常は左の判定だけで良いが、別のブロックに偽装するブロックに対応するため、右の判定を追加*/
-                && (checkBlockValidate(BlockMetaPair.getPair(event.block, event.blockMetadata)) || checkBlockValidate(blockmeta))
                 && event.harvester != null
                 && event.harvester.getCurrentEquippedItem() != null
+                /*通常は左の判定だけで良いが、別のブロックに偽装するブロックに対応するため、右の判定を追加*/
+                && (checkBlockValidate(BlockMetaPair.getPair(event.block, event.blockMetadata), event.harvester.getCurrentEquippedItem()) || checkBlockValidate(blockmeta, event.harvester.getCurrentEquippedItem()))
                 && ChainDestruction.enableItems.contains(ChainDestruction.getUniqueStrings(event.harvester.getCurrentEquippedItem().getItem()))) {
             //通常の破壊処理からこのイベントが呼ばれるので、連載処理を初回のみにするための処置
             doChain = true;
@@ -307,7 +324,7 @@ public class InteractBlockHook {
                     checkMeta = world.getBlockMetadata(i, j, k);
                     checkPair = BlockMetaPair.setPair(checkPair, checkBlock, checkMeta);
                     chunkCoordinates = new ChunkCoordinates(i, j, k);
-                    if (checkBlock(target, checkPair) && !candidateBlockList.contains(chunkCoordinates)) {
+                    if (checkBlock(target, checkPair, player.getCurrentEquippedItem()) && !candidateBlockList.contains(chunkCoordinates)) {
                         candidateBlockList.add(new ChunkCoordinates(i, j, k));
                     }
                 }
@@ -355,13 +372,16 @@ public class InteractBlockHook {
     }
 
     /*第一引数は最初に壊したブロック。第二引数は壊そうとしているブロック*/
-    private boolean checkBlock(BlockMetaPair target, BlockMetaPair check) {
+    private boolean checkBlock(BlockMetaPair target, BlockMetaPair check, ItemStack heldItem) {
         if (check.getBlock() == Blocks.air) return false;
         if (treeMode) {
+            String uniqueName = ChainDestruction.getUniqueStrings(heldItem.getItem());
+            if (privateRegisterMode && ChainDestruction.privateItemBlockMap.containsKey(uniqueName)) {
+                return match(ChainDestruction.privateItemBlockMap.get(uniqueName), check);
+            }
             return match(ChainDestruction.enableLogBlocks, check);
-        } else {
-            return matchTwoBlocks(target, check);
         }
+        return matchTwoBlocks(target, check);
     }
 
     /*破壊予定ブロックの走査範囲の設定*/
@@ -384,5 +404,9 @@ public class InteractBlockHook {
 
     public void setTreeMode(boolean treeMode) {
         this.treeMode = treeMode;
+    }
+
+    public void setPrivateRegisterMode(boolean privateRegisterMode) {
+        this.privateRegisterMode = privateRegisterMode;
     }
 }

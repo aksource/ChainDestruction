@@ -2,7 +2,10 @@ package ak.ChainDestruction;
 
 import ak.ChainDestruction.network.PacketHandler;
 import ak.akapi.ConfigSavable;
+import com.google.common.base.Joiner;
 import com.google.common.base.Optional;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import cpw.mods.fml.common.Loader;
 import cpw.mods.fml.common.Mod;
 import cpw.mods.fml.common.Mod.Instance;
@@ -14,11 +17,14 @@ import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.common.registry.GameRegistry;
 import cpw.mods.fml.common.registry.GameRegistry.UniqueIdentifier;
 import net.minecraft.block.Block;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.ChatComponentText;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.config.Configuration;
+import net.minecraftforge.event.entity.EntityJoinWorldEvent;
 import net.minecraftforge.event.world.WorldEvent.Save;
 import net.minecraftforge.oredict.OreDictionary;
 
@@ -34,11 +40,13 @@ public class ChainDestruction
 	public static HashSet<String> enableItems = new HashSet<>();
 	public static HashSet<String> enableBlocks = new HashSet<>();
     public static HashSet<String> enableLogBlocks = new HashSet<>();
-    public static HashSet<String> dropItemSet = new HashSet<>();
+    public static Map<String, Set<String>> privateItemBlockMap = Maps.newHashMap();
+//    public static HashSet<String> dropItemSet = new HashSet<>();
 
     public static String[] itemsConfig;
 	public static String[] blocksConfig;
     public static String[] logBlocksConfig;
+    public static String[] privateItemBlockConfig = new String[]{};
 	public static boolean digUnder = true;
 	public static String[] vanillaTools;
 	public static String[] vanillaBlocks;
@@ -47,6 +55,7 @@ public class ChainDestruction
     public static int maxYforTreeMode = 255;
 	public static boolean dropOnPlayer = true;
     public static boolean treeMode = false;
+    public static boolean privateRegisterMode = false;
 	public ConfigSavable config;
 	public static InteractBlockHook interactblockhook = new InteractBlockHook();
 	public static boolean loadMTH = false;
@@ -62,10 +71,13 @@ public class ChainDestruction
 		itemsConfig = config.get(Configuration.CATEGORY_GENERAL, "toolItemsId", vanillaTools, "Tool ids that enables chain destruction.").getStringList();
 		blocksConfig = config.get(Configuration.CATEGORY_GENERAL, "chainDestroyedBlockIdConfig", vanillaBlocks, "Ids of block that to be chain-destructed.").getStringList();
         logBlocksConfig = config.get(Configuration.CATEGORY_GENERAL, "chainDestroyedLogBlockIdConfig", vanillaLogs, "Ids of block that to be chain-destructed in tree mode.").getStringList();
+        privateItemBlockConfig = config.get(Configuration.CATEGORY_GENERAL, "privateItemBlockConfig", privateItemBlockConfig, "Item ID and Block IDs Group. Ex: ItemId@BlockID@BlockID...").getStringList();
         digUnder = config.get(Configuration.CATEGORY_GENERAL, "digUnder", digUnder, "dig blocks under your position.").getBoolean(digUnder);
+        privateRegisterMode = config.get(Configuration.CATEGORY_GENERAL, "privateRegisterMode", privateRegisterMode, "register block each item.").getBoolean();
 		config.save();
         interactblockhook.setDigUnder(digUnder);
         interactblockhook.setTreeMode(treeMode);
+        interactblockhook.setPrivateRegisterMode(privateRegisterMode);
         PacketHandler.init();
 	}
 	@Mod.EventHandler
@@ -82,14 +94,37 @@ public class ChainDestruction
 	    loadMTH = Loader.isModLoaded("MultiToolHolders");
 	}
 
-	private void addItemsAndBlocks()
-	{
+	private void addItemsAndBlocks() {
         enableItems.addAll(Arrays.asList(itemsConfig));
         enableBlocks.addAll(Arrays.asList(blocksConfig));
         changeStringsProperName(enableBlocks);
         enableLogBlocks.addAll(Arrays.asList(logBlocksConfig));
         changeStringsProperName(enableLogBlocks);
+        makePrivateRegisterMap(privateItemBlockConfig);
 	}
+
+    private void makePrivateRegisterMap(String[] strArray) {
+        List<String> splits;
+        Set<String> blockSet;
+        for (String string : strArray) {
+            splits = Arrays.asList(string.split("@"));
+            if (splits.size() > 1) {
+                blockSet =  Sets.newHashSet();
+                blockSet.addAll(splits.subList(1, splits.size()));
+                privateItemBlockMap.put(splits.get(0), blockSet);
+            }
+        }
+    }
+
+    private HashSet<String> makePrivateRegisterConfig(Map<String, Set<String>> map) {
+        HashSet<String> set = Sets.newHashSet();
+        String str;
+        for (String key : map.keySet()) {
+            str = key + "@" + Joiner.on('@').skipNulls().join(map.get(key));
+            set.add(str);
+        }
+        return set;
+    }
 
     private void changeStringsProperName(Set<String> set) {
         Set<String> subSet = new HashSet<>();
@@ -113,6 +148,16 @@ public class ChainDestruction
     }
 
     @SubscribeEvent
+    public void joinInWorld(EntityJoinWorldEvent event) {
+        if (!event.world.isRemote && event.entity instanceof EntityPlayer) {
+            EntityPlayer player = (EntityPlayer)event.entity;
+            String mode = privateRegisterMode?"Private Register":"Normal";
+            String s = String.format("ChainDestruction Info Mode:%s, TreeMode:%b, Range:%d", mode, treeMode, maxDestroyedBlock);
+            player.addChatMessage(new ChatComponentText(s));
+        }
+    }
+
+    @SubscribeEvent
     public void WorldSave(Save event)
     {
         config.set(Configuration.CATEGORY_GENERAL, "toolItemsId", enableItems);
@@ -120,6 +165,7 @@ public class ChainDestruction
         config.set(Configuration.CATEGORY_GENERAL, "chainDestroyedLogBlockIdConfig", enableLogBlocks);
         config.set(Configuration.CATEGORY_GENERAL, "digUnder", digUnder);
         config.set(Configuration.CATEGORY_GENERAL, "maxDestroyedBlock", maxDestroyedBlock);
+        config.set(Configuration.CATEGORY_GENERAL, "privateItemBlockConfig", makePrivateRegisterConfig(privateItemBlockMap));
         config.save();
     }
 

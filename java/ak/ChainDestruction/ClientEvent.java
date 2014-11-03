@@ -26,7 +26,7 @@ public class ClientEvent {
         } else if (ClientProxy.digUnderKey.isPressed()) {
             key = DigKEY;
         } else if (ClientProxy.treeKey.isPressed()) {
-            key = TreeKEY;
+            key = ModeKEY;
         }
         return key;
     }
