@@ -2,6 +2,7 @@ package ak.ChainDestruction;
 
 import ak.MultiToolHolders.ItemMultiToolHolder;
 import com.google.common.collect.Range;
+import com.google.common.collect.Sets;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.common.registry.GameRegistry;
 import net.minecraft.block.Block;
@@ -16,6 +17,7 @@ import net.minecraft.util.ChunkCoordinates;
 import net.minecraft.util.MathHelper;
 import net.minecraft.world.World;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.entity.EntityJoinWorldEvent;
 import net.minecraftforge.event.entity.player.PlayerDestroyItemEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent.Action;
@@ -29,6 +31,11 @@ public class InteractBlockHook {
     private Range<Integer> rangeX;
     private Range<Integer> rangeY;
     private Range<Integer> rangeZ;
+    private Range<Double> dropRangeX;
+    private Range<Double> dropRangeY;
+    private Range<Double> dropRangeZ;
+
+    private Set<EntityItem> dropItemSet = Sets.newHashSet();
 
     private BlockMetaPair blockmeta = null;
     private List<ChunkCoordinates> candidateBlockList = new ArrayList<>();
@@ -39,14 +46,12 @@ public class InteractBlockHook {
     public static final byte ModeKEY = 2;
 
     public static final byte MIDDLE_CLICK = 2;
-    public static final byte RIGHT_CLICK_CTRL = 1 + 3;
+    public static final byte RIGHT_CLICK_CTRL = 1 + 10;
 
     public boolean digUnder;
     private boolean treeMode;
     public boolean privateRegisterMode;
     private boolean doChain = false;
-
-    public static double dropItemGetRange = 10d;
 
     public void doKeyEvent(ItemStack item, EntityPlayer player, byte key) {
         String chat;
@@ -225,7 +230,7 @@ public class InteractBlockHook {
                 /*通常は左の判定だけで良いが、別のブロックに偽装するブロックに対応するため、右の判定を追加*/
                 && (checkBlockValidate(BlockMetaPair.getPair(event.block, event.blockMetadata), event.harvester.getCurrentEquippedItem()) || checkBlockValidate(blockmeta, event.harvester.getCurrentEquippedItem()))
                 && ChainDestruction.enableItems.contains(ChainDestruction.getUniqueStrings(event.harvester.getCurrentEquippedItem().getItem()))) {
-            //通常の破壊処理からこのイベントが呼ばれるので、連載処理を初回のみにするための処置
+            //通常の破壊処理からこのイベントが呼ばれるので、連鎖処理を初回のみにするための処置
             doChain = true;
             setBlockBounds(event.harvester, event.x, event.y, event.z);
             EntityItem ei;
@@ -242,7 +247,7 @@ public class InteractBlockHook {
                 destoryBlock(event.world, event.harvester, event.harvester.getCurrentEquippedItem());
             }
 //            ChainDestroyBlock(event.world, event.harvester, blockmeta, blockChunk, event.harvester.getCurrentEquippedItem());
-            getFirstDestroyedBlock(event.world, event.harvester, event.block);
+            getFirstDestroyedBlock(event.world, event.harvester);
 
             face = 0;
             doChain = false;
@@ -250,20 +255,30 @@ public class InteractBlockHook {
         }
     }
 
+    @SubscribeEvent
+    public void entityItemJoin(EntityJoinWorldEvent event) {
+        if (event.entity instanceof EntityItem && doChain && isEntityItemInRange((EntityItem)event.entity)) {
+            dropItemSet.add((EntityItem)event.entity);
+        }
+    }
+
+    private boolean isEntityItemInRange(EntityItem entityItem) {
+        return dropRangeX.contains(entityItem.posX) && dropRangeY.contains(entityItem.posY) && dropRangeZ.contains(entityItem.posZ);
+    }
+
     /*ドロップアイテムをプレイヤーのそばに持ってきて拾わせる*/
-    private void getFirstDestroyedBlock(World world, EntityPlayer player, Block block) {
-        @SuppressWarnings("unchecked")
-        List<EntityItem> list = world.getEntitiesWithinAABB(EntityItem.class, player.boundingBox.expand(dropItemGetRange, dropItemGetRange, dropItemGetRange));
-        if (list == null) return;
+    private void getFirstDestroyedBlock(World world, EntityPlayer player) {
+        if (dropItemSet.isEmpty()) return;
         double d0, d1, d2;
         float f1 = player.rotationYaw * (float)(2 * Math.PI / 360);
-        for (EntityItem eItem : list) {
+        for (EntityItem eItem : dropItemSet) {
             eItem.delayBeforeCanPickup = 0;
             d0 = player.posX - MathHelper.sin(f1) * 0.5D;
             d1 = player.posY + 0.5D;
             d2 = player.posZ + MathHelper.cos(f1) * 0.5D;
             eItem.setPosition(d0, d1, d2);
         }
+        dropItemSet.clear();
     }
 
     /*判定アイテムがnullの時やアイテムが壊れた時はtrueを返す。falseで続行。*/
@@ -337,7 +352,6 @@ public class InteractBlockHook {
 
     /*集めたblockから繋がってるものを取得。U型のクラスタはmaxDestroyedBlockの長さまで対応*/
     private void generateDestroyingBlockList(ChunkCoordinates targetCoord) {
-        boolean addFlag = false;
         int distance = treeMode ? 3 : 1;
         ChunkCoordinates checkCoord = null;
         for (int count = 0; count < ChainDestruction.maxDestroyedBlock; count++) {
@@ -387,15 +401,20 @@ public class InteractBlockHook {
     /*破壊予定ブロックの走査範囲の設定*/
     private void setBlockBounds(EntityPlayer player, int x, int y, int z) {
         rangeX = Range.closed(x - ChainDestruction.maxDestroyedBlock, x + ChainDestruction.maxDestroyedBlock);
+        dropRangeX = Range.closed((double)(x - ChainDestruction.maxDestroyedBlock - 1), (double)(x + ChainDestruction.maxDestroyedBlock + 1));
         int maxY = (treeMode)? ChainDestruction.maxYforTreeMode : y + ChainDestruction.maxDestroyedBlock;
         if (ChainDestruction.digUnder) {
             rangeY = Range.closed(y - ChainDestruction.maxDestroyedBlock, maxY);
+            dropRangeY = Range.closed((double)(y - ChainDestruction.maxDestroyedBlock), (double)maxY);
         } else if (face != 1) {
             rangeY = Range.closed(MathHelper.floor_double(player.posY), maxY);
+            dropRangeY = Range.closed(player.posY, (double)maxY);
         } else {
             rangeY = Range.closed(MathHelper.floor_double(player.posY) - 1, maxY);
+            dropRangeY = Range.closed(player.posY - 1, (double)maxY);
         }
         rangeZ = Range.closed(z - ChainDestruction.maxDestroyedBlock, z + ChainDestruction.maxDestroyedBlock);
+        dropRangeZ = Range.closed((double)(z - ChainDestruction.maxDestroyedBlock - 1), (double)(z + ChainDestruction.maxDestroyedBlock + 1));
     }
 
     public void setDigUnder(boolean digUnder) {

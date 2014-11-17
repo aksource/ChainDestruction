@@ -50,7 +50,7 @@ public class ClientEvent {
         if (mc.gameSettings.keyBindPickBlock.isPressed()) {
             mouse = 2;
         }
-        if (Keyboard.isKeyDown(Keyboard.KEY_LCONTROL)) {
+        if (mouse != -1 && Keyboard.isKeyDown(Keyboard.KEY_LCONTROL)) {
             mouse += 3;
         }
         return mouse;
