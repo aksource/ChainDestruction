@@ -170,7 +170,8 @@ public class InteractBlockHook {
                 set.addAll(oreNames);
                 chat = String.format("Add Block : %s", oreNames.toString());
                 player.addChatMessage(new ChatComponentText(chat));
-            } else {//いらない文字列を削除。
+            }
+            if (!oreNames.contains(uidStr)) {
                 set.remove(uidStr);
             }
         } else {
