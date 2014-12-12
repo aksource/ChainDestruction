@@ -6,6 +6,7 @@ import com.google.common.collect.Sets;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.common.registry.GameRegistry;
 import net.minecraft.block.Block;
+import net.minecraft.enchantment.Enchantment;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.entity.item.EntityItem;
 import net.minecraft.entity.player.EntityPlayer;
@@ -305,8 +306,10 @@ public class InteractBlockHook {
                 block.onBlockHarvested(world, chunk.posX, chunk.posY, chunk.posZ, meta, player);
                 block.onBlockDestroyedByPlayer(world, chunk.posX, chunk.posY, chunk.posZ, meta);
                 block.harvestBlock(world, player, MathHelper.ceiling_double_int(player.posX), MathHelper.ceiling_double_int(player.posY), MathHelper.ceiling_double_int(player.posZ), meta);
-                int exp = block.getExpDrop(world, meta, EnchantmentHelper.getFortuneModifier(player));
-                block.dropXpOnBlockBreak(world, MathHelper.ceiling_double_int(player.posX), MathHelper.ceiling_double_int(player.posY), MathHelper.ceiling_double_int(player.posZ), exp);
+                if (EnchantmentHelper.getEnchantmentLevel(Enchantment.silkTouch.effectId, item) == 0) {
+                    int exp = block.getExpDrop(world, meta, EnchantmentHelper.getFortuneModifier(player));
+                    block.dropXpOnBlockBreak(world, MathHelper.ceiling_double_int(player.posX), MathHelper.ceiling_double_int(player.posY), MathHelper.ceiling_double_int(player.posZ), exp);
+                }
                 if (item.stackSize == 0) {
                     destroyItem(player, item, isMultiToolHolder, tooldata, slotNum);
                     return true;

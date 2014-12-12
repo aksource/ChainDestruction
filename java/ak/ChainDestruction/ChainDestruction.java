@@ -59,6 +59,7 @@ public class ChainDestruction
 	public ConfigSavable config;
 	public static InteractBlockHook interactblockhook = new InteractBlockHook();
 	public static boolean loadMTH = false;
+    private static final Map<Block, Block> ALTERNATE_BLOCK_MAP = new HashMap<>();
 
 	@Mod.EventHandler
 	public void preInit(FMLPreInitializationEvent event)
@@ -186,7 +187,14 @@ public class ChainDestruction
     public static List<String> makeStringDataFromBlockAndMeta(BlockMetaPair blockMetaPair) {
         Block block = blockMetaPair.getBlock();
         int meta = blockMetaPair.getMeta();
+        if (ALTERNATE_BLOCK_MAP.containsKey(block)) {
+            block = ALTERNATE_BLOCK_MAP.get(block);
+        }
+        String s = String.format("%s:%d", GameRegistry.findUniqueIdentifierFor(block).toString(), meta);
         ItemStack itemStack = new ItemStack(block, 1, meta);
+        if (itemStack.getItem() == null) {
+            return Arrays.asList(s);
+        }
         int[] oreIDs = OreDictionary.getOreIDs(itemStack);
         if (oreIDs.length > 0) {
             List<String> oreNames = new ArrayList<>(oreIDs.length);
@@ -195,7 +203,6 @@ public class ChainDestruction
             }
             return oreNames;
         } else {
-            String s = String.format("%s:%d", GameRegistry.findUniqueIdentifierFor(block).toString(), meta);
             return Arrays.asList(s);
         }
 
@@ -208,5 +215,7 @@ public class ChainDestruction
 				"minecraft:diamond_pickaxe","minecraft:golden_pickaxe","minecraft:iron_pickaxe","minecraft:stone_pickaxe","minecraft:wooden_pickaxe"};
 		vanillaBlocks = new String[]{getUniqueStrings(Blocks.obsidian), "glowstone", "ore"};
         vanillaLogs = new String[] {"logWood","treeLeaves"};
+        ALTERNATE_BLOCK_MAP.put(Blocks.lit_redstone_ore, Blocks.redstone_ore);
+        ALTERNATE_BLOCK_MAP.put(Blocks.lit_furnace, Blocks.furnace);
 	}
 }
