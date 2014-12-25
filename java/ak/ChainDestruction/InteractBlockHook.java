@@ -3,17 +3,18 @@ package ak.ChainDestruction;
 import ak.MultiToolHolders.ItemMultiToolHolder;
 import com.google.common.collect.Range;
 import com.google.common.collect.Sets;
-import cpw.mods.fml.common.eventhandler.SubscribeEvent;
-import cpw.mods.fml.common.registry.GameRegistry;
 import net.minecraft.block.Block;
+import net.minecraft.block.state.IBlockState;
+import net.minecraft.enchantment.Enchantment;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.entity.item.EntityItem;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.BlockPos;
 import net.minecraft.util.ChatComponentText;
-import net.minecraft.util.ChunkCoordinates;
+import net.minecraft.util.EnumFacing;
 import net.minecraft.util.MathHelper;
 import net.minecraft.world.World;
 import net.minecraftforge.common.MinecraftForge;
@@ -23,11 +24,14 @@ import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent.Action;
 import net.minecraftforge.event.world.BlockEvent;
 import net.minecraftforge.event.world.BlockEvent.HarvestDropsEvent;
+import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
+import net.minecraftforge.fml.common.registry.GameRegistry;
 
 import java.util.*;
 
 public class InteractBlockHook {
-    private int face;
+    private EnumFacing face;
+    private IBlockState state;
     private Range<Integer> rangeX;
     private Range<Integer> rangeY;
     private Range<Integer> rangeZ;
@@ -37,9 +41,8 @@ public class InteractBlockHook {
 
     private Set<EntityItem> dropItemSet = Sets.newHashSet();
 
-    private BlockMetaPair blockmeta = null;
-    private List<ChunkCoordinates> candidateBlockList = new ArrayList<>();
-    private List<ChunkCoordinates> destroyingBlockList = new ArrayList<>();
+    private List<BlockPos> candidateBlockList = new ArrayList<>();
+    private List<BlockPos> destroyingBlockList = new ArrayList<>();
 
     public static final byte RegKEY = 0;
     public static final byte DigKEY = 1;
@@ -114,68 +117,68 @@ public class InteractBlockHook {
         if (world.isRemote || item == null) return;
         String uniqueName = ChainDestruction.getUniqueStrings(item.getItem());
         if (ChainDestruction.enableItems.contains(uniqueName)) {
-            Block block = world.getBlock(event.x, event.y, event.z);
-            int meta = world.getBlockMetadata(event.x, event.y, event.z);
+            IBlockState state = world.getBlockState(event.pos);
+//            Block block = world.getBlockState(event.pos).getBlock();
             if (event.action == Action.RIGHT_CLICK_BLOCK) {
                 if (privateRegisterMode) {
                     if (!ChainDestruction.privateItemBlockMap.containsKey(uniqueName)) {
                         ChainDestruction.privateItemBlockMap.put(uniqueName, new HashSet<String>());
                     }
-                    addAndRemoveBlocks(ChainDestruction.privateItemBlockMap.get(uniqueName), player, BlockMetaPair.getPair(block, meta));
+                    addAndRemoveBlocks(ChainDestruction.privateItemBlockMap.get(uniqueName), player, state);
                 } else {
                     if (treeMode) {
-                        addAndRemoveBlocks(ChainDestruction.enableLogBlocks, player, BlockMetaPair.getPair(block, meta));
+                        addAndRemoveBlocks(ChainDestruction.enableLogBlocks, player, state);
                     } else {
-                        addAndRemoveBlocks(ChainDestruction.enableBlocks, player, BlockMetaPair.getPair(block, meta));
+                        addAndRemoveBlocks(ChainDestruction.enableBlocks, player, state);
                     }
                 }
             }
             if (event.action == Action.LEFT_CLICK_BLOCK
-                    && checkBlockValidate(BlockMetaPair.getPair(block, meta), item)
+                    && checkBlockValidate(state, item)
                     && ChainDestruction.enableItems.contains(GameRegistry.findUniqueIdentifierFor(item.getItem()).toString())) {
                 face = event.face;
             }
         }
     }
 
-    /*引数はブロックとMeta値。モード別に文字列セットに含まれているかを返す。*/
-    private boolean checkBlockValidate(BlockMetaPair blockMetaPair, ItemStack heldItem) {
-        if (blockMetaPair == null) {
+    /*引数はBlockState。モード別に文字列セットに含まれているかを返す。*/
+    private boolean checkBlockValidate(IBlockState state, ItemStack heldItem) {
+        if (state == null) {
             return false;
         }
         String uniqueName = ChainDestruction.getUniqueStrings(heldItem.getItem());
         if (privateRegisterMode && ChainDestruction.privateItemBlockMap.containsKey(uniqueName)) {
-            return match(ChainDestruction.privateItemBlockMap.get(uniqueName), blockMetaPair);
+            return match(ChainDestruction.privateItemBlockMap.get(uniqueName), state);
         }
         if (treeMode) {
-            return match(ChainDestruction.enableLogBlocks, blockMetaPair);
+            return match(ChainDestruction.enableLogBlocks, state);
         }
-        return match(ChainDestruction.enableBlocks, blockMetaPair);
+        return match(ChainDestruction.enableBlocks, state);
     }
 
     /*ブロックの登録／削除*/
-    private void addAndRemoveBlocks(Set<String> set, EntityPlayer player, BlockMetaPair blockMetaPair) {
-        Block block = blockMetaPair.getBlock();
-        int meta = blockMetaPair.getMeta();
+    private void addAndRemoveBlocks(Set<String> set, EntityPlayer player, IBlockState state) {
+        Block block = state.getBlock();
         //ブロックの固有文字列
         String uidStr = GameRegistry.findUniqueIdentifierFor(block).toString();
         //Meta値付き固有文字列
-        String uidMetaStr = String.format("%s:%d", uidStr, meta);
+        String uidMetaStr = state.toString();
         //鉱石辞書名かMeta値付き固有文字列のリスト
-        List<String> oreNames = ChainDestruction.makeStringDataFromBlockAndMeta(blockMetaPair);
+        List<String> oreNames = ChainDestruction.makeStringDataFromBlockState(state);
         String chat;
         if (player.isSneaking()) {
-            //鉱石辞書名かmeta値付き固有文字列があって、登録されて無ければ、そちらを登録。
+            //鉱石辞書名かBlockState付き固有文字列があって、登録されて無ければ、そちらを登録。
             if (!matchOreNames(set, oreNames)) {
                 set.addAll(oreNames);
                 chat = String.format("Add Block : %s", oreNames.toString());
                 player.addChatMessage(new ChatComponentText(chat));
-            } else {//いらない文字列を削除。
+            }
+            if (!oreNames.contains(uidStr)) {
                 set.remove(uidStr);
             }
         } else {
             //文字列がマッチした場合のみ、チャット出力。
-            if (match(set, blockMetaPair)) {
+            if (match(set, state)) {
                 chat = String.format("Remove Block and its OreDictionary Names: %s", uidMetaStr);
                 player.addChatMessage(new ChatComponentText(chat));
             }
@@ -197,19 +200,18 @@ public class InteractBlockHook {
     }
 
     /*与えられた集合内に該当のものがあるかどうか*/
-    private boolean match(Set<String> set, BlockMetaPair blockMetaPair) {
-        Block block = blockMetaPair.getBlock();
-        int meta = blockMetaPair.getMeta();
+    private boolean match(Set<String> set, IBlockState state) {
+        Block block = state.getBlock();
         String uidStr = GameRegistry.findUniqueIdentifierFor(block).toString();
-        String uidMetaStr = String.format("%s:%d", uidStr, meta);
-        List<String> oreNames = ChainDestruction.makeStringDataFromBlockAndMeta(blockMetaPair);
+        String uidMetaStr = state.toString();
+        List<String> oreNames = ChainDestruction.makeStringDataFromBlockState(state);
         return matchOreNames(set, oreNames) || matchBlockMetaNames(set, uidStr, uidMetaStr);
     }
 
     /*２つのBlockMetaPairが鉱石辞書名経由で等しいかどうか*/
-    private boolean matchTwoBlocks(BlockMetaPair pair1, BlockMetaPair pair2) {
-        List<String> targetOreNames = ChainDestruction.makeStringDataFromBlockAndMeta(pair1);
-        List<String> checkOreNames = ChainDestruction.makeStringDataFromBlockAndMeta(pair2);
+    private boolean matchTwoBlocks(IBlockState pair1, IBlockState pair2) {
+        List<String> targetOreNames = ChainDestruction.makeStringDataFromBlockState(pair1);
+        List<String> checkOreNames = ChainDestruction.makeStringDataFromBlockState(pair2);
         for (String str : checkOreNames) {
             if (targetOreNames.contains(str)) return true;
         }
@@ -219,7 +221,7 @@ public class InteractBlockHook {
     /*偽装しているブロックへの対応*/
     @SubscribeEvent
     public void breakBlock(BlockEvent.BreakEvent event) {
-        this.blockmeta = BlockMetaPair.getPair(event.block, event.blockMetadata);
+        this.state = event.state;
     }
 
     @SubscribeEvent
@@ -228,20 +230,20 @@ public class InteractBlockHook {
                 && event.harvester != null
                 && event.harvester.getCurrentEquippedItem() != null
                 /*通常は左の判定だけで良いが、別のブロックに偽装するブロックに対応するため、右の判定を追加*/
-                && (checkBlockValidate(BlockMetaPair.getPair(event.block, event.blockMetadata), event.harvester.getCurrentEquippedItem()) || checkBlockValidate(blockmeta, event.harvester.getCurrentEquippedItem()))
+                && (checkBlockValidate(event.state, event.harvester.getCurrentEquippedItem()) || checkBlockValidate(state, event.harvester.getCurrentEquippedItem()))
                 && ChainDestruction.enableItems.contains(ChainDestruction.getUniqueStrings(event.harvester.getCurrentEquippedItem().getItem()))) {
             //通常の破壊処理からこのイベントが呼ばれるので、連鎖処理を初回のみにするための処置
             doChain = true;
-            setBlockBounds(event.harvester, event.x, event.y, event.z);
+            setBlockBounds(event.harvester, event.pos.getX(), event.pos.getY(), event.pos.getZ());
             EntityItem ei;
             for (ItemStack stack : event.drops) {
                 ei = new EntityItem(event.world, event.harvester.posX, event.harvester.posY, event.harvester.posZ, stack);
-                ei.delayBeforeCanPickup = 0;
+                ei.setNoPickupDelay();
                 event.world.spawnEntityInWorld(ei);
             }
             event.drops.clear();
-            ChunkCoordinates blockChunk = new ChunkCoordinates(event.x, event.y, event.z);
-            if (searchBlock(event.world, event.harvester, blockmeta, blockChunk)) {
+            BlockPos blockChunk = event.pos;
+            if (searchBlock(event.world, event.harvester, state, blockChunk)) {
                 Collections.sort(candidateBlockList, new CompareToOrigin(blockChunk));
                 generateDestroyingBlockList(blockChunk);
                 destoryBlock(event.world, event.harvester, event.harvester.getCurrentEquippedItem());
@@ -249,9 +251,9 @@ public class InteractBlockHook {
 //            ChainDestroyBlock(event.world, event.harvester, blockmeta, blockChunk, event.harvester.getCurrentEquippedItem());
             getFirstDestroyedBlock(event.world, event.harvester);
 
-            face = 0;
+            face = EnumFacing.DOWN;
             doChain = false;
-            this.blockmeta = BlockMetaPair.getPair(Blocks.air, 0);
+            this.state = Blocks.air.getDefaultState();
         }
     }
 
@@ -272,7 +274,7 @@ public class InteractBlockHook {
         double d0, d1, d2;
         float f1 = player.rotationYaw * (float)(2 * Math.PI / 360);
         for (EntityItem eItem : dropItemSet) {
-            eItem.delayBeforeCanPickup = 0;
+            eItem.setNoPickupDelay();
             d0 = player.posX - MathHelper.sin(f1) * 0.5D;
             d1 = player.posY + 0.5D;
             d2 = player.posZ + MathHelper.cos(f1) * 0.5D;
@@ -282,10 +284,10 @@ public class InteractBlockHook {
     }
 
     /*判定アイテムがnullの時やアイテムが壊れた時はtrueを返す。falseで続行。*/
-    private boolean destroyBlockAtPosition(World world, EntityPlayer player, ChunkCoordinates chunk, ItemStack item) {
+    private boolean destroyBlockAtPosition(World world, EntityPlayer player, BlockPos blockPos, ItemStack item) {
         boolean isMultiToolHolder = false;
         int slotNum = 0;
-        Block block = world.getBlock(chunk.posX, chunk.posY, chunk.posZ);
+        IBlockState state = world.getBlockState(blockPos);
         IInventory tooldata = null;
         if (ChainDestruction.loadMTH && item.getItem() instanceof ItemMultiToolHolder) {
             tooldata = ((ItemMultiToolHolder) item.getItem()).getInventoryFromItemStack(item);
@@ -296,16 +298,17 @@ public class InteractBlockHook {
             }
             isMultiToolHolder = true;
         }
-        int meta = world.getBlockMetadata(chunk.posX, chunk.posY, chunk.posZ);
-        boolean startBreakingBlock = item.getItem().onBlockStartBreak(item, chunk.posX, chunk.posY, chunk.posZ, player);
-        boolean blockDestroyed = item.getItem().onBlockDestroyed(item, world, block, chunk.posX, chunk.posY, chunk.posZ, player);
+        boolean startBreakingBlock = item.getItem().onBlockStartBreak(item, blockPos, player);
+        boolean blockDestroyed = item.getItem().onBlockDestroyed(item, world, state.getBlock(), blockPos, player);
         if (!startBreakingBlock && blockDestroyed) {
-            if (world.setBlockToAir(chunk.posX, chunk.posY, chunk.posZ)) {
-                block.onBlockHarvested(world, chunk.posX, chunk.posY, chunk.posZ, meta, player);
-                block.onBlockDestroyedByPlayer(world, chunk.posX, chunk.posY, chunk.posZ, meta);
-                block.harvestBlock(world, player, MathHelper.ceiling_double_int(player.posX), MathHelper.ceiling_double_int(player.posY), MathHelper.ceiling_double_int(player.posZ), meta);
-                int exp = block.getExpDrop(world, meta, EnchantmentHelper.getFortuneModifier(player));
-                block.dropXpOnBlockBreak(world, MathHelper.ceiling_double_int(player.posX), MathHelper.ceiling_double_int(player.posY), MathHelper.ceiling_double_int(player.posZ), exp);
+            if (world.setBlockToAir(blockPos)) {
+                state.getBlock().onBlockHarvested(world, blockPos, state, player);
+                state.getBlock().onBlockDestroyedByPlayer(world, blockPos, state);
+                state.getBlock().harvestBlock(world, player, new BlockPos(player.posX, player.posY, player.posZ), state, null);
+                if (EnchantmentHelper.getEnchantmentLevel(Enchantment.silkTouch.effectId, item) == 0) {
+                    int exp = state.getBlock().getExpDrop(world, blockPos, EnchantmentHelper.getFortuneModifier(player));
+                    state.getBlock().dropXpOnBlockBreak(world, new BlockPos(player.posX, player.posY, player.posZ), exp);
+                }
                 if (item.stackSize == 0) {
                     destroyItem(player, item, isMultiToolHolder, tooldata, slotNum);
                     return true;
@@ -327,43 +330,39 @@ public class InteractBlockHook {
     }
 
     /*target block と同型のブロックの収集*/
-    private boolean searchBlock(World world, EntityPlayer player, BlockMetaPair target, ChunkCoordinates targetCoord) {
-        BlockMetaPair checkPair = null;
-        Block checkBlock;
-        int checkMeta;
-        ChunkCoordinates chunkCoordinates;
+    private boolean searchBlock(World world, EntityPlayer player, IBlockState target, BlockPos targetPos) {
+        IBlockState checkState;
+        BlockPos blockPos;
         for (int i = rangeX.lowerEndpoint(); i <= rangeX.upperEndpoint(); i++) {
             for (int j = rangeY.lowerEndpoint(); j <= rangeY.upperEndpoint(); j++) {
                 for (int k = rangeZ.lowerEndpoint(); k <= rangeZ.upperEndpoint(); k++) {
-                    checkBlock = world.getBlock(i, j, k);
-                    checkMeta = world.getBlockMetadata(i, j, k);
-                    checkPair = BlockMetaPair.setPair(checkPair, checkBlock, checkMeta);
-                    chunkCoordinates = new ChunkCoordinates(i, j, k);
-                    if (checkBlock(target, checkPair, player.getCurrentEquippedItem()) && !candidateBlockList.contains(chunkCoordinates)) {
-                        candidateBlockList.add(new ChunkCoordinates(i, j, k));
+                    blockPos = new BlockPos(i, j, k);
+                    checkState = world.getBlockState(blockPos);
+                    if (checkBlock(target, checkState, player.getCurrentEquippedItem()) && !candidateBlockList.contains(blockPos)) {
+                        candidateBlockList.add(blockPos);
                     }
                 }
             }
         }
-        candidateBlockList.remove(targetCoord);
-        destroyingBlockList.add(targetCoord);
+        candidateBlockList.remove(targetPos);
+        destroyingBlockList.add(targetPos);
         return !candidateBlockList.isEmpty();
     }
 
     /*集めたblockから繋がってるものを取得。U型のクラスタはmaxDestroyedBlockの長さまで対応*/
-    private void generateDestroyingBlockList(ChunkCoordinates targetCoord) {
+    private void generateDestroyingBlockList(BlockPos targetPos) {
         int distance = treeMode ? 3 : 1;
-        ChunkCoordinates checkCoord = null;
+        BlockPos checkPos = null;
         for (int count = 0; count < ChainDestruction.maxDestroyedBlock; count++) {
-            for (ChunkCoordinates chunkCoordinates : candidateBlockList) {
-                for (ChunkCoordinates destroyingCoord : destroyingBlockList) {
-                    if (!destroyingCoord.equals(chunkCoordinates) && destroyingCoord.getDistanceSquaredToChunkCoordinates(chunkCoordinates) <= distance) {
-                        checkCoord = chunkCoordinates;
+            for (BlockPos blockPos : candidateBlockList) {
+                for (BlockPos destroyingCoord : destroyingBlockList) {
+                    if (!destroyingCoord.equals(blockPos) && destroyingCoord.distanceSq(blockPos) <= distance) {
+                        checkPos = blockPos;
                     }
                 }
-                if (checkCoord != null) {
-                    destroyingBlockList.add(checkCoord);
-                    checkCoord = null;
+                if (checkPos != null) {
+                    destroyingBlockList.add(checkPos);
+                    checkPos = null;
                 }
 
             }
@@ -371,13 +370,13 @@ public class InteractBlockHook {
             candidateBlockList.removeAll(destroyingBlockList);
         }
         //最初のブロックはそもそも破壊されてるので、判定後は削除。
-        destroyingBlockList.remove(targetCoord);
+        destroyingBlockList.remove(targetPos);
     }
 
     /*destroyingBlockListで登録した座標のブロックを破壊*/
     private void destoryBlock(World world, EntityPlayer player, ItemStack item) {
-        for (ChunkCoordinates chunkCoordinates : destroyingBlockList) {
-            if (destroyBlockAtPosition(world, player, chunkCoordinates, item)) {
+        for (BlockPos blockPos : destroyingBlockList) {
+            if (destroyBlockAtPosition(world, player, blockPos, item)) {
                 break;
             }
         }
@@ -386,8 +385,8 @@ public class InteractBlockHook {
     }
 
     /*第一引数は最初に壊したブロック。第二引数は壊そうとしているブロック*/
-    private boolean checkBlock(BlockMetaPair target, BlockMetaPair check, ItemStack heldItem) {
-        if (check.getBlock() == Blocks.air) return false;
+    private boolean checkBlock(IBlockState target, IBlockState check, ItemStack heldItem) {
+        if (check == null || check.getBlock() == Blocks.air) return false;
         if (treeMode) {
             String uniqueName = ChainDestruction.getUniqueStrings(heldItem.getItem());
             if (privateRegisterMode && ChainDestruction.privateItemBlockMap.containsKey(uniqueName)) {
@@ -406,7 +405,7 @@ public class InteractBlockHook {
         if (ChainDestruction.digUnder) {
             rangeY = Range.closed(y - ChainDestruction.maxDestroyedBlock, maxY);
             dropRangeY = Range.closed((double)(y - ChainDestruction.maxDestroyedBlock), (double)maxY);
-        } else if (face != 1) {
+        } else if (face != EnumFacing.UP) {
             rangeY = Range.closed(MathHelper.floor_double(player.posY), maxY);
             dropRangeY = Range.closed(player.posY, (double)maxY);
         } else {

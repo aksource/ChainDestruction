@@ -2,21 +2,15 @@ package ak.ChainDestruction;
 
 import ak.ChainDestruction.network.PacketHandler;
 import ak.akapi.ConfigSavable;
+import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.base.Optional;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import cpw.mods.fml.common.Loader;
-import cpw.mods.fml.common.Mod;
-import cpw.mods.fml.common.Mod.Instance;
-import cpw.mods.fml.common.SidedProxy;
-import cpw.mods.fml.common.event.FMLInitializationEvent;
-import cpw.mods.fml.common.event.FMLPostInitializationEvent;
-import cpw.mods.fml.common.event.FMLPreInitializationEvent;
-import cpw.mods.fml.common.eventhandler.SubscribeEvent;
-import cpw.mods.fml.common.registry.GameRegistry;
-import cpw.mods.fml.common.registry.GameRegistry.UniqueIdentifier;
 import net.minecraft.block.Block;
+import net.minecraft.block.state.BlockStateBase;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
 import net.minecraft.item.Item;
@@ -26,6 +20,14 @@ import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.config.Configuration;
 import net.minecraftforge.event.entity.EntityJoinWorldEvent;
 import net.minecraftforge.event.world.WorldEvent.Save;
+import net.minecraftforge.fml.common.*;
+import net.minecraftforge.fml.common.Mod.Instance;
+import net.minecraftforge.fml.common.event.FMLInitializationEvent;
+import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
+import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
+import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
+import net.minecraftforge.fml.common.registry.GameRegistry;
+import net.minecraftforge.fml.common.registry.GameRegistry.UniqueIdentifier;
 import net.minecraftforge.oredict.OreDictionary;
 
 import java.util.*;
@@ -59,6 +61,9 @@ public class ChainDestruction
 	public ConfigSavable config;
 	public static InteractBlockHook interactblockhook = new InteractBlockHook();
 	public static boolean loadMTH = false;
+    private static final Map<Block, Block> ALTERNATE_BLOCK_MAP = new HashMap<>();
+    private static final Joiner AT_JOINER = Joiner.on('@');
+    private static Function functionBlockStateBase = ObfuscationReflectionHelper.getPrivateValue(BlockStateBase.class, null, 1);
 
 	@Mod.EventHandler
 	public void preInit(FMLPreInitializationEvent event)
@@ -183,10 +188,13 @@ public class ChainDestruction
 		return Optional.fromNullable(uId).or(new UniqueIdentifier("none:dummy")).toString();
 	}
 
-    public static List<String> makeStringDataFromBlockAndMeta(BlockMetaPair blockMetaPair) {
-        Block block = blockMetaPair.getBlock();
-        int meta = blockMetaPair.getMeta();
-        ItemStack itemStack = new ItemStack(block, 1, meta);
+    public static List<String> makeStringDataFromBlockState(IBlockState state) {
+        Block block = state.getBlock();
+        if (ALTERNATE_BLOCK_MAP.containsKey(block)) {
+            block = ALTERNATE_BLOCK_MAP.get(block);
+        }
+        ItemStack itemStack = new ItemStack(block, 1, block.damageDropped(state));
+        if (itemStack.getItem() == null) return Arrays.asList(makeString(state));
         int[] oreIDs = OreDictionary.getOreIDs(itemStack);
         if (oreIDs.length > 0) {
             List<String> oreNames = new ArrayList<>(oreIDs.length);
@@ -195,10 +203,24 @@ public class ChainDestruction
             }
             return oreNames;
         } else {
-            String s = String.format("%s:%d", GameRegistry.findUniqueIdentifierFor(block).toString(), meta);
+            String s = makeString(state);
             return Arrays.asList(s);
         }
 
+    }
+
+    private static String makeString(IBlockState state) {
+        StringBuilder stringbuilder = new StringBuilder();
+        stringbuilder.append(Block.blockRegistry.getNameForObject(state.getBlock()));
+
+        if (!state.getProperties().isEmpty())
+        {
+            stringbuilder.append("[");
+            AT_JOINER.appendTo(stringbuilder, Iterables.transform(state.getProperties().entrySet(), functionBlockStateBase));
+            stringbuilder.append("]");
+        }
+
+        return stringbuilder.toString();
     }
 
 	static{
@@ -208,5 +230,7 @@ public class ChainDestruction
 				"minecraft:diamond_pickaxe","minecraft:golden_pickaxe","minecraft:iron_pickaxe","minecraft:stone_pickaxe","minecraft:wooden_pickaxe"};
 		vanillaBlocks = new String[]{getUniqueStrings(Blocks.obsidian), "glowstone", "ore"};
         vanillaLogs = new String[] {"logWood","treeLeaves"};
+        ALTERNATE_BLOCK_MAP.put(Blocks.lit_redstone_ore, Blocks.redstone_ore);
+        ALTERNATE_BLOCK_MAP.put(Blocks.lit_furnace, Blocks.furnace);
 	}
 }
