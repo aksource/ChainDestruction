@@ -14,5 +14,6 @@ public class PacketHandler {
     public static void init() {
         INSTANCE.registerMessage(MessageKeyPressedHandler.class, MessageKeyPressed.class, 0, Side.SERVER);
         INSTANCE.registerMessage(MessageMousePressedHandler.class, MessageMousePressed.class, 1, Side.SERVER);
+        INSTANCE.registerMessage(MessageDigSoundHandler.class, MessageDigSound.class, 2, Side.CLIENT);
     }
 }

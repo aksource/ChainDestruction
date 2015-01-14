@@ -2,7 +2,9 @@ package ak.ChainDestruction;
 
 import cpw.mods.fml.client.registry.ClientRegistry;
 import cpw.mods.fml.common.FMLCommonHandler;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.settings.KeyBinding;
+import net.minecraft.entity.player.EntityPlayer;
 import org.lwjgl.input.Keyboard;
 
 public class ClientProxy extends CommonProxy
@@ -16,5 +18,10 @@ public class ClientProxy extends CommonProxy
 		ClientRegistry.registerKeyBinding(registItemKey);
 		ClientRegistry.registerKeyBinding(digUnderKey);
         ClientRegistry.registerKeyBinding(treeKey);
+	}
+
+	@Override
+	public EntityPlayer getEntityPlayer() {
+		return Minecraft.getMinecraft().thePlayer;
 	}
 }

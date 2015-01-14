@@ -18,6 +18,7 @@ import net.minecraft.util.ChunkCoordinates;
 import net.minecraft.util.MathHelper;
 import net.minecraft.world.World;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.common.util.FakePlayer;
 import net.minecraftforge.event.entity.EntityJoinWorldEvent;
 import net.minecraftforge.event.entity.player.PlayerDestroyItemEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
@@ -40,7 +41,7 @@ public class InteractBlockHook {
 
     private BlockMetaPair blockmeta = null;
     private List<ChunkCoordinates> candidateBlockList = new ArrayList<>();
-    private List<ChunkCoordinates> destroyingBlockList = new ArrayList<>();
+    private LinkedHashSet<ChunkCoordinates> destroyingBlockSet = new LinkedHashSet<>();
 
     public static final byte RegKEY = 0;
     public static final byte DigKEY = 1;
@@ -218,13 +219,19 @@ public class InteractBlockHook {
         return false;
     }
 
-    /*偽装しているブロックへの対応*/
+    /*偽装しているブロックへの対応含めこちらで処理したほうが良い*/
     @SubscribeEvent
     public void breakBlock(BlockEvent.BreakEvent event) {
-        this.blockmeta = BlockMetaPair.getPair(event.block, event.blockMetadata);
+        if (!(event.getPlayer() instanceof FakePlayer) && !event.world.isRemote) {
+            this.blockmeta = BlockMetaPair.getPair(event.block, event.blockMetadata);
+            if (isChainDestructionActionable(blockmeta, event.getPlayer().getCurrentEquippedItem())) {
+                setup(event.getPlayer(), event.world, new ChunkCoordinates(event.x, event.y, event.z));
+            }
+        }
     }
 
-    @SubscribeEvent
+    /*BlockBreakEventに処理を移行した todo 削除予定*/
+//    @SubscribeEvent
     public void HarvestEvent(HarvestDropsEvent event) {
         if (!event.world.isRemote && !doChain
                 && event.harvester != null
@@ -246,7 +253,7 @@ public class InteractBlockHook {
             if (searchBlock(event.world, event.harvester, blockmeta, blockChunk)) {
                 Collections.sort(candidateBlockList, new CompareToOrigin(blockChunk));
                 generateDestroyingBlockList(blockChunk);
-                destoryBlock(event.world, event.harvester, event.harvester.getCurrentEquippedItem());
+                destroyBlock(event.world, event.harvester, event.harvester.getCurrentEquippedItem());
             }
 //            ChainDestroyBlock(event.world, event.harvester, blockmeta, blockChunk, event.harvester.getCurrentEquippedItem());
             getFirstDestroyedBlock(event.world, event.harvester);
@@ -255,6 +262,29 @@ public class InteractBlockHook {
             doChain = false;
             this.blockmeta = BlockMetaPair.getPair(Blocks.air, 0);
         }
+    }
+
+    private boolean isChainDestructionActionable(BlockMetaPair blockMetaPair, ItemStack heldItem) {
+        return checkBlockValidate(blockMetaPair, heldItem) && ChainDestruction.enableItems.contains(ChainDestruction.getUniqueStrings(heldItem.getItem()));
+    }
+
+    private void setup(EntityPlayer player, World world, ChunkCoordinates chunkCoordinates) {
+        setBlockBounds(player, chunkCoordinates.posX, chunkCoordinates.posY, chunkCoordinates.posZ);
+        if (searchBlock(world, player, blockmeta, chunkCoordinates)) {
+            Collections.sort(candidateBlockList, new CompareToOrigin(chunkCoordinates));
+            generateDestroyingBlockList(chunkCoordinates);
+            if (!ChainDestruction.destroyingSequentially) {
+                destroyBlock(world, player, player.getCurrentEquippedItem());
+            } else {
+                ChainDestruction.digTaskEvent.digTaskSet.add(new DigTask(player, player.getCurrentEquippedItem(), destroyingBlockSet, chunkCoordinates));
+                candidateBlockList.clear();
+                destroyingBlockSet.clear();
+            }
+        }
+        getFirstDestroyedBlock(world, player);
+
+        face = 0;
+        this.blockmeta = BlockMetaPair.getPair(Blocks.air, 0);
     }
 
     @SubscribeEvent
@@ -284,7 +314,7 @@ public class InteractBlockHook {
     }
 
     /*判定アイテムがnullの時やアイテムが壊れた時はtrueを返す。falseで続行。*/
-    private boolean destroyBlockAtPosition(World world, EntityPlayer player, ChunkCoordinates chunk, ItemStack item) {
+    public static boolean destroyBlockAtPosition(World world, EntityPlayer player, ChunkCoordinates chunk, ItemStack item) {
         boolean isMultiToolHolder = false;
         int slotNum = 0;
         Block block = world.getBlock(chunk.posX, chunk.posY, chunk.posZ);
@@ -314,14 +344,14 @@ public class InteractBlockHook {
                     destroyItem(player, item, isMultiToolHolder, tooldata, slotNum);
                     return true;
                 }
-                return false;
+                return isItemBreakingSoon(item);
             }
         }
         return true;
     }
 
     /*手持ちアイテムの破壊処理。ツールホルダーの処理のため。*/
-    public void destroyItem(EntityPlayer player, ItemStack item, boolean isInMultiTool, IInventory tools, int slotnum) {
+    public static void destroyItem(EntityPlayer player, ItemStack item, boolean isInMultiTool, IInventory tools, int slotnum) {
         if (isInMultiTool) {
             tools.setInventorySlotContents(slotnum, null);
             MinecraftForge.EVENT_BUS.post(new PlayerDestroyItemEvent(player, item));
@@ -350,7 +380,7 @@ public class InteractBlockHook {
             }
         }
         candidateBlockList.remove(targetCoord);
-        destroyingBlockList.add(targetCoord);
+        destroyingBlockSet.add(targetCoord);
         return !candidateBlockList.isEmpty();
     }
 
@@ -360,33 +390,38 @@ public class InteractBlockHook {
         ChunkCoordinates checkCoord = null;
         for (int count = 0; count < ChainDestruction.maxDestroyedBlock; count++) {
             for (ChunkCoordinates chunkCoordinates : candidateBlockList) {
-                for (ChunkCoordinates destroyingCoord : destroyingBlockList) {
+                for (ChunkCoordinates destroyingCoord : destroyingBlockSet) {
                     if (!destroyingCoord.equals(chunkCoordinates) && destroyingCoord.getDistanceSquaredToChunkCoordinates(chunkCoordinates) <= distance) {
                         checkCoord = chunkCoordinates;
                     }
                 }
                 if (checkCoord != null) {
-                    destroyingBlockList.add(checkCoord);
+                    destroyingBlockSet.add(checkCoord);
                     checkCoord = null;
                 }
 
             }
             //ループの計算量を減らすため、登録したものは削除。
-            candidateBlockList.removeAll(destroyingBlockList);
+            candidateBlockList.removeAll(destroyingBlockSet);
         }
         //最初のブロックはそもそも破壊されてるので、判定後は削除。
-        destroyingBlockList.remove(targetCoord);
+        destroyingBlockSet.remove(targetCoord);
     }
 
     /*destroyingBlockListで登録した座標のブロックを破壊*/
-    private void destoryBlock(World world, EntityPlayer player, ItemStack item) {
-        for (ChunkCoordinates chunkCoordinates : destroyingBlockList) {
+    private void destroyBlock(World world, EntityPlayer player, ItemStack item) {
+        for (ChunkCoordinates chunkCoordinates : destroyingBlockSet) {
             if (destroyBlockAtPosition(world, player, chunkCoordinates, item)) {
                 break;
             }
         }
         candidateBlockList.clear();
-        destroyingBlockList.clear();
+        destroyingBlockSet.clear();
+    }
+
+    /*ツールの耐久値が１以下の時を判定*/
+    private static boolean isItemBreakingSoon(ItemStack itemStack) {
+        return ChainDestruction.notToDestroyItem && (itemStack.getMaxDamage() - itemStack.getItemDamage() <= 1);
     }
 
     /*第一引数は最初に壊したブロック。第二引数は壊そうとしているブロック*/

@@ -53,11 +53,15 @@ public class ChainDestruction
     public static String[] vanillaLogs;
 	public static int maxDestroyedBlock = 5;
     public static int maxYforTreeMode = 255;
+    public static int digTaskMaxCounter = 5;
 	public static boolean dropOnPlayer = true;
     public static boolean treeMode = false;
     public static boolean privateRegisterMode = false;
+    public static boolean destroyingSequentially = false;
+    public static boolean notToDestroyItem = false;
 	public ConfigSavable config;
 	public static InteractBlockHook interactblockhook = new InteractBlockHook();
+    public static DigTaskEvent digTaskEvent = new DigTaskEvent();
 	public static boolean loadMTH = false;
     private static final Map<Block, Block> ALTERNATE_BLOCK_MAP = new HashMap<>();
 
@@ -74,6 +78,10 @@ public class ChainDestruction
         privateItemBlockConfig = config.get(Configuration.CATEGORY_GENERAL, "privateItemBlockConfig", privateItemBlockConfig, "Item ID and Block IDs Group. Ex: ItemId@BlockID@BlockID...").getStringList();
         digUnder = config.get(Configuration.CATEGORY_GENERAL, "digUnder", digUnder, "dig blocks under your position.").getBoolean(digUnder);
         privateRegisterMode = config.get(Configuration.CATEGORY_GENERAL, "privateRegisterMode", privateRegisterMode, "register block each item.").getBoolean();
+        destroyingSequentially = config.get(Configuration.CATEGORY_GENERAL, "destroyingSequentially Mode", destroyingSequentially, "destroy blocks sequentially").getBoolean();
+        digTaskMaxCounter = config.get(Configuration.CATEGORY_GENERAL, "digTaskMaxCounter", digTaskMaxCounter, "Tick Rate on destroying Sequentially Mode").getInt();
+        digTaskMaxCounter = (digTaskMaxCounter <= 0)? 1 : digTaskMaxCounter;
+        notToDestroyItem = config.get(Configuration.CATEGORY_GENERAL, "notToDestroyItem", notToDestroyItem, "Stop Destruciton not to destroy item").getBoolean();
 		config.save();
         interactblockhook.setDigUnder(digUnder);
         interactblockhook.setTreeMode(treeMode);
