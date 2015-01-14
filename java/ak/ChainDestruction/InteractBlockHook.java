@@ -12,12 +12,10 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.BlockPos;
-import net.minecraft.util.ChatComponentText;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.MathHelper;
+import net.minecraft.util.*;
 import net.minecraft.world.World;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.common.util.FakePlayer;
 import net.minecraftforge.event.entity.EntityJoinWorldEvent;
 import net.minecraftforge.event.entity.player.PlayerDestroyItemEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
@@ -42,7 +40,7 @@ public class InteractBlockHook {
     private Set<EntityItem> dropItemSet = Sets.newHashSet();
 
     private List<BlockPos> candidateBlockList = new ArrayList<>();
-    private List<BlockPos> destroyingBlockList = new ArrayList<>();
+    private LinkedHashSet<BlockPos> destroyingBlockSet = new LinkedHashSet<>();
 
     public static final byte RegKEY = 0;
     public static final byte DigKEY = 1;
@@ -218,13 +216,18 @@ public class InteractBlockHook {
         return false;
     }
 
-    /*偽装しているブロックへの対応*/
+    /*偽装しているブロックへの対応含めこちらで処理したほうが良い*/
     @SubscribeEvent
     public void breakBlock(BlockEvent.BreakEvent event) {
-        this.state = event.state;
+        if (!(event.getPlayer() instanceof FakePlayer) && !event.world.isRemote) {
+            this.state = event.state;
+            if (isChainDestructionActionable(state, event.getPlayer().getCurrentEquippedItem())) {
+                setup(event.getPlayer(), event.world, event.pos);
+            }
+        }
     }
-
-    @SubscribeEvent
+    /*BlockBreakEventに処理を移行した todo 削除予定*/
+//    @SubscribeEvent
     public void HarvestEvent(HarvestDropsEvent event) {
         if (!event.world.isRemote && !doChain
                 && event.harvester != null
@@ -234,7 +237,6 @@ public class InteractBlockHook {
                 && ChainDestruction.enableItems.contains(ChainDestruction.getUniqueStrings(event.harvester.getCurrentEquippedItem().getItem()))) {
             //通常の破壊処理からこのイベントが呼ばれるので、連鎖処理を初回のみにするための処置
             doChain = true;
-            setBlockBounds(event.harvester, event.pos.getX(), event.pos.getY(), event.pos.getZ());
             EntityItem ei;
             for (ItemStack stack : event.drops) {
                 ei = new EntityItem(event.world, event.harvester.posX, event.harvester.posY, event.harvester.posZ, stack);
@@ -242,19 +244,32 @@ public class InteractBlockHook {
                 event.world.spawnEntityInWorld(ei);
             }
             event.drops.clear();
-            BlockPos blockChunk = event.pos;
-            if (searchBlock(event.world, event.harvester, state, blockChunk)) {
-                Collections.sort(candidateBlockList, new CompareToOrigin(blockChunk));
-                generateDestroyingBlockList(blockChunk);
-                destoryBlock(event.world, event.harvester, event.harvester.getCurrentEquippedItem());
-            }
-//            ChainDestroyBlock(event.world, event.harvester, blockmeta, blockChunk, event.harvester.getCurrentEquippedItem());
-            getFirstDestroyedBlock(event.world, event.harvester);
-
-            face = EnumFacing.DOWN;
+            setup(event.harvester, event.world, event.pos);
             doChain = false;
-            this.state = Blocks.air.getDefaultState();
         }
+    }
+
+    private boolean isChainDestructionActionable(IBlockState state, ItemStack heldItem) {
+        return checkBlockValidate(state, heldItem) && ChainDestruction.enableItems.contains(ChainDestruction.getUniqueStrings(heldItem.getItem()));
+    }
+
+    private void setup(EntityPlayer player, World world, BlockPos blockPos) {
+        setBlockBounds(player, blockPos.getX(), blockPos.getY(), blockPos.getZ());
+        if (searchBlock(world, player, state, blockPos)) {
+            Collections.sort(candidateBlockList, new CompareToOrigin(blockPos));
+            generateDestroyingBlockList(blockPos);
+            if (!ChainDestruction.destroyingSequentially) {
+                destroyBlock(world, player, player.getCurrentEquippedItem());
+            } else {
+                ChainDestruction.digTaskEvent.digTaskSet.add(new DigTask(player, player.getCurrentEquippedItem(), destroyingBlockSet, blockPos));
+                candidateBlockList.clear();
+                destroyingBlockSet.clear();
+            }
+        }
+        getFirstDestroyedBlock(world, player);
+
+        face = EnumFacing.DOWN;
+        this.state = Blocks.air.getDefaultState();
     }
 
     @SubscribeEvent
@@ -284,7 +299,7 @@ public class InteractBlockHook {
     }
 
     /*判定アイテムがnullの時やアイテムが壊れた時はtrueを返す。falseで続行。*/
-    private boolean destroyBlockAtPosition(World world, EntityPlayer player, BlockPos blockPos, ItemStack item) {
+    public static boolean destroyBlockAtPosition(World world, EntityPlayer player, BlockPos blockPos, ItemStack item) {
         boolean isMultiToolHolder = false;
         int slotNum = 0;
         IBlockState state = world.getBlockState(blockPos);
@@ -305,6 +320,9 @@ public class InteractBlockHook {
                 state.getBlock().onBlockHarvested(world, blockPos, state, player);
                 state.getBlock().onBlockDestroyedByPlayer(world, blockPos, state);
                 state.getBlock().harvestBlock(world, player, new BlockPos(player.posX, player.posY, player.posZ), state, null);
+                if (ChainDestruction.destroyingSequentially) {
+                    dropItemNearPlayer(world, player, blockPos);
+                }
                 if (EnchantmentHelper.getEnchantmentLevel(Enchantment.silkTouch.effectId, item) == 0) {
                     int exp = state.getBlock().getExpDrop(world, blockPos, EnchantmentHelper.getFortuneModifier(player));
                     state.getBlock().dropXpOnBlockBreak(world, new BlockPos(player.posX, player.posY, player.posZ), exp);
@@ -313,14 +331,30 @@ public class InteractBlockHook {
                     destroyItem(player, item, isMultiToolHolder, tooldata, slotNum);
                     return true;
                 }
-                return false;
+                return isItemBreakingSoon(item);
             }
         }
         return true;
     }
 
+    private static void dropItemNearPlayer(World world, EntityPlayer player, BlockPos blockPos) {
+        IBlockState state = world.getBlockState(blockPos);
+        Block block = state.getBlock();
+        @SuppressWarnings("unchecked")
+        List<EntityItem> entityItemList = world.getEntitiesWithinAABB(EntityItem.class, AxisAlignedBB.fromBounds(blockPos.getX(), blockPos.getY(), blockPos.getZ(), blockPos.getX() + 1, blockPos.getY() + 1, blockPos.getZ() + 1).expand(1, 1, 1));
+        double d0, d1, d2;
+        float f1 = player.rotationYaw * (float)(2 * Math.PI / 360);
+        for (EntityItem eItem : entityItemList) {
+            eItem.setNoPickupDelay();
+            d0 = player.posX - MathHelper.sin(f1) * 0.5D;
+            d1 = player.posY + 0.5D;
+            d2 = player.posZ + MathHelper.cos(f1) * 0.5D;
+            eItem.setPosition(d0, d1, d2);
+        }
+    }
+
     /*手持ちアイテムの破壊処理。ツールホルダーの処理のため。*/
-    public void destroyItem(EntityPlayer player, ItemStack item, boolean isInMultiTool, IInventory tools, int slotnum) {
+    public static void destroyItem(EntityPlayer player, ItemStack item, boolean isInMultiTool, IInventory tools, int slotnum) {
         if (isInMultiTool) {
             tools.setInventorySlotContents(slotnum, null);
             MinecraftForge.EVENT_BUS.post(new PlayerDestroyItemEvent(player, item));
@@ -345,7 +379,7 @@ public class InteractBlockHook {
             }
         }
         candidateBlockList.remove(targetPos);
-        destroyingBlockList.add(targetPos);
+        destroyingBlockSet.add(targetPos);
         return !candidateBlockList.isEmpty();
     }
 
@@ -355,33 +389,38 @@ public class InteractBlockHook {
         BlockPos checkPos = null;
         for (int count = 0; count < ChainDestruction.maxDestroyedBlock; count++) {
             for (BlockPos blockPos : candidateBlockList) {
-                for (BlockPos destroyingCoord : destroyingBlockList) {
+                for (BlockPos destroyingCoord : destroyingBlockSet) {
                     if (!destroyingCoord.equals(blockPos) && destroyingCoord.distanceSq(blockPos) <= distance) {
                         checkPos = blockPos;
                     }
                 }
                 if (checkPos != null) {
-                    destroyingBlockList.add(checkPos);
+                    destroyingBlockSet.add(checkPos);
                     checkPos = null;
                 }
 
             }
             //ループの計算量を減らすため、登録したものは削除。
-            candidateBlockList.removeAll(destroyingBlockList);
+            candidateBlockList.removeAll(destroyingBlockSet);
         }
         //最初のブロックはそもそも破壊されてるので、判定後は削除。
-        destroyingBlockList.remove(targetPos);
+        destroyingBlockSet.remove(targetPos);
     }
 
     /*destroyingBlockListで登録した座標のブロックを破壊*/
-    private void destoryBlock(World world, EntityPlayer player, ItemStack item) {
-        for (BlockPos blockPos : destroyingBlockList) {
+    private void destroyBlock(World world, EntityPlayer player, ItemStack item) {
+        for (BlockPos blockPos : destroyingBlockSet) {
             if (destroyBlockAtPosition(world, player, blockPos, item)) {
                 break;
             }
         }
         candidateBlockList.clear();
-        destroyingBlockList.clear();
+        destroyingBlockSet.clear();
+    }
+
+    /*ツールの耐久値が１以下の時を判定*/
+    private static boolean isItemBreakingSoon(ItemStack itemStack) {
+        return ChainDestruction.notToDestroyItem && (itemStack.getMaxDamage() - itemStack.getItemDamage() <= 1);
     }
 
     /*第一引数は最初に壊したブロック。第二引数は壊そうとしているブロック*/
