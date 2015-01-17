@@ -141,7 +141,7 @@ public class InteractBlockHook {
 
     /*引数はBlockState。モード別に文字列セットに含まれているかを返す。*/
     private boolean checkBlockValidate(IBlockState state, ItemStack heldItem) {
-        if (state == null) {
+        if (state == null || heldItem == null) {
             return false;
         }
         String uniqueName = ChainDestruction.getUniqueStrings(heldItem.getItem());
