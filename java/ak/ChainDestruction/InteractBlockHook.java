@@ -142,7 +142,7 @@ public class InteractBlockHook {
 
     /*引数はブロックとMeta値。モード別に文字列セットに含まれているかを返す。*/
     private boolean checkBlockValidate(BlockMetaPair blockMetaPair, ItemStack heldItem) {
-        if (blockMetaPair == null) {
+        if (blockMetaPair == null || heldItem == null) {
             return false;
         }
         String uniqueName = ChainDestruction.getUniqueStrings(heldItem.getItem());
