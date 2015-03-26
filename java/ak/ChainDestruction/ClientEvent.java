@@ -60,7 +60,7 @@ public class ClientEvent {
     public void mouseClickEvent(InputEvent.MouseInputEvent event) {
         if (mc.inGameHasFocus) {
             byte mouseIndex = getMouseIndex();
-            if (mouseIndex != -1) {
+            if (mouseIndex != -1 && mouseIndex == InteractBlockHook.MIDDLE_CLICK) {
                 boolean isFocusObject = mc.objectMouseOver != null || mc.pointedEntity != null;
                 PacketHandler.INSTANCE.sendToServer(new MessageMousePressed(mouseIndex, isFocusObject));
             }
