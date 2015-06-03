@@ -3,13 +3,12 @@ package ak.ChainDestruction;
 import ak.ChainDestruction.network.MessageKeyPressed;
 import ak.ChainDestruction.network.MessageMousePressed;
 import ak.ChainDestruction.network.PacketHandler;
-import net.minecraftforge.fml.client.FMLClientHandler;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-import net.minecraftforge.fml.common.gameevent.InputEvent;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
-import org.lwjgl.input.Keyboard;
+import net.minecraftforge.fml.client.FMLClientHandler;
+import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
+import net.minecraftforge.fml.common.gameevent.InputEvent;
 
 import static ak.ChainDestruction.InteractBlockHook.*;
 
@@ -44,15 +43,15 @@ public class ClientEvent {
 
     private byte getMouseIndex() {
         byte mouse = -1;
-        if (mc.gameSettings.keyBindUseItem.isPressed()) {
-            mouse = 1;
+//        if (mc.gameSettings.keyBindUseItem.getIsKeyPressed()) {
+//            mouse = 1;
+//        }
+        if (mc.gameSettings.keyBindPickBlock.getIsKeyPressed()) {
+            mouse = InteractBlockHook.MIDDLE_CLICK;
         }
-        if (mc.gameSettings.keyBindPickBlock.isPressed()) {
-            mouse = 2;
-        }
-        if (mouse != -1 && Keyboard.isKeyDown(Keyboard.KEY_LCONTROL)) {
-            mouse += 3;
-        }
+//        if (mouse != -1 && Keyboard.isKeyDown(Keyboard.KEY_LCONTROL)) {
+//            mouse += 3;
+//        }
         return mouse;
     }
 
