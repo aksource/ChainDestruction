@@ -10,13 +10,15 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Created by AKIRA on 15/01/13.
+ * ブロック破壊のタスク処理イベントクラス
+ * Created by A.K. on 15/01/13.
  */
 public class DigTaskEvent {
 
     public Set<DigTask> digTaskSet = new HashSet<>();
     private Set<DigTask> digTaskRemoveSet = new HashSet<>();
 
+    @SuppressWarnings("unused")
     @SubscribeEvent
     public void digTaskTickEvent(TickEvent.PlayerTickEvent event) {
         if (event.phase == TickEvent.Phase.END && !event.player.worldObj.isRemote) {
@@ -30,6 +32,7 @@ public class DigTaskEvent {
         }
     }
 
+    @SuppressWarnings("unused")
     @SubscribeEvent
     public void deleteDigTaskOnDeath(LivingDeathEvent event) {
         if (event.entityLiving instanceof EntityPlayer && !((EntityPlayer) event.entityLiving).worldObj.isRemote) {
@@ -43,6 +46,7 @@ public class DigTaskEvent {
         }
     }
 
+    @SuppressWarnings("unused")
     @SubscribeEvent
     public void deleteDigTaskOnLogOut(PlayerEvent.PlayerLoggedOutEvent event) {
         if (!event.player.worldObj.isRemote) {

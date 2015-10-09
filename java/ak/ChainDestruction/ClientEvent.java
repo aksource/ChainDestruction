@@ -3,6 +3,7 @@ package ak.ChainDestruction;
 import ak.ChainDestruction.network.MessageKeyPressed;
 import ak.ChainDestruction.network.MessageMousePressed;
 import ak.ChainDestruction.network.PacketHandler;
+import ak.akapi.Constants;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
@@ -10,9 +11,11 @@ import net.minecraftforge.fml.client.FMLClientHandler;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.InputEvent;
 
-import static ak.ChainDestruction.InteractBlockHook.*;
+import java.util.Map;
+import java.util.UUID;
 
 /**
+ * クライアント側のマウス・キーb－どイベントクラス
  * Created by A.K. on 14/08/01.
  */
 public class ClientEvent {
@@ -21,14 +24,16 @@ public class ClientEvent {
     private byte getKeyIndex() {
         byte key = -1;
         if (ClientProxy.registItemKey.isPressed()) {
-            key = RegKEY;
+            key = Constants.RegKEY;
         } else if (ClientProxy.digUnderKey.isPressed()) {
-            key = DigKEY;
+            key = Constants.DigKEY;
         } else if (ClientProxy.treeKey.isPressed()) {
-            key = ModeKEY;
+            key = Constants.ModeKEY;
         }
         return key;
     }
+
+    @SuppressWarnings("unused")
     @SubscribeEvent
     public void KeyPressEvent(InputEvent.KeyInputEvent event) {
         if (FMLClientHandler.instance().getClient().inGameHasFocus && FMLClientHandler.instance().getClientPlayerEntity() != null) {
@@ -46,8 +51,8 @@ public class ClientEvent {
 //        if (mc.gameSettings.keyBindUseItem.getIsKeyPressed()) {
 //            mouse = 1;
 //        }
-        if (mc.gameSettings.keyBindPickBlock.getIsKeyPressed()) {
-            mouse = InteractBlockHook.MIDDLE_CLICK;
+        if (mc.gameSettings.keyBindPickBlock.isKeyDown()) {
+            mouse = Constants.MIDDLE_CLICK;
         }
 //        if (mouse != -1 && Keyboard.isKeyDown(Keyboard.KEY_LCONTROL)) {
 //            mouse += 3;
@@ -55,11 +60,12 @@ public class ClientEvent {
         return mouse;
     }
 
+    @SuppressWarnings("unused")
     @SubscribeEvent
     public void mouseClickEvent(InputEvent.MouseInputEvent event) {
         if (mc.inGameHasFocus) {
             byte mouseIndex = getMouseIndex();
-            if (mouseIndex != -1 && mouseIndex == InteractBlockHook.MIDDLE_CLICK) {
+            if (mouseIndex != -1 && mouseIndex == Constants.MIDDLE_CLICK) {
                 boolean isFocusObject = mc.objectMouseOver != null || mc.pointedEntity != null;
                 PacketHandler.INSTANCE.sendToServer(new MessageMousePressed(mouseIndex, isFocusObject));
             }
@@ -67,8 +73,12 @@ public class ClientEvent {
     }
 
     public void doKeyClient(ItemStack item, EntityPlayer player, byte key) {
-        if (key == DigKEY) {
-            ChainDestruction.digUnder = ChainDestruction.interactblockhook.digUnder;
+        if (key == Constants.DigKEY) {
+            UUID uuid = player.getGameProfile().getId();
+            Map<UUID, CDStatus> map = ChainDestruction.interactblockhook.getStatusMap();
+            if (map.containsKey(uuid)) {
+                ChainDestruction.digUnder = map.get(uuid).isDigUnder();
+            }
         }
     }
 }

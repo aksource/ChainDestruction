@@ -35,6 +35,7 @@ import java.util.*;
 @Mod(modid="ChainDestruction", name="ChainDestruction", version="@VERSION@", dependencies = "required-after:Forge@[10.12.1.1090,)", useMetadata = true)
 public class ChainDestruction
 {
+    @SuppressWarnings("unused")
 	@Instance("ChainDestruction")
 	public static ChainDestruction instance;
 	@SidedProxy(clientSide = "ak.ChainDestruction.ClientProxy", serverSide = "ak.ChainDestruction.CommonProxy")
@@ -56,26 +57,28 @@ public class ChainDestruction
 	public static int maxDestroyedBlock = 5;
     public static int maxYforTreeMode = 255;
     public static int digTaskMaxCounter = 5;
+    @SuppressWarnings("unused")
 	public static boolean dropOnPlayer = true;
     public static boolean treeMode = false;
     public static boolean privateRegisterMode = false;
     public static boolean destroyingSequentially = false;
     public static boolean notToDestroyItem = false;
 	public ConfigSavable config;
-	public static InteractBlockHook interactblockhook = new InteractBlockHook();
+	public static InteractBlockHook interactblockhook/* = new InteractBlockHook()*/;
     public static DigTaskEvent digTaskEvent = new DigTaskEvent();
 	public static boolean loadMTH = false;
     private static final Map<Block, Block> ALTERNATE_BLOCK_MAP = new HashMap<>();
     private static final Joiner AT_JOINER = Joiner.on('@');
     private static Function functionBlockStateBase = ObfuscationReflectionHelper.getPrivateValue(BlockStateBase.class, null, 1);
 
+    @SuppressWarnings("unused")
 	@Mod.EventHandler
 	public void preInit(FMLPreInitializationEvent event)
 	{
 		config = new ConfigSavable(event.getSuggestedConfigurationFile());
 		config.load();
-		maxDestroyedBlock = config.get(Configuration.CATEGORY_GENERAL, "maxDestroyedBlock", maxDestroyedBlock, "Maximum Destroyed Block Counts. range is 2 * max + 1").getInt();
-        maxYforTreeMode = config.get(Configuration.CATEGORY_GENERAL, "maxYforTreeMode", maxYforTreeMode, "Max Height of destroyed block for tree mode. Be careful to set over 200.").getInt();
+		maxDestroyedBlock = config.get(Configuration.CATEGORY_GENERAL, "maxDestroyedBlock", maxDestroyedBlock, "Maximum Destroyed Block Counts. range is 2 * max + 1", 0, 255).getInt();
+        maxYforTreeMode = config.get(Configuration.CATEGORY_GENERAL, "maxYforTreeMode", maxYforTreeMode, "Max Height of destroyed block for tree mode. Be careful to set over 200.", 0, 255).getInt();
 		itemsConfig = config.get(Configuration.CATEGORY_GENERAL, "toolItemsId", vanillaTools, "Tool ids that enables chain destruction.").getStringList();
 		blocksConfig = config.get(Configuration.CATEGORY_GENERAL, "chainDestroyedBlockIdConfig", vanillaBlocks, "Ids of block that to be chain-destructed.").getStringList();
         logBlocksConfig = config.get(Configuration.CATEGORY_GENERAL, "chainDestroyedLogBlockIdConfig", vanillaLogs, "Ids of block that to be chain-destructed in tree mode.").getStringList();
@@ -83,15 +86,14 @@ public class ChainDestruction
         digUnder = config.get(Configuration.CATEGORY_GENERAL, "digUnder", digUnder, "dig blocks under your position.").getBoolean(digUnder);
         privateRegisterMode = config.get(Configuration.CATEGORY_GENERAL, "privateRegisterMode", privateRegisterMode, "register block each item.").getBoolean();
         destroyingSequentially = config.get(Configuration.CATEGORY_GENERAL, "destroyingSequentially Mode", destroyingSequentially, "destroy blocks sequentially").getBoolean();
-        digTaskMaxCounter = config.get(Configuration.CATEGORY_GENERAL, "digTaskMaxCounter", digTaskMaxCounter, "Tick Rate on destroying Sequentially Mode").getInt();
-        digTaskMaxCounter = (digTaskMaxCounter <= 0)? 1 : digTaskMaxCounter;
+        digTaskMaxCounter = config.get(Configuration.CATEGORY_GENERAL, "digTaskMaxCounter", digTaskMaxCounter, "Tick Rate on destroying Sequentially Mode", 1, 100).getInt();
         notToDestroyItem = config.get(Configuration.CATEGORY_GENERAL, "notToDestroyItem", notToDestroyItem, "Stop Destruciton not to destroy item").getBoolean();
         config.save();
-        interactblockhook.setDigUnder(digUnder);
-        interactblockhook.setTreeMode(treeMode);
-        interactblockhook.setPrivateRegisterMode(privateRegisterMode);
+        interactblockhook = new InteractBlockHook();
         PacketHandler.init();
 	}
+
+    @SuppressWarnings("unused")
 	@Mod.EventHandler
 	public void load(FMLInitializationEvent event)
 	{
@@ -103,6 +105,8 @@ public class ChainDestruction
             FMLCommonHandler.instance().bus().register(digTaskEvent);
         }
 	}
+
+    @SuppressWarnings("unused")
 	@Mod.EventHandler
 	public void postInit(FMLPostInitializationEvent event)
 	{
@@ -163,6 +167,7 @@ public class ChainDestruction
         }
     }
 
+    @SuppressWarnings("unused")
     @SubscribeEvent
     public void joinInWorld(EntityJoinWorldEvent event) {
         if (!event.world.isRemote && event.entity instanceof EntityPlayer) {
@@ -173,6 +178,7 @@ public class ChainDestruction
         }
     }
 
+    @SuppressWarnings("unused")
     @SubscribeEvent
     public void WorldSave(Save event)
     {
@@ -206,7 +212,7 @@ public class ChainDestruction
             block = ALTERNATE_BLOCK_MAP.get(block);
         }
         ItemStack itemStack = new ItemStack(block, 1, block.damageDropped(state));
-        if (itemStack.getItem() == null) return Arrays.asList(makeString(state));
+        if (itemStack.getItem() == null) return Collections.singletonList(makeString(state));
         int[] oreIDs = OreDictionary.getOreIDs(itemStack);
         if (oreIDs.length > 0) {
             List<String> oreNames = new ArrayList<>(oreIDs.length);
@@ -216,7 +222,7 @@ public class ChainDestruction
             return oreNames;
         } else {
             String s = makeString(state);
-            return Arrays.asList(s);
+            return Collections.singletonList(s);
         }
 
     }

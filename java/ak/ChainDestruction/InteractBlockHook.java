@@ -1,7 +1,7 @@
 package ak.ChainDestruction;
 
 import ak.MultiToolHolders.ItemMultiToolHolder;
-import com.google.common.collect.Range;
+import ak.akapi.Constants;
 import com.google.common.collect.Sets;
 import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
@@ -16,47 +16,45 @@ import net.minecraft.util.*;
 import net.minecraft.world.World;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.util.FakePlayer;
-import net.minecraftforge.event.entity.EntityJoinWorldEvent;
 import net.minecraftforge.event.entity.player.PlayerDestroyItemEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent.Action;
 import net.minecraftforge.event.world.BlockEvent;
-import net.minecraftforge.event.world.BlockEvent.HarvestDropsEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.registry.GameRegistry;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class InteractBlockHook {
-    private EnumFacing face;
-    private IBlockState state;
-    private Range<Integer> rangeX;
-    private Range<Integer> rangeY;
-    private Range<Integer> rangeZ;
-    private Range<Double> dropRangeX;
-    private Range<Double> dropRangeY;
-    private Range<Double> dropRangeZ;
 
-    private Set<EntityItem> dropItemSet = Sets.newHashSet();
+//    private Range<Double> dropRangeX;
+//    private Range<Double> dropRangeY;
+//    private Range<Double> dropRangeZ;
 
-    private List<BlockPos> candidateBlockList = new ArrayList<>();
-    private LinkedHashSet<BlockPos> destroyingBlockSet = new LinkedHashSet<>();
+//    private Set<EntityItem> dropItemSet = Sets.newHashSet();
 
-    public static final byte RegKEY = 0;
-    public static final byte DigKEY = 1;
-    public static final byte ModeKEY = 2;
+//    public boolean digUnder = ChainDestruction.digUnder;
+//    private boolean treeMode = ChainDestruction.treeMode;
+//    public boolean privateRegisterMode = ChainDestruction.privateRegisterMode;
+//    private boolean doChain = false;
 
-    public static final byte MIDDLE_CLICK = 2;
-    public static final byte RIGHT_CLICK_CTRL = 1 + 10;
+    private ConcurrentHashMap<UUID, CDStatus> statusMap = new ConcurrentHashMap<>();
 
-    public boolean digUnder;
-    private boolean treeMode;
-    public boolean privateRegisterMode;
-    private boolean doChain = false;
-
+    /**
+     * キーイベント処理。MessageHandlerから呼ばれる
+     * @param item 手持ちアイテム
+     * @param player プレイヤー
+     * @param key 押下キーを表すbyte
+     */
     public void doKeyEvent(ItemStack item, EntityPlayer player, byte key) {
         String chat;
-        if (key == RegKEY) {
+        if (!statusMap.containsKey(player.getGameProfile().getId())) {
+            statusMap.put(player.getGameProfile().getId(), new CDStatus());
+        }
+        CDStatus status = statusMap.get(player.getGameProfile().getId());
+        status.setPlayer(player);
+        if (key == Constants.RegKEY) {
             if (player.isSneaking() && ChainDestruction.enableItems.contains(ChainDestruction.getUniqueStrings(item))) {
                 ChainDestruction.enableItems.remove(ChainDestruction.getUniqueStrings(item));
                 chat = String.format("Remove Tool : %s", ChainDestruction.getUniqueStrings(item));
@@ -68,32 +66,38 @@ public class InteractBlockHook {
                 player.addChatMessage(new ChatComponentText(chat));
             }
         }
-        if (key == DigKEY) {
-            this.digUnder = !this.digUnder;
-            chat = String.format("Dig Under %b", this.digUnder);
+        if (key == Constants.DigKEY) {
+            status.setDigUnder(!status.isDigUnder());
+            chat = String.format("Dig Under %b", status.isDigUnder());
             player.addChatMessage(new ChatComponentText(chat));
-            ChainDestruction.digUnder = this.digUnder;
         }
-        if (key == ModeKEY) {
+        if (key == Constants.ModeKEY) {
             if (player.isSneaking()) {
-                this.privateRegisterMode = !this.privateRegisterMode;
-                chat = String.format("Private Register Mode %b", this.privateRegisterMode);
+                status.setPrivateRegisterMode(!status.isPrivateRegisterMode());
+                chat = String.format("Private Register Mode %b", status.isPrivateRegisterMode());
                 player.addChatMessage(new ChatComponentText(chat));
             } else {
-                this.treeMode = !this.treeMode;
-                chat = String.format("Tree Mode %b", this.treeMode);
+                status.setTreeMode(!status.isTreeMode());
+                chat = String.format("Tree Mode %b", status.isTreeMode());
                 player.addChatMessage(new ChatComponentText(chat));
             }
         }
     }
 
+    /**
+     * マウスイベント処理。Messagehandlerから呼ばれる
+     * @param item 手持ちアイテム
+     * @param player プレイヤー
+     * @param mouse 押下したマウスのキーを表すbyte
+     * @param isFocusObject オブジェクトにフォーカスしているかどうか
+     */
     public void doMouseEvent(ItemStack item, EntityPlayer player, byte mouse, boolean isFocusObject) {
         try {
             if (!ChainDestruction.enableItems.contains(ChainDestruction.getUniqueStrings(item))) {
                 return;
             }
             String chat;
-            if (mouse == MIDDLE_CLICK && !isFocusObject) {
+            if (mouse == Constants.MIDDLE_CLICK && !isFocusObject) {
                 if (player.isSneaking() && ChainDestruction.maxDestroyedBlock > 0) {
                     ChainDestruction.maxDestroyedBlock--;
                 } else {
@@ -107,9 +111,19 @@ public class InteractBlockHook {
         }
     }
 
+    /**
+     * ブロックをクリック時に呼ばれるイベント
+     * @param event PlayerInteractEvent
+     */
+    @SuppressWarnings("unused")
     @SubscribeEvent
     public void interactBlock(PlayerInteractEvent event) {
         EntityPlayer player = event.entityPlayer;
+        UUID uuid = event.entityPlayer.getGameProfile().getId();
+        if (!statusMap.containsKey(uuid)) {
+            statusMap.put(uuid, new CDStatus());
+        }
+        CDStatus status = statusMap.get(uuid);
         World world = player.worldObj;
         ItemStack item = event.entityPlayer.getCurrentEquippedItem();
         if (world.isRemote || item == null) return;
@@ -118,13 +132,13 @@ public class InteractBlockHook {
             IBlockState state = world.getBlockState(event.pos);
 //            Block block = world.getBlockState(event.pos).getBlock();
             if (event.action == Action.RIGHT_CLICK_BLOCK) {
-                if (privateRegisterMode) {
+                if (status.isPrivateRegisterMode()) {
                     if (!ChainDestruction.privateItemBlockMap.containsKey(uniqueName)) {
                         ChainDestruction.privateItemBlockMap.put(uniqueName, new HashSet<String>());
                     }
                     addAndRemoveBlocks(ChainDestruction.privateItemBlockMap.get(uniqueName), player, state);
                 } else {
-                    if (treeMode) {
+                    if (status.isTreeMode()) {
                         addAndRemoveBlocks(ChainDestruction.enableLogBlocks, player, state);
                     } else {
                         addAndRemoveBlocks(ChainDestruction.enableBlocks, player, state);
@@ -132,29 +146,47 @@ public class InteractBlockHook {
                 }
             }
             if (event.action == Action.LEFT_CLICK_BLOCK
-                    && checkBlockValidate(state, item)
+                    && checkBlockValidate(player, state, item)
                     && ChainDestruction.enableItems.contains(GameRegistry.findUniqueIdentifierFor(item.getItem()).toString())) {
-                face = event.face;
+                status.setPlayer(event.entityPlayer);
+                status.setFace(event.face);
+                status.setDigUnder(ChainDestruction.digUnder);
+                status.setTreeMode(ChainDestruction.treeMode);
             }
         }
     }
 
-    /*引数はBlockState。モード別に文字列セットに含まれているかを返す。*/
-    private boolean checkBlockValidate(IBlockState state, ItemStack heldItem) {
+    /**
+     * IBlockStateが破壊対象かどうかを判定
+     * @param state 判定されるIBlockState
+     * @param heldItem 手持ちアイテム
+     * @return 破壊対象かどうか
+     */
+    private boolean checkBlockValidate(EntityPlayer player, IBlockState state, ItemStack heldItem) {
+        UUID uuid = player.getGameProfile().getId();
+        if (!statusMap.containsKey(uuid)) {
+            statusMap.put(uuid, new CDStatus());
+        }
+        CDStatus status = statusMap.get(uuid);
         if (state == null || heldItem == null) {
             return false;
         }
         String uniqueName = ChainDestruction.getUniqueStrings(heldItem.getItem());
-        if (privateRegisterMode && ChainDestruction.privateItemBlockMap.containsKey(uniqueName)) {
+        if (status.isPrivateRegisterMode() && ChainDestruction.privateItemBlockMap.containsKey(uniqueName)) {
             return match(ChainDestruction.privateItemBlockMap.get(uniqueName), state);
         }
-        if (treeMode) {
+        if (status.isTreeMode()) {
             return match(ChainDestruction.enableLogBlocks, state);
         }
         return match(ChainDestruction.enableBlocks, state);
     }
 
-    /*ブロックの登録／削除*/
+    /**
+     * ブロックの登録／削除
+     * @param set 登録／削除する対象集合
+     * @param player プレイヤー
+     * @param state 対象ブロックのIBlockState
+     */
     private void addAndRemoveBlocks(Set<String> set, EntityPlayer player, IBlockState state) {
         Block block = state.getBlock();
         //ブロックの固有文字列
@@ -185,11 +217,23 @@ public class InteractBlockHook {
         }
     }
 
+    /**
+     * 破壊対象ブロック名集合内に固有文字列が含まれているかどうか
+     * @param set 破壊対象ブロック名集合
+     * @param uid ブロックの固有文字列
+     * @param uidmeta メタ付きブロックの固有文字列　[固有文字列]:[meta]
+     * @return 含まれていたらtrue
+     */
     private boolean matchBlockMetaNames(Set<String> set, String uid, String uidmeta) {
         return set.contains(uid) || set.contains(uidmeta);
     }
 
-    /*コレクションの共通部分を取り、要素があるかどうかで判定。*/
+    /**
+     * 鉱石辞書名リスト内の要素と破壊対象ブロック名集合の要素で一致するものがあるかどうか
+     * @param set 破壊対象ブロック名集合
+     * @param oreNames 鉱石辞書名リスト
+     * @return 一致する要素があるならtrue
+     */
     private boolean matchOreNames(Set<String> set, List<String> oreNames) {
         for (String string : oreNames) {
             if (set.contains(string)) return true;
@@ -197,7 +241,12 @@ public class InteractBlockHook {
         return false;
     }
 
-    /*与えられた集合内に該当のものがあるかどうか*/
+    /**
+     * 破壊対象ブロック名集合内に引数のIBlockStateが表すブロックが含まれるかどうか
+     * @param set 破壊対象ブロック名集合
+     * @param state 破壊対象判定IBlockState
+     * @return 含まれていたらtrue
+     */
     private boolean match(Set<String> set, IBlockState state) {
         Block block = state.getBlock();
         String uidStr = GameRegistry.findUniqueIdentifierFor(block).toString();
@@ -206,7 +255,12 @@ public class InteractBlockHook {
         return matchOreNames(set, oreNames) || matchBlockMetaNames(set, uidStr, uidMetaStr);
     }
 
-    /*２つのBlockMetaPairが鉱石辞書名経由で等しいかどうか*/
+    /**
+     * ２つのBlockMetaPairが鉱石辞書名経由で等しいかどうか
+     * @param pair1 判定元のIBlockState
+     * @param pair2 判定されるIBlockState
+     * @return 同じ鉱石辞書名を含む場合はtrue
+     */
     private boolean matchTwoBlocks(IBlockState pair1, IBlockState pair2) {
         List<String> targetOreNames = ChainDestruction.makeStringDataFromBlockState(pair1);
         List<String> checkOreNames = ChainDestruction.makeStringDataFromBlockState(pair2);
@@ -217,97 +271,110 @@ public class InteractBlockHook {
     }
 
     /*偽装しているブロックへの対応含めこちらで処理したほうが良い*/
+    @SuppressWarnings("unused")
     @SubscribeEvent
-    public void breakBlock(BlockEvent.BreakEvent event) {
+    public void blockBreakingEvent(BlockEvent.BreakEvent event) {
         if (!(event.getPlayer() instanceof FakePlayer) && !event.world.isRemote) {
-            this.state = event.state;
-            if (isChainDestructionActionable(state, event.getPlayer().getCurrentEquippedItem())) {
-                setup(event.getPlayer(), event.world, event.pos);
+            if (isChainDestructionActionable(event.getPlayer(), event.state, event.getPlayer().getCurrentEquippedItem())) {
+                setup(event.state, event.getPlayer(), event.world, event.pos);
             }
         }
     }
     /*BlockBreakEventに処理を移行した todo 削除予定*/
 //    @SubscribeEvent
-    public void HarvestEvent(HarvestDropsEvent event) {
-        if (!event.world.isRemote && !doChain
-                && event.harvester != null
-                && event.harvester.getCurrentEquippedItem() != null
-                /*通常は左の判定だけで良いが、別のブロックに偽装するブロックに対応するため、右の判定を追加*/
-                && (checkBlockValidate(event.state, event.harvester.getCurrentEquippedItem()) || checkBlockValidate(state, event.harvester.getCurrentEquippedItem()))
-                && ChainDestruction.enableItems.contains(ChainDestruction.getUniqueStrings(event.harvester.getCurrentEquippedItem().getItem()))) {
-            //通常の破壊処理からこのイベントが呼ばれるので、連鎖処理を初回のみにするための処置
-            doChain = true;
-            EntityItem ei;
-            for (ItemStack stack : event.drops) {
-                ei = new EntityItem(event.world, event.harvester.posX, event.harvester.posY, event.harvester.posZ, stack);
-                ei.setNoPickupDelay();
-                event.world.spawnEntityInWorld(ei);
-            }
-            event.drops.clear();
-            setup(event.harvester, event.world, event.pos);
-            doChain = false;
+//    @SuppressWarnings("unused")
+//    @Deprecated
+//    public void HarvestEvent(HarvestDropsEvent event) {
+//        if (!event.world.isRemote && !doChain
+//                && event.harvester != null
+//                && event.harvester.getCurrentEquippedItem() != null
+//                /*通常は左の判定だけで良いが、別のブロックに偽装するブロックに対応するため、右の判定を追加*/
+//                && (checkBlockValidate(event.state, event.harvester.getCurrentEquippedItem()) || checkBlockValidate(event.state, event.harvester.getCurrentEquippedItem()))
+//                && ChainDestruction.enableItems.contains(ChainDestruction.getUniqueStrings(event.harvester.getCurrentEquippedItem().getItem()))) {
+//            //通常の破壊処理からこのイベントが呼ばれるので、連鎖処理を初回のみにするための処置
+//            doChain = true;
+//            EntityItem ei;
+//            for (ItemStack stack : event.drops) {
+//                ei = new EntityItem(event.world, event.harvester.posX, event.harvester.posY, event.harvester.posZ, stack);
+//                ei.setNoPickupDelay();
+//                event.world.spawnEntityInWorld(ei);
+//            }
+//            event.drops.clear();
+//            setup(event.state, event.harvester, event.world, event.pos);
+//            doChain = false;
+//        }
+//    }
+
+    /**
+     * 連鎖破壊処理が動くかどうか
+     * @param state 破壊した最初のブロックのIBlockState
+     * @param heldItem 手持ちアイテム
+     * @return 連鎖破壊処理が動くならtrue
+     */
+    private boolean isChainDestructionActionable(EntityPlayer player, IBlockState state, ItemStack heldItem) {
+        return checkBlockValidate(player, state, heldItem) && ChainDestruction.enableItems.contains(ChainDestruction.getUniqueStrings(heldItem.getItem()));
+    }
+
+    private void setup(IBlockState firstBrokenBlockState, EntityPlayer player, World world, BlockPos blockPos) {
+//        setBlockBounds(player, blockPos.getX(), blockPos.getY(), blockPos.getZ());
+        CDStatus status = statusMap.get(player.getGameProfile().getId());
+        Set<BlockPos> searchedBlockSet = searchBlock(world, status, firstBrokenBlockState, blockPos);
+        LinkedHashSet<BlockPos> connectedBlockSet = getConnectedBlockSet(status, blockPos, searchedBlockSet);
+        if (!ChainDestruction.destroyingSequentially) {
+            destroyBlock(world, player, player.getCurrentEquippedItem(), connectedBlockSet);
+        } else {
+            ChainDestruction.digTaskEvent.digTaskSet.add(new DigTask(player, player.getCurrentEquippedItem(), connectedBlockSet, blockPos));
         }
     }
 
-    private boolean isChainDestructionActionable(IBlockState state, ItemStack heldItem) {
-        return checkBlockValidate(state, heldItem) && ChainDestruction.enableItems.contains(ChainDestruction.getUniqueStrings(heldItem.getItem()));
-    }
-
-    private void setup(EntityPlayer player, World world, BlockPos blockPos) {
-        setBlockBounds(player, blockPos.getX(), blockPos.getY(), blockPos.getZ());
-        if (searchBlock(world, player, state, blockPos)) {
-            Collections.sort(candidateBlockList, new CompareToOrigin(blockPos));
-            generateDestroyingBlockList(blockPos);
-            if (!ChainDestruction.destroyingSequentially) {
-                destroyBlock(world, player, player.getCurrentEquippedItem());
-            } else {
-                ChainDestruction.digTaskEvent.digTaskSet.add(new DigTask(player, player.getCurrentEquippedItem(), destroyingBlockSet, blockPos));
-                candidateBlockList.clear();
-                destroyingBlockSet.clear();
-            }
-        }
-        getFirstDestroyedBlock(world, player);
-
-        face = EnumFacing.DOWN;
-        this.state = Blocks.air.getDefaultState();
-    }
-
-    @SubscribeEvent
-    public void entityItemJoin(EntityJoinWorldEvent event) {
-        if (event.entity instanceof EntityItem && doChain && isEntityItemInRange((EntityItem)event.entity)) {
-            dropItemSet.add((EntityItem)event.entity);
-        }
-    }
-
-    private boolean isEntityItemInRange(EntityItem entityItem) {
-        return dropRangeX.contains(entityItem.posX) && dropRangeY.contains(entityItem.posY) && dropRangeZ.contains(entityItem.posZ);
-    }
+//    /**
+//     * ドロップアイテムがスポーンした際に呼ばれる処理。
+//     * @param event EntityJoinWorldEvent
+//     */
+//    @SuppressWarnings("unused")
+////    @SubscribeEvent
+//    public void entityItemJoin(EntityJoinWorldEvent event) {
+//        if (event.entity instanceof EntityItem && doChain && isEntityItemInRange((EntityItem)event.entity)) {
+//            dropItemSet.add((EntityItem)event.entity);
+//        }
+//    }
+//
+//    private boolean isEntityItemInRange(EntityItem entityItem) {
+//        return dropRangeX.contains(entityItem.posX) && dropRangeY.contains(entityItem.posY) && dropRangeZ.contains(entityItem.posZ);
+//    }
 
     /*ドロップアイテムをプレイヤーのそばに持ってきて拾わせる*/
-    private void getFirstDestroyedBlock(World world, EntityPlayer player) {
-        if (dropItemSet.isEmpty()) return;
-        double d0, d1, d2;
-        float f1 = player.rotationYaw * (float)(2 * Math.PI / 360);
-        for (EntityItem eItem : dropItemSet) {
-            eItem.setNoPickupDelay();
-            d0 = player.posX - MathHelper.sin(f1) * 0.5D;
-            d1 = player.posY + 0.5D;
-            d2 = player.posZ + MathHelper.cos(f1) * 0.5D;
-            eItem.setPosition(d0, d1, d2);
-        }
-        dropItemSet.clear();
-    }
+//    private void getFirstDestroyedBlock(World world, EntityPlayer player) {
+//        if (dropItemSet.isEmpty()) return;
+//        double d0, d1, d2;
+//        float f1 = player.rotationYaw * (float)(2 * Math.PI / 360);
+//        for (EntityItem eItem : dropItemSet) {
+//            eItem.setNoPickupDelay();
+//            d0 = player.posX - MathHelper.sin(f1) * 0.5D;
+//            d1 = player.posY + 0.5D;
+//            d2 = player.posZ + MathHelper.cos(f1) * 0.5D;
+//            eItem.setPosition(d0, d1, d2);
+//        }
+//        dropItemSet.clear();
+//    }
 
-    /*判定アイテムがnullの時やアイテムが壊れた時はtrueを返す。falseで続行。*/
+    /**
+     * 指定座標のブロックを破壊する処理
+     * @param world Worldラクス
+     * @param player プレイヤー
+     * @param blockPos 指定座標
+     * @param item 手持ちアイテム
+     * @return 判定アイテムがnullの時やアイテムが壊れた時はtrueを返す。falseで続行。
+     */
     public static boolean destroyBlockAtPosition(World world, EntityPlayer player, BlockPos blockPos, ItemStack item) {
         boolean isMultiToolHolder = false;
         int slotNum = 0;
         IBlockState state = world.getBlockState(blockPos);
-        IInventory tooldata = null;
+        IInventory toolData = null;
         if (ChainDestruction.loadMTH && item.getItem() instanceof ItemMultiToolHolder) {
-            tooldata = ((ItemMultiToolHolder) item.getItem()).getInventoryFromItemStack(item);
+            toolData = ((ItemMultiToolHolder) item.getItem()).getInventoryFromItemStack(item);
             slotNum = ItemMultiToolHolder.getSlotNumFromItemStack(item);
-            item = tooldata.getStackInSlot(slotNum);
+            item = toolData.getStackInSlot(slotNum);
             if (item == null) {
                 return true;
             }
@@ -328,7 +395,7 @@ public class InteractBlockHook {
                     state.getBlock().dropXpOnBlockBreak(world, new BlockPos(player.posX, player.posY, player.posZ), exp);
                 }
                 if (item.stackSize == 0) {
-                    destroyItem(player, item, isMultiToolHolder, tooldata, slotNum);
+                    destroyItem(player, item, isMultiToolHolder, toolData, slotNum);
                     return true;
                 }
                 return isItemBreakingSoon(item);
@@ -337,9 +404,13 @@ public class InteractBlockHook {
         return true;
     }
 
+    /**
+     * プレイヤーの足元にドロップを集める処理
+     * @param world Worldクラス
+     * @param player プレイヤー
+     * @param blockPos 破壊したブロックの座標
+     */
     private static void dropItemNearPlayer(World world, EntityPlayer player, BlockPos blockPos) {
-        IBlockState state = world.getBlockState(blockPos);
-        Block block = state.getBlock();
         @SuppressWarnings("unchecked")
         List<EntityItem> entityItemList = world.getEntitiesWithinAABB(EntityItem.class, AxisAlignedBB.fromBounds(blockPos.getX(), blockPos.getY(), blockPos.getZ(), blockPos.getX() + 1, blockPos.getY() + 1, blockPos.getZ() + 1).expand(1, 1, 1));
         double d0, d1, d2;
@@ -353,7 +424,14 @@ public class InteractBlockHook {
         }
     }
 
-    /*手持ちアイテムの破壊処理。ツールホルダーの処理のため。*/
+    /**
+     * 手持ちアイテム破壊処理。ツールホルダー用
+     * @param player プレイヤー
+     * @param item 手持ちアイテム
+     * @param isInMultiTool ツールホルダー内のアイテムかどうか
+     * @param tools ツールホルダーのインベントリ
+     * @param slotnum ツールホルダーのスロット番号
+     */
     public static void destroyItem(EntityPlayer player, ItemStack item, boolean isInMultiTool, IInventory tools, int slotnum) {
         if (isInMultiTool) {
             tools.setInventorySlotContents(slotnum, null);
@@ -363,72 +441,99 @@ public class InteractBlockHook {
         }
     }
 
-    /*target block と同型のブロックの収集*/
-    private boolean searchBlock(World world, EntityPlayer player, IBlockState target, BlockPos targetPos) {
+    /**
+     * 最初に破壊したブロックと同種ブロックを範囲内から取得
+     * @param world Worldクラス
+     * @param status 連鎖破壊ステータスクラス
+     * @param target 最初に破壊したブロックのIBlockState
+     * @param targetPos 最初に破壊したブロックの座標
+     * @return 最初に破壊したブロックと同種ブロックの座標集合
+     */
+    private Set<BlockPos> searchBlock(World world, CDStatus status, IBlockState target, BlockPos targetPos) {
+        Set<BlockPos> beBrokenBlockSet = Sets.newHashSet();
         IBlockState checkState;
-        BlockPos blockPos;
-        for (int i = rangeX.lowerEndpoint(); i <= rangeX.upperEndpoint(); i++) {
-            for (int j = rangeY.lowerEndpoint(); j <= rangeY.upperEndpoint(); j++) {
-                for (int k = rangeZ.lowerEndpoint(); k <= rangeZ.upperEndpoint(); k++) {
-                    blockPos = new BlockPos(i, j, k);
-                    checkState = world.getBlockState(blockPos);
-                    if (checkBlock(target, checkState, player.getCurrentEquippedItem()) && !candidateBlockList.contains(blockPos)) {
-                        candidateBlockList.add(blockPos);
+        BlockPos minPos = this.getMinPos(status, targetPos);
+        BlockPos maxPos = this.getMaxPos(status, targetPos);
+        @SuppressWarnings("unchecked")
+        Iterable<BlockPos> allBlockPos = BlockPos.getAllInBox(minPos, maxPos);
+
+        for (BlockPos blockPos : allBlockPos) {
+            checkState = world.getBlockState(blockPos);
+            if (checkBlock(status, target, checkState, status.getPlayer().getCurrentEquippedItem())) {
+                beBrokenBlockSet.add(blockPos);
+            }
+        }
+
+        return beBrokenBlockSet;
+    }
+
+    /**
+     * 範囲内の同種ブロックから最初のブロックとつながっているブロックを取得する
+     * @param status 連鎖破壊ステータスクラス
+     * @param origin 最初に破壊したブロック
+     * @param searchedBlockSet 同種ブロックの座標集合
+     * @return 最初のブロックとつながっているブロックの座標集合
+     */
+    private LinkedHashSet<BlockPos> getConnectedBlockSet(CDStatus status, BlockPos origin, Set<BlockPos> searchedBlockSet) {
+        LinkedHashSet<BlockPos> connectedBlockLSet = new LinkedHashSet<>();
+        connectedBlockLSet.add(origin);
+        int distance = status.isTreeMode() ? 3 : 1;
+        boolean check = true;
+        while(check) {
+            check = false;
+            Iterator<BlockPos> iterator = searchedBlockSet.iterator();
+            while(iterator.hasNext()) {
+                BlockPos blockPos = iterator.next();
+                for (BlockPos listedBlockPos : connectedBlockLSet) {
+                    if (listedBlockPos.distanceSq(blockPos) <= distance) {
+                        connectedBlockLSet.add(blockPos);
+                        iterator.remove();
+                        check = true;
+                        break;
                     }
                 }
             }
         }
-        candidateBlockList.remove(targetPos);
-        destroyingBlockSet.add(targetPos);
-        return !candidateBlockList.isEmpty();
+        connectedBlockLSet.remove(origin);
+        return connectedBlockLSet;
     }
 
-    /*集めたblockから繋がってるものを取得。U型のクラスタはmaxDestroyedBlockの長さまで対応*/
-    private void generateDestroyingBlockList(BlockPos targetPos) {
-        int distance = treeMode ? 3 : 1;
-        BlockPos checkPos = null;
-        for (int count = 0; count < ChainDestruction.maxDestroyedBlock; count++) {
-            for (BlockPos blockPos : candidateBlockList) {
-                for (BlockPos destroyingCoord : destroyingBlockSet) {
-                    if (!destroyingCoord.equals(blockPos) && destroyingCoord.distanceSq(blockPos) <= distance) {
-                        checkPos = blockPos;
-                    }
-                }
-                if (checkPos != null) {
-                    destroyingBlockSet.add(checkPos);
-                    checkPos = null;
-                }
-
-            }
-            //ループの計算量を減らすため、登録したものは削除。
-            candidateBlockList.removeAll(destroyingBlockSet);
-        }
-        //最初のブロックはそもそも破壊されてるので、判定後は削除。
-        destroyingBlockSet.remove(targetPos);
-    }
-
-    /*destroyingBlockListで登録した座標のブロックを破壊*/
-    private void destroyBlock(World world, EntityPlayer player, ItemStack item) {
-        for (BlockPos blockPos : destroyingBlockSet) {
+    /**
+     * 第四引数の集合内の座標にあるブロックを破壊する処理
+     * @param world Worldクラス
+     * @param player プレイヤー
+     * @param item 手持ちアイテム
+     * @param connectedBlockSet つながっているブロックの座標集合
+     */
+    private void destroyBlock(World world, EntityPlayer player, ItemStack item, LinkedHashSet<BlockPos> connectedBlockSet) {
+        for (BlockPos blockPos : connectedBlockSet) {
             if (destroyBlockAtPosition(world, player, blockPos, item)) {
                 break;
             }
         }
-        candidateBlockList.clear();
-        destroyingBlockSet.clear();
     }
 
-    /*ツールの耐久値が１以下の時を判定*/
+    /**
+     * ツールの耐久値が１以下の時を判定
+     * @param itemStack 手持ちアイテム
+     * @return 壊れない設定でかつ耐久が1以下の場合true
+     */
     private static boolean isItemBreakingSoon(ItemStack itemStack) {
         return ChainDestruction.notToDestroyItem && (itemStack.getMaxDamage() - itemStack.getItemDamage() <= 1);
     }
 
-    /*第一引数は最初に壊したブロック。第二引数は壊そうとしているブロック*/
-    private boolean checkBlock(IBlockState target, IBlockState check, ItemStack heldItem) {
+    /**
+     * 壊そうとしているブロックが最初に壊したブロックと同じかどうか判定
+     * @param target 最初のブロック
+     * @param check 壊そうとしているブロック
+     * @param heldItem 手持ちアイテム
+     * @return 同種ならtrue
+     */
+    private boolean checkBlock(CDStatus status, IBlockState target, IBlockState check, ItemStack heldItem) {
         if (check == null || check.getBlock() == Blocks.air) return false;
-        if (treeMode) {
+        if (status.isTreeMode()) {
             String uniqueName = ChainDestruction.getUniqueStrings(heldItem.getItem());
-            if (privateRegisterMode && ChainDestruction.privateItemBlockMap.containsKey(uniqueName)) {
+            if (status.isPrivateRegisterMode() && ChainDestruction.privateItemBlockMap.containsKey(uniqueName)) {
                 return match(ChainDestruction.privateItemBlockMap.get(uniqueName), check);
             }
             return match(ChainDestruction.enableLogBlocks, check);
@@ -436,34 +541,36 @@ public class InteractBlockHook {
         return matchTwoBlocks(target, check);
     }
 
-    /*破壊予定ブロックの走査範囲の設定*/
-    private void setBlockBounds(EntityPlayer player, int x, int y, int z) {
-        rangeX = Range.closed(x - ChainDestruction.maxDestroyedBlock, x + ChainDestruction.maxDestroyedBlock);
-        dropRangeX = Range.closed((double)(x - ChainDestruction.maxDestroyedBlock - 1), (double)(x + ChainDestruction.maxDestroyedBlock + 1));
-        int maxY = (treeMode)? ChainDestruction.maxYforTreeMode : y + ChainDestruction.maxDestroyedBlock;
-        if (ChainDestruction.digUnder) {
-            rangeY = Range.closed(y - ChainDestruction.maxDestroyedBlock, maxY);
-            dropRangeY = Range.closed((double)(y - ChainDestruction.maxDestroyedBlock), (double)maxY);
-        } else if (face != EnumFacing.UP) {
-            rangeY = Range.closed(MathHelper.floor_double(player.posY), maxY);
-            dropRangeY = Range.closed(player.posY, (double)maxY);
-        } else {
-            rangeY = Range.closed(MathHelper.floor_double(player.posY) - 1, maxY);
-            dropRangeY = Range.closed(player.posY - 1, (double)maxY);
+    /**
+     * 破壊範囲の座標が小さい方の端点クラスを取得
+     * @param status 連鎖破壊ステータスクラス
+     * @param targetPos 最初に破壊したブロック
+     * @return 端点クラス
+     */
+    private BlockPos getMinPos(CDStatus status, BlockPos targetPos) {
+        int y = targetPos.getY();
+        if (status.isDigUnder()) {
+            y = Math.max(Constants.MIN_Y, targetPos.getY() - ChainDestruction.maxDestroyedBlock);
+        } else if (EnumFacing.UP != status.getFace()) {
+            y = Math.max(Constants.MIN_Y, MathHelper.floor_double(status.getPlayer().posY));
+        } else if (ChainDestruction.maxDestroyedBlock > 0){
+            y = Math.max(Constants.MIN_Y, MathHelper.floor_double(status.getPlayer().posY) - 1);
         }
-        rangeZ = Range.closed(z - ChainDestruction.maxDestroyedBlock, z + ChainDestruction.maxDestroyedBlock);
-        dropRangeZ = Range.closed((double)(z - ChainDestruction.maxDestroyedBlock - 1), (double)(z + ChainDestruction.maxDestroyedBlock + 1));
+        return new BlockPos(targetPos.getX() - ChainDestruction.maxDestroyedBlock, y, targetPos.getZ() - ChainDestruction.maxDestroyedBlock);
     }
 
-    public void setDigUnder(boolean digUnder) {
-        this.digUnder = digUnder;
+    /**
+     * 破壊範囲の座標が大きい方の端点クラスを取得
+     * @param status 連鎖破壊ステータスクラス
+     * @param targetPos 最初に破壊したブロック
+     * @return 端点クラス
+     */
+    private BlockPos getMaxPos(CDStatus status, BlockPos targetPos) {
+        int y = (status.isTreeMode())? ChainDestruction.maxYforTreeMode : targetPos.getY() + ChainDestruction.maxDestroyedBlock;;
+        return new BlockPos(targetPos.getX() + ChainDestruction.maxDestroyedBlock, y, targetPos.getZ() + ChainDestruction.maxDestroyedBlock);
     }
 
-    public void setTreeMode(boolean treeMode) {
-        this.treeMode = treeMode;
-    }
-
-    public void setPrivateRegisterMode(boolean privateRegisterMode) {
-        this.privateRegisterMode = privateRegisterMode;
+    public ConcurrentHashMap<UUID, CDStatus> getStatusMap() {
+        return statusMap;
     }
 }

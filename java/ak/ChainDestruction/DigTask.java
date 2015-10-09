@@ -12,7 +12,8 @@ import net.minecraft.world.World;
 import java.util.LinkedHashSet;
 
 /**
- * Created by AKIRA on 15/01/13.
+ * ブロック破壊のタスククラス
+ * Created by A.K. on 15/01/13.
  */
 public class DigTask {
     private LinkedHashSet<BlockPos> blockToDestroySet = new LinkedHashSet<>();
