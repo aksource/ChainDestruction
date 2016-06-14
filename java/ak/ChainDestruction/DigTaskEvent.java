@@ -10,7 +10,8 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Created by AKIRA on 15/01/13.
+ * DigTaskをTick処理するためのイベントハンドラクラス
+ * Created by A.K. on 15/01/13.
  */
 public class DigTaskEvent {
 
