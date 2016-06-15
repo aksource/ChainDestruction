@@ -12,7 +12,7 @@ import net.minecraft.world.World;
 import java.util.LinkedHashSet;
 
 /**
- * ブロック破壊のタスククラス
+ * 繝悶Ο繝�繧ｯ遐ｴ螢翫�ｮ繧ｿ繧ｹ繧ｯ繧ｯ繝ｩ繧ｹ
  * Created by A.K. on 15/01/13.
  */
 public class DigTask {

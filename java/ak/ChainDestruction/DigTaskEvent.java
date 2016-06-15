@@ -10,7 +10,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * ƒuƒƒbƒN”j‰ó‚Ìƒ^ƒXƒNˆ—ƒCƒxƒ“ƒgƒNƒ‰ƒX
+ * ãƒ–ãƒ­ãƒƒã‚¯ç ´å£Šã®ã‚¿ã‚¹ã‚¯å‡¦ç†ã‚¤ãƒ™ãƒ³ãƒˆã‚¯ãƒ©ã‚¹
  * Created by A.K. on 15/01/13.
  */
 public class DigTaskEvent {

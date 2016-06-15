@@ -21,7 +21,6 @@ import net.minecraftforge.common.config.Configuration;
 import net.minecraftforge.event.entity.EntityJoinWorldEvent;
 import net.minecraftforge.event.world.WorldEvent.Save;
 import net.minecraftforge.fml.common.*;
-import net.minecraftforge.fml.common.Mod.Instance;
 import net.minecraftforge.fml.common.event.FMLInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
@@ -32,12 +31,20 @@ import net.minecraftforge.oredict.OreDictionary;
 
 import java.util.*;
 
-@Mod(modid="ChainDestruction", name="ChainDestruction", version="@VERSION@", dependencies = "required-after:Forge@[10.12.1.1090,)", useMetadata = true)
-public class ChainDestruction
-{
-    @SuppressWarnings("unused")
-	@Instance("ChainDestruction")
-	public static ChainDestruction instance;
+@Mod(modid=ChainDestruction.MOD_ID,
+        name=ChainDestruction.MOD_NAME,
+        version=ChainDestruction.MOD_VERSION,
+        dependencies = ChainDestruction.MOD_DEPENDENCIES,
+        useMetadata = true,
+        acceptedMinecraftVersions = ChainDestruction.MOD_MC_VERSION)
+public class ChainDestruction {
+
+    public static final String MOD_ID = "ChainDestruction";
+    public static final String MOD_NAME = "ChainDestruction";
+    public static final String MOD_VERSION = "@VERSION@";
+    public static final String MOD_DEPENDENCIES = "required-after:Forge@[11.14.0.1237,)";
+    public static final String MOD_MC_VERSION = "[1.8,1.8.9]";
+
 	@SidedProxy(clientSide = "ak.ChainDestruction.ClientProxy", serverSide = "ak.ChainDestruction.CommonProxy")
 	public static CommonProxy proxy;
 	public static HashSet<String> enableItems = new HashSet<>();

@@ -11,11 +11,8 @@ import net.minecraftforge.fml.client.FMLClientHandler;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.InputEvent;
 
-import java.util.Map;
-import java.util.UUID;
-
 /**
- * クライアント側のマウス・キーb－どイベントクラス
+ * 繧ｯ繝ｩ繧､繧｢繝ｳ繝亥�ｴ縺ｮ繝槭え繧ｹ繝ｻ繧ｭ繝ｼb竏偵←繧､繝吶Φ繝医け繝ｩ繧ｹ
  * Created by A.K. on 14/08/01.
  */
 public class ClientEvent {
@@ -74,11 +71,7 @@ public class ClientEvent {
 
     public void doKeyClient(ItemStack item, EntityPlayer player, byte key) {
         if (key == Constants.DigKEY) {
-            UUID uuid = player.getGameProfile().getId();
-            Map<UUID, CDStatus> map = ChainDestruction.interactblockhook.getStatusMap();
-            if (map.containsKey(uuid)) {
-                ChainDestruction.digUnder = map.get(uuid).isDigUnder();
-            }
+            ChainDestruction.digUnder = CDStatus.get(player).isDigUnder();
         }
     }
 }

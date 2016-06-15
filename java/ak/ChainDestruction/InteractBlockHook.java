@@ -1,5 +1,7 @@
 package ak.ChainDestruction;
 
+import ak.ChainDestruction.network.MessageCDStatusProperties;
+import ak.ChainDestruction.network.PacketHandler;
 import ak.MultiToolHolders.ItemMultiToolHolder;
 import ak.akapi.Constants;
 import com.google.common.collect.Sets;
@@ -9,13 +11,17 @@ import net.minecraft.enchantment.Enchantment;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.entity.item.EntityItem;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.init.Blocks;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.*;
 import net.minecraft.world.World;
+import net.minecraftforge.common.IExtendedEntityProperties;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.util.FakePlayer;
+import net.minecraftforge.event.entity.EntityEvent;
 import net.minecraftforge.event.entity.player.PlayerDestroyItemEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent.Action;
@@ -24,23 +30,8 @@ import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.registry.GameRegistry;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class InteractBlockHook {
-
-//    private Range<Double> dropRangeX;
-//    private Range<Double> dropRangeY;
-//    private Range<Double> dropRangeZ;
-
-//    private Set<EntityItem> dropItemSet = Sets.newHashSet();
-
-//    public boolean digUnder = ChainDestruction.digUnder;
-//    private boolean treeMode = ChainDestruction.treeMode;
-//    public boolean privateRegisterMode = ChainDestruction.privateRegisterMode;
-//    private boolean doChain = false;
-
-    private ConcurrentHashMap<UUID, CDStatus> statusMap = new ConcurrentHashMap<>();
-
     /**
      * キーイベント処理。MessageHandlerから呼ばれる
      * @param item 手持ちアイテム
@@ -49,11 +40,7 @@ public class InteractBlockHook {
      */
     public void doKeyEvent(ItemStack item, EntityPlayer player, byte key) {
         String chat;
-        if (!statusMap.containsKey(player.getGameProfile().getId())) {
-            statusMap.put(player.getGameProfile().getId(), new CDStatus());
-        }
-        CDStatus status = statusMap.get(player.getGameProfile().getId());
-        status.setPlayer(player);
+        CDStatus status = CDStatus.get(player);
         if (key == Constants.RegKEY) {
             if (player.isSneaking() && ChainDestruction.enableItems.contains(ChainDestruction.getUniqueStrings(item))) {
                 ChainDestruction.enableItems.remove(ChainDestruction.getUniqueStrings(item));
@@ -82,6 +69,7 @@ public class InteractBlockHook {
                 player.addChatMessage(new ChatComponentText(chat));
             }
         }
+        PacketHandler.INSTANCE.sendTo(new MessageCDStatusProperties(player), (EntityPlayerMP) player);
     }
 
     /**
@@ -119,18 +107,13 @@ public class InteractBlockHook {
     @SubscribeEvent
     public void interactBlock(PlayerInteractEvent event) {
         EntityPlayer player = event.entityPlayer;
-        UUID uuid = event.entityPlayer.getGameProfile().getId();
-        if (!statusMap.containsKey(uuid)) {
-            statusMap.put(uuid, new CDStatus());
-        }
-        CDStatus status = statusMap.get(uuid);
+        CDStatus status = CDStatus.get(player);
         World world = player.worldObj;
         ItemStack item = event.entityPlayer.getCurrentEquippedItem();
         if (world.isRemote || item == null) return;
         String uniqueName = ChainDestruction.getUniqueStrings(item.getItem());
         if (ChainDestruction.enableItems.contains(uniqueName)) {
             IBlockState state = world.getBlockState(event.pos);
-//            Block block = world.getBlockState(event.pos).getBlock();
             if (event.action == Action.RIGHT_CLICK_BLOCK) {
                 if (status.isPrivateRegisterMode()) {
                     if (!ChainDestruction.privateItemBlockMap.containsKey(uniqueName)) {
@@ -148,10 +131,7 @@ public class InteractBlockHook {
             if (event.action == Action.LEFT_CLICK_BLOCK
                     && checkBlockValidate(player, state, item)
                     && ChainDestruction.enableItems.contains(GameRegistry.findUniqueIdentifierFor(item.getItem()).toString())) {
-                status.setPlayer(event.entityPlayer);
                 status.setFace(event.face);
-                status.setDigUnder(ChainDestruction.digUnder);
-                status.setTreeMode(ChainDestruction.treeMode);
             }
         }
     }
@@ -163,11 +143,7 @@ public class InteractBlockHook {
      * @return 破壊対象かどうか
      */
     private boolean checkBlockValidate(EntityPlayer player, IBlockState state, ItemStack heldItem) {
-        UUID uuid = player.getGameProfile().getId();
-        if (!statusMap.containsKey(uuid)) {
-            statusMap.put(uuid, new CDStatus());
-        }
-        CDStatus status = statusMap.get(uuid);
+        CDStatus status = CDStatus.get(player);
         if (state == null || heldItem == null) {
             return false;
         }
@@ -280,6 +256,32 @@ public class InteractBlockHook {
             }
         }
     }
+
+    @SubscribeEvent
+    public void onEntityConstructing(EntityEvent.EntityConstructing event) {
+        if (event.entity instanceof EntityPlayer) {
+            CDStatus.register((EntityPlayer) event.entity);
+        }
+    }
+
+    @SubscribeEvent
+    //Dimension移動時や、リスポーン時に呼ばれるイベント。古いインスタンスと新しいインスタンスの両方を参照できる。
+    public void onCloningPlayer(net.minecraftforge.event.entity.player.PlayerEvent.Clone event) {
+        //死亡時に呼ばれてるかどうか
+        if (event.wasDeath) {
+            //古いカスタムデータ
+            IExtendedEntityProperties oldEntityProperties = event.original.getExtendedProperties(CDStatus.EXT_PROP_NAME);
+            //新しいカスタムデータ
+            IExtendedEntityProperties newEntityProperties = event.entityPlayer.getExtendedProperties(CDStatus.EXT_PROP_NAME);
+            NBTTagCompound playerData = new NBTTagCompound();
+            //データの吸い出し
+            oldEntityProperties.saveNBTData(playerData);
+            //データの書き込み
+            newEntityProperties.loadNBTData(playerData);
+
+        }
+    }
+
     /*BlockBreakEventに処理を移行した todo 削除予定*/
 //    @SubscribeEvent
 //    @SuppressWarnings("unused")
@@ -317,8 +319,8 @@ public class InteractBlockHook {
 
     private void setup(IBlockState firstBrokenBlockState, EntityPlayer player, World world, BlockPos blockPos) {
 //        setBlockBounds(player, blockPos.getX(), blockPos.getY(), blockPos.getZ());
-        CDStatus status = statusMap.get(player.getGameProfile().getId());
-        Set<BlockPos> searchedBlockSet = searchBlock(world, status, firstBrokenBlockState, blockPos);
+        CDStatus status = CDStatus.get(player);
+        Set<BlockPos> searchedBlockSet = searchBlock(world, status, player, firstBrokenBlockState, blockPos);
         LinkedHashSet<BlockPos> connectedBlockSet = getConnectedBlockSet(status, blockPos, searchedBlockSet);
         if (!ChainDestruction.destroyingSequentially) {
             destroyBlock(world, player, player.getCurrentEquippedItem(), connectedBlockSet);
@@ -449,17 +451,17 @@ public class InteractBlockHook {
      * @param targetPos 最初に破壊したブロックの座標
      * @return 最初に破壊したブロックと同種ブロックの座標集合
      */
-    private Set<BlockPos> searchBlock(World world, CDStatus status, IBlockState target, BlockPos targetPos) {
+    private Set<BlockPos> searchBlock(World world, CDStatus status, EntityPlayer player, IBlockState target, BlockPos targetPos) {
         Set<BlockPos> beBrokenBlockSet = Sets.newHashSet();
         IBlockState checkState;
-        BlockPos minPos = this.getMinPos(status, targetPos);
+        BlockPos minPos = this.getMinPos(player, status, targetPos);
         BlockPos maxPos = this.getMaxPos(status, targetPos);
         @SuppressWarnings("unchecked")
         Iterable<BlockPos> allBlockPos = BlockPos.getAllInBox(minPos, maxPos);
 
         for (BlockPos blockPos : allBlockPos) {
             checkState = world.getBlockState(blockPos);
-            if (checkBlock(status, target, checkState, status.getPlayer().getCurrentEquippedItem())) {
+            if (checkBlock(status, target, checkState, player.getCurrentEquippedItem())) {
                 beBrokenBlockSet.add(blockPos);
             }
         }
@@ -547,14 +549,14 @@ public class InteractBlockHook {
      * @param targetPos 最初に破壊したブロック
      * @return 端点クラス
      */
-    private BlockPos getMinPos(CDStatus status, BlockPos targetPos) {
+    private BlockPos getMinPos(EntityPlayer player, CDStatus status, BlockPos targetPos) {
         int y = targetPos.getY();
         if (status.isDigUnder()) {
             y = Math.max(Constants.MIN_Y, targetPos.getY() - ChainDestruction.maxDestroyedBlock);
         } else if (EnumFacing.UP != status.getFace()) {
-            y = Math.max(Constants.MIN_Y, MathHelper.floor_double(status.getPlayer().posY));
+            y = Math.max(Constants.MIN_Y, MathHelper.floor_double(player.posY));
         } else if (ChainDestruction.maxDestroyedBlock > 0){
-            y = Math.max(Constants.MIN_Y, MathHelper.floor_double(status.getPlayer().posY) - 1);
+            y = Math.max(Constants.MIN_Y, MathHelper.floor_double(player.posY) - 1);
         }
         return new BlockPos(targetPos.getX() - ChainDestruction.maxDestroyedBlock, y, targetPos.getZ() - ChainDestruction.maxDestroyedBlock);
     }
@@ -568,9 +570,5 @@ public class InteractBlockHook {
     private BlockPos getMaxPos(CDStatus status, BlockPos targetPos) {
         int y = (status.isTreeMode())? ChainDestruction.maxYforTreeMode : targetPos.getY() + ChainDestruction.maxDestroyedBlock;;
         return new BlockPos(targetPos.getX() + ChainDestruction.maxDestroyedBlock, y, targetPos.getZ() + ChainDestruction.maxDestroyedBlock);
-    }
-
-    public ConcurrentHashMap<UUID, CDStatus> getStatusMap() {
-        return statusMap;
     }
 }

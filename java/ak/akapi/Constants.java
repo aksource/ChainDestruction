@@ -1,7 +1,7 @@
 package ak.akapi;
 
 /**
- * ˜A½”j‰óMOD‚Ì’è”ƒNƒ‰ƒX
+ * é€£é–ç ´å£ŠMODã®å®šæ•°ã‚¯ãƒ©ã‚¹
  * Created by A.K. on 2015/09/26.
  */
 public class Constants {
