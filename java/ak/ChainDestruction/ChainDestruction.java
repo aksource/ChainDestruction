@@ -1,200 +1,85 @@
 package ak.ChainDestruction;
 
+import ak.ChainDestruction.capability.CDPlayerStatus;
+import ak.ChainDestruction.capability.CapabilityCDItemStackStatusHandler;
+import ak.ChainDestruction.capability.CapabilityCDPlayerStatusHandler;
+import ak.ChainDestruction.capability.ICDPlayerStatusHandler;
+import ak.ChainDestruction.command.CommandCopyRtoLCDStatus;
+import ak.ChainDestruction.command.CommandResetCDPlayerStatus;
+import ak.ChainDestruction.command.CommandShowItemCDStatus;
+import ak.ChainDestruction.command.CommandShowPlayerCDStatus;
 import ak.ChainDestruction.network.PacketHandler;
-import ak.akapi.ConfigSavable;
+import com.google.common.base.Function;
 import com.google.common.base.Joiner;
-import com.google.common.base.Optional;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
-import cpw.mods.fml.common.Loader;
-import cpw.mods.fml.common.Mod;
-import cpw.mods.fml.common.Mod.Instance;
-import cpw.mods.fml.common.SidedProxy;
-import cpw.mods.fml.common.event.FMLInitializationEvent;
-import cpw.mods.fml.common.event.FMLPostInitializationEvent;
-import cpw.mods.fml.common.event.FMLPreInitializationEvent;
-import cpw.mods.fml.common.eventhandler.SubscribeEvent;
-import cpw.mods.fml.common.registry.GameRegistry;
-import cpw.mods.fml.common.registry.GameRegistry.UniqueIdentifier;
+import com.google.common.collect.Iterables;
 import net.minecraft.block.Block;
+import net.minecraft.block.state.BlockStateBase;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
-import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.ChatComponentText;
+import net.minecraft.util.text.TextComponentString;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.config.Configuration;
 import net.minecraftforge.event.entity.EntityJoinWorldEvent;
-import net.minecraftforge.event.world.WorldEvent.Save;
+import net.minecraftforge.fml.common.Loader;
+import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
+import net.minecraftforge.fml.common.SidedProxy;
+import net.minecraftforge.fml.common.event.FMLInitializationEvent;
+import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
+import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
+import net.minecraftforge.fml.common.event.FMLServerStartingEvent;
+import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.oredict.OreDictionary;
 
 import java.util.*;
+import java.util.logging.Logger;
 
-@Mod(modid="ChainDestruction", name="ChainDestruction", version="@VERSION@", dependencies = "required-after:Forge@[10.12.1.1090,)", useMetadata = true)
-public class ChainDestruction
-{
-	@Instance("ChainDestruction")
-	public static ChainDestruction instance;
-	@SidedProxy(clientSide = "ak.ChainDestruction.ClientProxy", serverSide = "ak.ChainDestruction.CommonProxy")
-	public static CommonProxy proxy;
-	public static HashSet<String> enableItems = new HashSet<>();
-	public static HashSet<String> enableBlocks = new HashSet<>();
-    public static HashSet<String> enableLogBlocks = new HashSet<>();
-    public static Map<String, Set<String>> privateItemBlockMap = Maps.newHashMap();
-//    public static HashSet<String> dropItemSet = new HashSet<>();
+@Mod(modid = ChainDestruction.MOD_ID,
+        name = ChainDestruction.MOD_NAME,
+        version = ChainDestruction.MOD_VERSION,
+        dependencies = ChainDestruction.MOD_DEPENDENCIES,
+        useMetadata = true,
+        acceptedMinecraftVersions = ChainDestruction.MOD_MC_VERSION)
+public class ChainDestruction {
 
-    public static String[] itemsConfig;
-	public static String[] blocksConfig;
-    public static String[] logBlocksConfig;
-    public static String[] privateItemBlockConfig = new String[]{};
-	public static boolean digUnder = true;
-	public static String[] vanillaTools;
-	public static String[] vanillaBlocks;
-    public static String[] vanillaLogs;
-	public static int maxDestroyedBlock = 5;
-    public static int maxYforTreeMode = 255;
-	public static boolean dropOnPlayer = true;
-    public static boolean treeMode = false;
-    public static boolean privateRegisterMode = false;
-	public ConfigSavable config;
-	public static InteractBlockHook interactblockhook = new InteractBlockHook();
-	public static boolean loadMTH = false;
+    public static final String MOD_ID = "ChainDestruction";
+    public static final String MOD_NAME = "ChainDestruction";
+    public static final String MOD_VERSION = "@VERSION@";
+    public static final String MOD_DEPENDENCIES = "required-after:Forge@[12.17.0,)";
+    public static final String MOD_MC_VERSION = "[1.9,1.10.99]";
     private static final Map<Block, Block> ALTERNATE_BLOCK_MAP = new HashMap<>();
+    private static final Joiner AT_JOINER = Joiner.on('@');
+    @SidedProxy(clientSide = "ak.ChainDestruction.ClientProxy", serverSide = "ak.ChainDestruction.CommonProxy")
+    public static CommonProxy proxy;
+    @SuppressWarnings("unused")
+    public static Logger logger = Logger.getLogger(MOD_ID);
+    public static int maxYforTreeMode = 255;
+    public static int digTaskMaxCounter = 5;
+    @SuppressWarnings("unused")
+    public static boolean dropOnPlayer = true;
+    public static boolean destroyingSequentially = false;
+    public static boolean notToDestroyItem = false;
+    public static InteractBlockHook interactblockhook/* = new InteractBlockHook()*/;
+    public static DigTaskEvent digTaskEvent = new DigTaskEvent();
+    public static boolean loadMTH = false;
+    private static Function functionBlockStateBase = ObfuscationReflectionHelper.getPrivateValue(BlockStateBase.class, null, 1);
 
-	@Mod.EventHandler
-	public void preInit(FMLPreInitializationEvent event)
-	{
-		config = new ConfigSavable(event.getSuggestedConfigurationFile());
-		config.load();
-		maxDestroyedBlock = config.get(Configuration.CATEGORY_GENERAL, "maxDestroyedBlock", maxDestroyedBlock, "Maximum Destroyed Block Counts. range is 2 * max + 1").getInt();
-        maxYforTreeMode = config.get(Configuration.CATEGORY_GENERAL, "maxYforTreeMode", maxYforTreeMode, "Max Height of destroyed block for tree mode. Be careful to set over 200.").getInt();
-		itemsConfig = config.get(Configuration.CATEGORY_GENERAL, "toolItemsId", vanillaTools, "Tool ids that enables chain destruction.").getStringList();
-		blocksConfig = config.get(Configuration.CATEGORY_GENERAL, "chainDestroyedBlockIdConfig", vanillaBlocks, "Ids of block that to be chain-destructed.").getStringList();
-        logBlocksConfig = config.get(Configuration.CATEGORY_GENERAL, "chainDestroyedLogBlockIdConfig", vanillaLogs, "Ids of block that to be chain-destructed in tree mode.").getStringList();
-        privateItemBlockConfig = config.get(Configuration.CATEGORY_GENERAL, "privateItemBlockConfig", privateItemBlockConfig, "Item ID and Block IDs Group. Ex: ItemId@BlockID@BlockID...").getStringList();
-        digUnder = config.get(Configuration.CATEGORY_GENERAL, "digUnder", digUnder, "dig blocks under your position.").getBoolean(digUnder);
-        privateRegisterMode = config.get(Configuration.CATEGORY_GENERAL, "privateRegisterMode", privateRegisterMode, "register block each item.").getBoolean();
-		config.save();
-        interactblockhook.setDigUnder(digUnder);
-        interactblockhook.setTreeMode(treeMode);
-        interactblockhook.setPrivateRegisterMode(privateRegisterMode);
-        PacketHandler.init();
-	}
-	@Mod.EventHandler
-	public void load(FMLInitializationEvent event)
-	{
-		proxy.registerClientInfo();
-		MinecraftForge.EVENT_BUS.register(interactblockhook);
-		MinecraftForge.EVENT_BUS.register(this);
-	}
-	@Mod.EventHandler
-	public void postInit(FMLPostInitializationEvent event)
-	{
-		addItemsAndBlocks();
-	    loadMTH = Loader.isModLoaded("MultiToolHolders");
-	}
-
-	private void addItemsAndBlocks() {
-        enableItems.addAll(Arrays.asList(itemsConfig));
-        enableBlocks.addAll(Arrays.asList(blocksConfig));
-        changeStringsProperName(enableBlocks);
-        enableLogBlocks.addAll(Arrays.asList(logBlocksConfig));
-        changeStringsProperName(enableLogBlocks);
-        makePrivateRegisterMap(privateItemBlockConfig);
-	}
-
-    private void makePrivateRegisterMap(String[] strArray) {
-        List<String> splits;
-        Set<String> blockSet;
-        for (String string : strArray) {
-            splits = Arrays.asList(string.split("@"));
-            if (splits.size() > 1) {
-                blockSet =  Sets.newHashSet();
-                blockSet.addAll(splits.subList(1, splits.size()));
-                privateItemBlockMap.put(splits.get(0), blockSet);
-            }
-        }
+    static {
+        ALTERNATE_BLOCK_MAP.put(Blocks.LIT_REDSTONE_ORE, Blocks.REDSTONE_ORE);
+        ALTERNATE_BLOCK_MAP.put(Blocks.LIT_FURNACE, Blocks.FURNACE);
     }
 
-    private HashSet<String> makePrivateRegisterConfig(Map<String, Set<String>> map) {
-        HashSet<String> set = Sets.newHashSet();
-        String str;
-        for (String key : map.keySet()) {
-            str = key + "@" + Joiner.on('@').skipNulls().join(map.get(key));
-            set.add(str);
-        }
-        return set;
-    }
+    public Configuration config;
 
-    private void changeStringsProperName(Set<String> set) {
-        Set<String> subSet = new HashSet<>();
-        subSet.addAll(set);
-        List<String> oreList = Arrays.asList(OreDictionary.getOreNames());
-
-        for (String str : set) {
-            if (str.contains(":") || oreList.contains(str)) subSet.remove(str);
-        }
-
-        for (String str : subSet) {
-            boolean removeString = false;
-            for (String oreName : oreList) {
-                if (oreName.contains(str)) {
-                    removeString = true;
-                    set.add(oreName);
-                }
-            }
-            if (removeString) set.remove(str);
-        }
-    }
-
-    @SubscribeEvent
-    public void joinInWorld(EntityJoinWorldEvent event) {
-        if (!event.world.isRemote && event.entity instanceof EntityPlayer) {
-            EntityPlayer player = (EntityPlayer)event.entity;
-            String mode = privateRegisterMode?"Private Register":"Normal";
-            String s = String.format("ChainDestruction Info Mode:%s, TreeMode:%b, Range:%d", mode, treeMode, maxDestroyedBlock);
-            player.addChatMessage(new ChatComponentText(s));
-        }
-    }
-
-    @SubscribeEvent
-    public void WorldSave(Save event)
-    {
-        config.set(Configuration.CATEGORY_GENERAL, "toolItemsId", enableItems);
-        config.set(Configuration.CATEGORY_GENERAL, "chainDestroyedBlockIdConfig", enableBlocks);
-        config.set(Configuration.CATEGORY_GENERAL, "chainDestroyedLogBlockIdConfig", enableLogBlocks);
-        config.set(Configuration.CATEGORY_GENERAL, "digUnder", digUnder);
-        config.set(Configuration.CATEGORY_GENERAL, "maxDestroyedBlock", maxDestroyedBlock);
-        config.set(Configuration.CATEGORY_GENERAL, "privateItemBlockConfig", makePrivateRegisterConfig(privateItemBlockMap));
-        config.save();
-    }
-
-	public static String getUniqueStrings(Object obj)
-	{
-		UniqueIdentifier uId = null;
-		if (obj instanceof ItemStack) {
-			obj = ((ItemStack)obj).getItem();
-		}
-		if (obj instanceof Block) {
-			uId = GameRegistry.findUniqueIdentifierFor((Block) obj);
-		}
-        if (obj instanceof Item){
-			uId = GameRegistry.findUniqueIdentifierFor((Item) obj);
-		}
-		return Optional.fromNullable(uId).or(new UniqueIdentifier("none:dummy")).toString();
-	}
-
-    public static List<String> makeStringDataFromBlockAndMeta(BlockMetaPair blockMetaPair) {
-        Block block = blockMetaPair.getBlock();
-        int meta = blockMetaPair.getMeta();
+    public static List<String> makeStringDataFromBlockState(IBlockState state) {
+        Block block = state.getBlock();
         if (ALTERNATE_BLOCK_MAP.containsKey(block)) {
             block = ALTERNATE_BLOCK_MAP.get(block);
         }
-        String s = String.format("%s:%d", GameRegistry.findUniqueIdentifierFor(block).toString(), meta);
-        ItemStack itemStack = new ItemStack(block, 1, meta);
-        if (itemStack.getItem() == null) {
-            return Arrays.asList(s);
-        }
+        ItemStack itemStack = new ItemStack(block, 1, block.damageDropped(state));
+        if (itemStack.getItem() == null) return Collections.singletonList(makeString(state));
         int[] oreIDs = OreDictionary.getOreIDs(itemStack);
         if (oreIDs.length > 0) {
             List<String> oreNames = new ArrayList<>(oreIDs.length);
@@ -203,19 +88,76 @@ public class ChainDestruction
             }
             return oreNames;
         } else {
-            return Arrays.asList(s);
+            String s = makeString(state);
+            return Collections.singletonList(s);
         }
 
     }
 
-	static{
-		vanillaTools = new String[]{
-				"minecraft:diamond_axe","minecraft:golden_axe","minecraft:iron_axe","minecraft:stone_axe","minecraft:wooden_axe",
-				"minecraft:diamond_shovel","minecraft:golden_shovel","minecraft:iron_shovel","minecraft:stone_shovel","minecraft:wooden_shovel",
-				"minecraft:diamond_pickaxe","minecraft:golden_pickaxe","minecraft:iron_pickaxe","minecraft:stone_pickaxe","minecraft:wooden_pickaxe"};
-		vanillaBlocks = new String[]{getUniqueStrings(Blocks.obsidian), "glowstone", "ore"};
-        vanillaLogs = new String[] {"logWood","treeLeaves"};
-        ALTERNATE_BLOCK_MAP.put(Blocks.lit_redstone_ore, Blocks.redstone_ore);
-        ALTERNATE_BLOCK_MAP.put(Blocks.lit_furnace, Blocks.furnace);
-	}
+    private static String makeString(IBlockState state) {
+        StringBuilder stringbuilder = new StringBuilder();
+        stringbuilder.append(state.getBlock().getRegistryName().toString());
+
+        if (!state.getProperties().isEmpty()) {
+            stringbuilder.append("[");
+            AT_JOINER.appendTo(stringbuilder, Iterables.transform(state.getProperties().entrySet(), functionBlockStateBase));
+            stringbuilder.append("]");
+        }
+
+        return stringbuilder.toString();
+    }
+
+    @SuppressWarnings("unused")
+    @Mod.EventHandler
+    public void preInit(FMLPreInitializationEvent event) {
+        config = new Configuration(event.getSuggestedConfigurationFile());
+        config.load();
+        maxYforTreeMode = config.get(Configuration.CATEGORY_GENERAL, "maxYforTreeMode", maxYforTreeMode, "Max Height of destroyed block for tree mode. Be careful to set over 200.", 0, 255).getInt();
+        destroyingSequentially = config.get(Configuration.CATEGORY_GENERAL, "destroyingSequentially Mode", destroyingSequentially, "destroy blocks sequentially").getBoolean();
+        digTaskMaxCounter = config.get(Configuration.CATEGORY_GENERAL, "digTaskMaxCounter", digTaskMaxCounter, "Tick Rate on destroying Sequentially Mode", 1, 100).getInt();
+        notToDestroyItem = config.get(Configuration.CATEGORY_GENERAL, "notToDestroyItem", notToDestroyItem, "Stop Destruciton not to destroy item").getBoolean();
+        config.save();
+        interactblockhook = new InteractBlockHook();
+        PacketHandler.init();
+        CapabilityCDPlayerStatusHandler.register();
+        CapabilityCDItemStackStatusHandler.register();
+    }
+
+    @SuppressWarnings("unused")
+    @Mod.EventHandler
+    public void load(FMLInitializationEvent event) {
+        proxy.registerClientInfo();
+        MinecraftForge.EVENT_BUS.register(interactblockhook);
+        MinecraftForge.EVENT_BUS.register(this);
+        if (destroyingSequentially) {
+            MinecraftForge.EVENT_BUS.register(digTaskEvent);
+        }
+    }
+
+    @SuppressWarnings("unused")
+    @Mod.EventHandler
+    public void postInit(FMLPostInitializationEvent event) {
+        loadMTH = Loader.isModLoaded("MultiToolHolders");
+    }
+
+    @SuppressWarnings("unused")
+    @Mod.EventHandler
+    public void serverStart(FMLServerStartingEvent event) {
+        event.registerServerCommand(new CommandResetCDPlayerStatus());
+        event.registerServerCommand(new CommandCopyRtoLCDStatus());
+        event.registerServerCommand(new CommandShowPlayerCDStatus());
+        event.registerServerCommand(new CommandShowItemCDStatus());
+    }
+
+    @SuppressWarnings("unused")
+    @SubscribeEvent
+    public void joinInWorld(EntityJoinWorldEvent event) {
+        if (!event.getWorld().isRemote && event.getEntity() instanceof EntityPlayer) {
+            EntityPlayer player = (EntityPlayer) event.getEntity();
+            ICDPlayerStatusHandler status = CDPlayerStatus.get(player);
+            String mode = status.isPrivateRegisterMode() ? "Private Register" : "Normal";
+            String s = String.format("ChainDestruction Info Mode:%s, TreeMode:%b, Range:%d", mode, status.isTreeMode(), status.getMaxDestroyedBlock());
+            player.addChatMessage(new TextComponentString(s));
+        }
+    }
 }

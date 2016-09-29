@@ -1,9 +1,10 @@
 package ak.ChainDestruction.network;
 
-import cpw.mods.fml.common.network.simpleimpl.IMessage;
+import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
 import io.netty.buffer.ByteBuf;
 
 /**
+ * マウスクリック用メッセージクラス
  * Created by A.K. on 14/10/14.
  */
 public class MessageMousePressed implements IMessage {
