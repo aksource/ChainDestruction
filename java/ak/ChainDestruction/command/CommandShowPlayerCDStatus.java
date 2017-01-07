@@ -20,12 +20,12 @@ import static ak.akapi.Constants.COMMAND_USAGE_SHOW_PLAYER_STATUS;
  */
 public class CommandShowPlayerCDStatus extends CommandBase {
     @Override
-    public String getCommandName() {
+    public String getName() {
         return COMMAND_SHOW_PLAYER_CD_STATUS;
     }
 
     @Override
-    public String getCommandUsage(ICommandSender sender) {
+    public String getUsage(ICommandSender sender) {
         return COMMAND_USAGE_SHOW_PLAYER_STATUS;
     }
 
@@ -36,7 +36,7 @@ public class CommandShowPlayerCDStatus extends CommandBase {
             if (entityPlayer.hasCapability(CAPABILITY_CHAIN_DESTRUCTION_PLAYER, null)) {
                 ICDPlayerStatusHandler status = entityPlayer.getCapability(CAPABILITY_CHAIN_DESTRUCTION_PLAYER, null);
                 String statusStr = CapabilityCDPlayerStatusHandler.makePlayerStatusToString(status);
-                entityPlayer.addChatMessage(new TextComponentString(statusStr));
+                entityPlayer.sendMessage(new TextComponentString(statusStr));
             }
         } else {
             for (String username : args) {
@@ -44,7 +44,7 @@ public class CommandShowPlayerCDStatus extends CommandBase {
                 if (entity instanceof EntityPlayer && entity.hasCapability(CAPABILITY_CHAIN_DESTRUCTION_PLAYER, null)) {
                     ICDPlayerStatusHandler status = entity.getCapability(CAPABILITY_CHAIN_DESTRUCTION_PLAYER, null);
                     String statusStr = CapabilityCDPlayerStatusHandler.makePlayerStatusToString(status);
-                    entity.addChatMessage(new TextComponentString(statusStr));
+                    entity.sendMessage(new TextComponentString(statusStr));
                 }
             }
         }

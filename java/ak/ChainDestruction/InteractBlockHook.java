@@ -35,7 +35,10 @@ import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.world.BlockEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 
-import java.util.*;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
 
 import static ak.ChainDestruction.capability.CapabilityCDItemStackStatusHandler.CAPABILITY_CHAIN_DESTRUCTION_ITEM;
 import static ak.ChainDestruction.capability.CapabilityCDItemStackStatusHandler.CD_ITEM_STATUS;
@@ -57,28 +60,28 @@ public class InteractBlockHook {
             if (player.isSneaking() && enableItems.contains(item.getItem().getRegistryName().toString())) {
                 enableItems.remove(item.getItem().getRegistryName().toString());
                 chat = String.format("Remove Tool : %s", item.getItem().getRegistryName().toString());
-                player.addChatMessage(new TextComponentString(chat));
+                player.sendMessage(new TextComponentString(chat));
             }
             if (!player.isSneaking() && !enableItems.contains(item.getItem().getRegistryName().toString())) {
                 enableItems.add(item.getItem().getRegistryName().toString());
                 chat = String.format("Add Tool : %s", item.getItem().getRegistryName().toString());
-                player.addChatMessage(new TextComponentString(chat));
+                player.sendMessage(new TextComponentString(chat));
             }
         }
         if (key == Constants.DigKEY) {
             status.setDigUnder(!status.isDigUnder());
             chat = String.format("Dig Under %b", status.isDigUnder());
-            player.addChatMessage(new TextComponentString(chat));
+            player.sendMessage(new TextComponentString(chat));
         }
         if (key == Constants.ModeKEY) {
             if (player.isSneaking()) {
                 status.setPrivateRegisterMode(!status.isPrivateRegisterMode());
                 chat = String.format("Private Register Mode %b", status.isPrivateRegisterMode());
-                player.addChatMessage(new TextComponentString(chat));
+                player.sendMessage(new TextComponentString(chat));
             } else {
                 status.setTreeMode(!status.isTreeMode());
                 chat = String.format("Tree Mode %b", status.isTreeMode());
-                player.addChatMessage(new TextComponentString(chat));
+                player.sendMessage(new TextComponentString(chat));
             }
         }
         PacketHandler.INSTANCE.sendTo(new MessageCDStatusProperties(player), (EntityPlayerMP) player);
@@ -106,7 +109,7 @@ public class InteractBlockHook {
                     status.setMaxDestroyedBlock(++maxDestroyedBlock);
                 }
                 chat = String.format("New Max Destroyed : %d", maxDestroyedBlock);
-                player.addChatMessage(new TextComponentString(chat));
+                player.sendMessage(new TextComponentString(chat));
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -122,9 +125,9 @@ public class InteractBlockHook {
     public void onRightClickBlock(PlayerInteractEvent.RightClickBlock event) {
         EntityPlayer player = event.getEntityPlayer();
         ICDPlayerStatusHandler status = CDPlayerStatus.get(player);
-        World world = player.worldObj;
+        World world = player.getEntityWorld();
         ItemStack itemStack = player.getHeldItemMainhand();
-        if (world.isRemote || itemStack == null) return;
+        if (world.isRemote || itemStack == ItemStack.EMPTY) return;
         String uniqueName = itemStack.getItem().getRegistryName().toString();
         if (status.getEnableItems().contains(uniqueName)) {
             IBlockState state = world.getBlockState(event.getPos());
@@ -145,9 +148,9 @@ public class InteractBlockHook {
         EntityPlayer player = event.getEntityPlayer();
         ICDPlayerStatusHandler status = CDPlayerStatus.get(player);
         Set<String> enableItems = status.getEnableItems();
-        World world = player.worldObj;
+        World world = player.getEntityWorld();
         ItemStack itemStack = player.getHeldItemMainhand();
-        if (world.isRemote || itemStack == null) return;
+        if (world.isRemote || itemStack == ItemStack.EMPTY) return;
         String uniqueName = itemStack.getItem().getRegistryName().toString();
         if (enableItems.contains(uniqueName)) {
             IBlockState state = world.getBlockState(event.getPos());
@@ -166,7 +169,7 @@ public class InteractBlockHook {
      */
     private boolean checkBlockValidate(EntityPlayer player, IBlockState state, ItemStack heldItem) {
         ICDPlayerStatusHandler status = CDPlayerStatus.get(player);
-        if (state == null || heldItem == null) {
+        if (state == null || heldItem == ItemStack.EMPTY) {
             return false;
         }
 //        String uniqueName = heldItem.getItem().getRegistryName().toString();
@@ -201,7 +204,7 @@ public class InteractBlockHook {
             if (!matchOreNames(set, oreNames)) {
                 set.addAll(oreNames);
                 chat = String.format("Add Block : %s", oreNames.toString());
-                player.addChatMessage(new TextComponentString(chat));
+                player.sendMessage(new TextComponentString(chat));
             }
             if (!oreNames.contains(uidStr)) {
                 set.remove(uidStr);
@@ -210,7 +213,7 @@ public class InteractBlockHook {
             //文字列がマッチした場合のみ、チャット出力。
             if (match(set, state)) {
                 chat = String.format("Remove Block and its OreDictionary Names: %s", uidMetaStr);
-                player.addChatMessage(new TextComponentString(chat));
+                player.sendMessage(new TextComponentString(chat));
             }
             set.remove(uidStr);
             set.removeAll(oreNames);
@@ -300,7 +303,7 @@ public class InteractBlockHook {
     @SubscribeEvent
     @SuppressWarnings("unused")
     public void onAttachingItemStack(AttachCapabilitiesEvent.Item event) {
-        if (event.getItemStack() != null) {
+        if (event.getItemStack() != ItemStack.EMPTY) {
             event.addCapability(CD_ITEM_STATUS, new CDItemStackStatus());
         }
     }
@@ -391,7 +394,7 @@ public class InteractBlockHook {
             toolData = ((ItemMultiToolHolder) item.getItem()).getInventoryFromItemStack(item);
             slotNum = ItemMultiToolHolder.getSlotNumFromItemStack(item);
             item = toolData.getStackInSlot(slotNum);
-            if (item == null) {
+            if (item == ItemStack.EMPTY) {
                 return true;
             }
             isMultiToolHolder = true;
@@ -410,7 +413,7 @@ public class InteractBlockHook {
                     int exp = state.getBlock().getExpDrop(state, world, blockPos, EnchantmentHelper.getEnchantmentLevel(Enchantments.FORTUNE, item));
                     state.getBlock().dropXpOnBlockBreak(world, new BlockPos(player.posX, player.posY, player.posZ), exp);
                 }
-                if (item.stackSize == 0) {
+                if (item.getCount() == 0) {
                     destroyItem(player, item, isMultiToolHolder, toolData, slotNum);
                     return true;
                 }
@@ -452,11 +455,11 @@ public class InteractBlockHook {
      */
     public static void destroyItem(EntityPlayer player, ItemStack item, boolean isInMultiTool, IInventory tools, int slotnum) {
         if (isInMultiTool) {
-            tools.setInventorySlotContents(slotnum, null);
+            tools.setInventorySlotContents(slotnum, ItemStack.EMPTY);
             MinecraftForge.EVENT_BUS.post(new PlayerDestroyItemEvent(player, item, EnumHand.MAIN_HAND));
         } else {
             net.minecraftforge.event.ForgeEventFactory.onPlayerDestroyItem(player, item, EnumHand.MAIN_HAND);
-            player.setHeldItem(EnumHand.MAIN_HAND, null);
+            player.setHeldItem(EnumHand.MAIN_HAND, ItemStack.EMPTY);
         }
     }
 
@@ -551,7 +554,6 @@ public class InteractBlockHook {
     private boolean checkBlock(ICDPlayerStatusHandler status, IBlockState target, IBlockState check, ItemStack heldItem) {
         if (check == null || check.getBlock() == Blocks.AIR) return false;
         if (status.isTreeMode()) {
-            String uniqueName = heldItem.getItem().getRegistryName().toString();
             if (status.isPrivateRegisterMode() && heldItem.hasCapability(CAPABILITY_CHAIN_DESTRUCTION_ITEM, null)) {
                 ICDItemStackStatusHandler itemStatus = CDItemStackStatus.get(heldItem);
                 return match(status.isTreeMode() ? itemStatus.getEnableLogBlocks() : itemStatus.getEnableBlocks(), check);
@@ -573,9 +575,9 @@ public class InteractBlockHook {
         if (status.isDigUnder()) {
             y = Math.max(Constants.MIN_Y, targetPos.getY() - maxDestroyedBlock);
         } else if (EnumFacing.UP != status.getFace()) {
-            y = Math.max(Constants.MIN_Y, MathHelper.floor_double(player.posY));
+            y = Math.max(Constants.MIN_Y, MathHelper.floor(player.posY));
         } else if (maxDestroyedBlock > 0){
-            y = Math.max(Constants.MIN_Y, MathHelper.floor_double(player.posY) - 1);
+            y = Math.max(Constants.MIN_Y, MathHelper.floor(player.posY) - 1);
         }
         return new BlockPos(
                 targetPos.getX() - maxDestroyedBlock,

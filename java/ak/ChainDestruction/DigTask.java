@@ -40,7 +40,7 @@ public class DigTask {
         if (blockToDestroySet.isEmpty()) return true;
         BlockPos first = blockToDestroySet.iterator().next();
         blockToDestroySet.remove(first);
-        World world = this.digger.worldObj;
+        World world = this.digger.getEntityWorld();
         world.playBroadcastSound(2001, first, Block.getStateId(world.getBlockState(first)));
         PacketHandler.INSTANCE.sendTo(new MessageDigSound(first), (EntityPlayerMP)digger);
         return InteractBlockHook.destroyBlockAtPosition(world, digger, first, heldItem);

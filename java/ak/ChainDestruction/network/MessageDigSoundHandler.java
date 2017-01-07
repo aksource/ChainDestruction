@@ -17,7 +17,7 @@ public class MessageDigSoundHandler implements IMessageHandler<MessageDigSound, 
     @Override
     public IMessage onMessage(MessageDigSound message, MessageContext ctx) {
         EntityPlayer player = ChainDestruction.proxy.getEntityPlayer();
-        World world = player.worldObj;
+        World world = player.getEntityWorld();
         BlockPos blockPos = message.getBlockPos();
         world.playBroadcastSound(2001, blockPos, Block.getStateId(world.getBlockState(blockPos)));
         return null;

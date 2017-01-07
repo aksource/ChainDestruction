@@ -17,6 +17,7 @@ import net.minecraft.block.state.BlockStateBase;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
+import net.minecraft.init.Items;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.text.TextComponentString;
 import net.minecraftforge.common.MinecraftForge;
@@ -44,11 +45,11 @@ import java.util.logging.Logger;
         acceptedMinecraftVersions = ChainDestruction.MOD_MC_VERSION)
 public class ChainDestruction {
 
-    public static final String MOD_ID = "ChainDestruction";
+    public static final String MOD_ID = "chaindestruction";
     public static final String MOD_NAME = "ChainDestruction";
     public static final String MOD_VERSION = "@VERSION@";
-    public static final String MOD_DEPENDENCIES = "required-after:Forge@[12.17.0,)";
-    public static final String MOD_MC_VERSION = "[1.9,1.10.99]";
+    public static final String MOD_DEPENDENCIES = "required-after:forge@[13.19.1,)";
+    public static final String MOD_MC_VERSION = "[1.11,1.19.99]";
     private static final Map<Block, Block> ALTERNATE_BLOCK_MAP = new HashMap<>();
     private static final Joiner AT_JOINER = Joiner.on('@');
     @SidedProxy(clientSide = "ak.ChainDestruction.ClientProxy", serverSide = "ak.ChainDestruction.CommonProxy")
@@ -79,7 +80,7 @@ public class ChainDestruction {
             block = ALTERNATE_BLOCK_MAP.get(block);
         }
         ItemStack itemStack = new ItemStack(block, 1, block.damageDropped(state));
-        if (itemStack.getItem() == null) return Collections.singletonList(makeString(state));
+        if (itemStack.getItem() == Items.AIR) return Collections.singletonList(makeString(state));
         int[] oreIDs = OreDictionary.getOreIDs(itemStack);
         if (oreIDs.length > 0) {
             List<String> oreNames = new ArrayList<>(oreIDs.length);
@@ -157,7 +158,7 @@ public class ChainDestruction {
             ICDPlayerStatusHandler status = CDPlayerStatus.get(player);
             String mode = status.isPrivateRegisterMode() ? "Private Register" : "Normal";
             String s = String.format("ChainDestruction Info Mode:%s, TreeMode:%b, Range:%d", mode, status.isTreeMode(), status.getMaxDestroyedBlock());
-            player.addChatMessage(new TextComponentString(s));
+            player.sendMessage(new TextComponentString(s));
         }
     }
 }

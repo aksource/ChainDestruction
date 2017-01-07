@@ -21,7 +21,7 @@ public class DigTaskEvent {
     @SuppressWarnings("unused")
     @SubscribeEvent
     public void digTaskTickEvent(TickEvent.PlayerTickEvent event) {
-        if (event.phase == TickEvent.Phase.END && !event.player.worldObj.isRemote) {
+        if (event.phase == TickEvent.Phase.END && !event.player.getEntityWorld().isRemote) {
             for (DigTask digTask : digTaskSet) {
                 if (digTask.increaseCount()) {
                     digTaskRemoveSet.add(digTask);
@@ -35,7 +35,7 @@ public class DigTaskEvent {
     @SuppressWarnings("unused")
     @SubscribeEvent
     public void deleteDigTaskOnDeath(LivingDeathEvent event) {
-        if (event.getEntityLiving() instanceof EntityPlayer && !((EntityPlayer) event.getEntityLiving()).worldObj.isRemote) {
+        if (event.getEntityLiving() instanceof EntityPlayer && !((EntityPlayer) event.getEntityLiving()).getEntityWorld().isRemote) {
             for (DigTask digTask : digTaskSet) {
                 if (digTask.getDigger() == event.getEntityLiving()) {
                     digTaskRemoveSet.add(digTask);
@@ -49,7 +49,7 @@ public class DigTaskEvent {
     @SuppressWarnings("unused")
     @SubscribeEvent
     public void deleteDigTaskOnLogOut(PlayerEvent.PlayerLoggedOutEvent event) {
-        if (!event.player.worldObj.isRemote) {
+        if (!event.player.getEntityWorld().isRemote) {
             for (DigTask digTask : digTaskSet) {
                 if (digTask.getDigger() == event.player) {
                     digTaskRemoveSet.add(digTask);

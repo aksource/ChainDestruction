@@ -20,12 +20,12 @@ import static ak.akapi.Constants.COMMAND_USAGE_RESET_PLAYER_STATUS;
  */
 public class CommandResetCDPlayerStatus extends CommandBase {
     @Override
-    public String getCommandName() {
+    public String getName() {
         return COMMAND_RESET_PLAYER_STATUS;
     }
 
     @Override
-    public String getCommandUsage(ICommandSender sender) {
+    public String getUsage(ICommandSender sender) {
         return COMMAND_USAGE_RESET_PLAYER_STATUS;
     }
 

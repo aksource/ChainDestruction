@@ -20,12 +20,12 @@ import static ak.akapi.Constants.COOMAND_USAGE_COPY_R_TO_L;
  */
 public class CommandCopyRtoLCDStatus extends CommandBase {
     @Override
-    public String getCommandName() {
+    public String getName() {
         return COMMAND_COPY_R_TO_L;
     }
 
     @Override
-    public String getCommandUsage(ICommandSender sender) {
+    public String getUsage(ICommandSender sender) {
         return COOMAND_USAGE_COPY_R_TO_L;
     }
 
@@ -37,7 +37,7 @@ public class CommandCopyRtoLCDStatus extends CommandBase {
             EntityPlayer entityPlayer = getCommandSenderAsPlayer(sender);
             itemMainHand = entityPlayer.getHeldItemMainhand();
             itemOffHand = entityPlayer.getHeldItemOffhand();
-            if (itemMainHand != null && itemOffHand != null
+            if (itemMainHand != ItemStack.EMPTY && itemOffHand != ItemStack.EMPTY
                     && itemMainHand.hasCapability(CAPABILITY_CHAIN_DESTRUCTION_ITEM, null)
                     && itemOffHand.hasCapability(CAPABILITY_CHAIN_DESTRUCTION_ITEM, null)) {
                 ICDItemStackStatusHandler copyFrom = itemMainHand.getCapability(CAPABILITY_CHAIN_DESTRUCTION_ITEM, null);
