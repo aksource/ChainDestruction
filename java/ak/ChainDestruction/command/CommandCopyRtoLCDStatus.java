@@ -37,7 +37,7 @@ public class CommandCopyRtoLCDStatus extends CommandBase {
             EntityPlayer entityPlayer = getCommandSenderAsPlayer(sender);
             itemMainHand = entityPlayer.getHeldItemMainhand();
             itemOffHand = entityPlayer.getHeldItemOffhand();
-            if (itemMainHand != ItemStack.EMPTY && itemOffHand != ItemStack.EMPTY
+            if (!itemMainHand.isEmpty() && !itemOffHand.isEmpty()
                     && itemMainHand.hasCapability(CAPABILITY_CHAIN_DESTRUCTION_ITEM, null)
                     && itemOffHand.hasCapability(CAPABILITY_CHAIN_DESTRUCTION_ITEM, null)) {
                 ICDItemStackStatusHandler copyFrom = itemMainHand.getCapability(CAPABILITY_CHAIN_DESTRUCTION_ITEM, null);
@@ -51,7 +51,7 @@ public class CommandCopyRtoLCDStatus extends CommandBase {
                     EntityPlayer entityPlayer = (EntityPlayer) entity;
                     itemMainHand = entityPlayer.getHeldItemMainhand();
                     itemOffHand = entityPlayer.getHeldItemOffhand();
-                    if (itemMainHand != null && itemOffHand != null
+                    if (!itemMainHand.isEmpty() && itemOffHand.isEmpty()
                             && itemMainHand.hasCapability(CAPABILITY_CHAIN_DESTRUCTION_ITEM, null)
                             && itemOffHand.hasCapability(CAPABILITY_CHAIN_DESTRUCTION_ITEM, null)) {
                         ICDItemStackStatusHandler copyFrom = itemMainHand.getCapability(CAPABILITY_CHAIN_DESTRUCTION_ITEM, null);

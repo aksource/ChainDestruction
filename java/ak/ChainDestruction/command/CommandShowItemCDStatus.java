@@ -36,7 +36,7 @@ public class CommandShowItemCDStatus extends CommandBase {
         if (args.length == 0) {
             EntityPlayer entityPlayer = getCommandSenderAsPlayer(sender);
             ItemStack itemMainHand = entityPlayer.getHeldItemMainhand();
-            if (itemMainHand != ItemStack.EMPTY && itemMainHand.hasCapability(CAPABILITY_CHAIN_DESTRUCTION_ITEM, null)) {
+            if (!itemMainHand.isEmpty() && itemMainHand.hasCapability(CAPABILITY_CHAIN_DESTRUCTION_ITEM, null)) {
                 ICDItemStackStatusHandler status = itemMainHand.getCapability(CAPABILITY_CHAIN_DESTRUCTION_ITEM, null);
                 String statusStr = CapabilityCDItemStackStatusHandler.makeItemsStatusToString(status);
                 entityPlayer.sendMessage(new TextComponentString(statusStr));
@@ -46,7 +46,7 @@ public class CommandShowItemCDStatus extends CommandBase {
                 Entity entity = getEntity(server, sender, username);
                 if (entity instanceof EntityPlayer && entity.hasCapability(CAPABILITY_CHAIN_DESTRUCTION_PLAYER, null)) {
                     ItemStack itemMainHand = ((EntityPlayer) entity).getHeldItemMainhand();
-                    if (itemMainHand != ItemStack.EMPTY && itemMainHand.hasCapability(CAPABILITY_CHAIN_DESTRUCTION_ITEM, null)) {
+                    if (!itemMainHand.isEmpty() && itemMainHand.hasCapability(CAPABILITY_CHAIN_DESTRUCTION_ITEM, null)) {
                         ICDItemStackStatusHandler status = itemMainHand.getCapability(CAPABILITY_CHAIN_DESTRUCTION_ITEM, null);
                         String statusStr = CapabilityCDItemStackStatusHandler.makeItemsStatusToString(status);
                         entity.sendMessage(new TextComponentString(statusStr));

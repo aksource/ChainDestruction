@@ -127,7 +127,7 @@ public class InteractBlockHook {
         ICDPlayerStatusHandler status = CDPlayerStatus.get(player);
         World world = player.getEntityWorld();
         ItemStack itemStack = player.getHeldItemMainhand();
-        if (world.isRemote || itemStack == ItemStack.EMPTY) return;
+        if (world.isRemote || itemStack.isEmpty()) return;
         String uniqueName = itemStack.getItem().getRegistryName().toString();
         if (status.getEnableItems().contains(uniqueName)) {
             IBlockState state = world.getBlockState(event.getPos());
@@ -150,7 +150,7 @@ public class InteractBlockHook {
         Set<String> enableItems = status.getEnableItems();
         World world = player.getEntityWorld();
         ItemStack itemStack = player.getHeldItemMainhand();
-        if (world.isRemote || itemStack == ItemStack.EMPTY) return;
+        if (world.isRemote || itemStack.isEmpty()) return;
         String uniqueName = itemStack.getItem().getRegistryName().toString();
         if (enableItems.contains(uniqueName)) {
             IBlockState state = world.getBlockState(event.getPos());
@@ -169,7 +169,7 @@ public class InteractBlockHook {
      */
     private boolean checkBlockValidate(EntityPlayer player, IBlockState state, ItemStack heldItem) {
         ICDPlayerStatusHandler status = CDPlayerStatus.get(player);
-        if (state == null || heldItem == ItemStack.EMPTY) {
+        if (state == null || heldItem.isEmpty()) {
             return false;
         }
 //        String uniqueName = heldItem.getItem().getRegistryName().toString();
@@ -303,7 +303,7 @@ public class InteractBlockHook {
     @SubscribeEvent
     @SuppressWarnings("unused")
     public void onAttachingItemStack(AttachCapabilitiesEvent.Item event) {
-        if (event.getItemStack() != ItemStack.EMPTY) {
+        if (!event.getItemStack().isEmpty()) {
             event.addCapability(CD_ITEM_STATUS, new CDItemStackStatus());
         }
     }
@@ -394,7 +394,7 @@ public class InteractBlockHook {
             toolData = ((ItemMultiToolHolder) item.getItem()).getInventoryFromItemStack(item);
             slotNum = ItemMultiToolHolder.getSlotNumFromItemStack(item);
             item = toolData.getStackInSlot(slotNum);
-            if (item == ItemStack.EMPTY) {
+            if (item.isEmpty()) {
                 return true;
             }
             isMultiToolHolder = true;
