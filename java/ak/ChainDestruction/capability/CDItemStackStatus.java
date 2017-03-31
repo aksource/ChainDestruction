@@ -1,6 +1,8 @@
 package ak.ChainDestruction.capability;
 
+import ak.ChainDestruction.ChainDestruction;
 import com.google.common.collect.Sets;
+import net.minecraft.init.Blocks;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
@@ -10,6 +12,7 @@ import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ICapabilitySerializable;
 import net.minecraftforge.common.util.Constants;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Set;
 
@@ -24,8 +27,16 @@ public class CDItemStackStatus implements ICDItemStackStatusHandler, ICapability
     public static final String NBT_STATUS_ENABLE_LOG_BLOCKS = "cd:enableLogBlocks";
     public Set<String> enableBlocks = Sets.newHashSet();
     public Set<String> enableLogBlocks = Sets.newHashSet();
+    private final ItemStack itemStack;
 
-    public static ICDItemStackStatusHandler get(ItemStack itemStack) {
+    CDItemStackStatus() {
+        this.itemStack = new ItemStack(Blocks.AIR, 1, 0);
+    }
+    CDItemStackStatus(ItemStack itemStack) {
+        this.itemStack = itemStack;
+    }
+
+    public static ICDItemStackStatusHandler get(@Nonnull ItemStack itemStack) {
         return itemStack.getCapability(CAPABILITY_CHAIN_DESTRUCTION_ITEM, null);
     }
 
@@ -51,12 +62,13 @@ public class CDItemStackStatus implements ICDItemStackStatusHandler, ICapability
 
     @Override
     public boolean hasCapability(Capability<?> capability, @Nullable EnumFacing facing) {
-        return capability == CAPABILITY_CHAIN_DESTRUCTION_ITEM;
+        return !ChainDestruction.excludeItemPredicate.test(this.itemStack.getItem().getRegistryName()) &&
+                capability == CAPABILITY_CHAIN_DESTRUCTION_ITEM;
     }
 
     @Override
     public <T> T getCapability(Capability<T> capability, @Nullable EnumFacing facing) {
-        return capability == CAPABILITY_CHAIN_DESTRUCTION_ITEM ? CAPABILITY_CHAIN_DESTRUCTION_ITEM.cast(this) : null;
+        return hasCapability(capability, facing) ? CAPABILITY_CHAIN_DESTRUCTION_ITEM.cast(this) : null;
     }
 
     @Override
@@ -64,10 +76,14 @@ public class CDItemStackStatus implements ICDItemStackStatusHandler, ICapability
         NBTTagCompound nbt = new NBTTagCompound();
         NBTTagList nbtTagListEnableBlocks = new NBTTagList();
         enableBlocks.forEach(blockStr -> nbtTagListEnableBlocks.appendTag(new NBTTagString(blockStr)));
-        nbt.setTag(NBT_STATUS_ENABLE_BLOCKS, nbtTagListEnableBlocks);
+        if (nbtTagListEnableBlocks.tagCount() > 0) {
+            nbt.setTag(NBT_STATUS_ENABLE_BLOCKS, nbtTagListEnableBlocks);
+        }
         NBTTagList nbtTagListEnableLogBlocks = new NBTTagList();
         enableLogBlocks.forEach(blockStr -> nbtTagListEnableLogBlocks.appendTag(new NBTTagString(blockStr)));
-        nbt.setTag(NBT_STATUS_ENABLE_LOG_BLOCKS, nbtTagListEnableLogBlocks);
+        if (nbtTagListEnableLogBlocks.tagCount() > 0) {
+            nbt.setTag(NBT_STATUS_ENABLE_LOG_BLOCKS, nbtTagListEnableLogBlocks);
+        }
         return nbt;
     }
 

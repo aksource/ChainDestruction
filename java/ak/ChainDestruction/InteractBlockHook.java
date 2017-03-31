@@ -29,18 +29,18 @@ import net.minecraft.util.text.TextComponentString;
 import net.minecraft.world.World;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.util.FakePlayer;
-import net.minecraftforge.event.AttachCapabilitiesEvent;
 import net.minecraftforge.event.entity.player.PlayerDestroyItemEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.world.BlockEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 
-import java.util.*;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
 
 import static ak.ChainDestruction.capability.CapabilityCDItemStackStatusHandler.CAPABILITY_CHAIN_DESTRUCTION_ITEM;
-import static ak.ChainDestruction.capability.CapabilityCDItemStackStatusHandler.CD_ITEM_STATUS;
 import static ak.ChainDestruction.capability.CapabilityCDPlayerStatusHandler.CAPABILITY_CHAIN_DESTRUCTION_PLAYER;
-import static ak.ChainDestruction.capability.CapabilityCDPlayerStatusHandler.CD_STATUS;
 
 public class InteractBlockHook {
     /**
@@ -134,7 +134,6 @@ public class InteractBlockHook {
                 addAndRemoveBlocks(enableBlocks, player, state);
             } else {
                 addAndRemoveBlocks(status.isTreeMode() ? status.getEnableLogBlocks() : status.getEnableBlocks(), player, state);
-
             }
         }
     }
@@ -278,30 +277,6 @@ public class InteractBlockHook {
             if (isChainDestructionActionable(event.getPlayer(), event.getState(), event.getPlayer().getHeldItemMainhand())) {
                 setup(event.getState(), event.getPlayer(), event.getWorld(), event.getPos());
             }
-        }
-    }
-
-    /**
-     * Capabilityの登録
-     * @param event AttachCapabilitiesEvent.Entity
-     */
-    @SubscribeEvent
-    @SuppressWarnings("unused")
-    public void onAttachingEntity(AttachCapabilitiesEvent.Entity event) {
-        if (event.getEntity() instanceof EntityPlayer) {
-            event.addCapability(CD_STATUS, new CDPlayerStatus());
-        }
-    }
-
-    /**
-     * Capabilityの登録
-     * @param event AttachCapabilitiesEvent.Item
-     */
-    @SubscribeEvent
-    @SuppressWarnings("unused")
-    public void onAttachingItemStack(AttachCapabilitiesEvent.Item event) {
-        if (event.getItemStack() != null) {
-            event.addCapability(CD_ITEM_STATUS, new CDItemStackStatus());
         }
     }
 

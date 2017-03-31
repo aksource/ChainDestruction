@@ -58,7 +58,7 @@ public class CapabilityCDItemStackStatusHandler {
                     instance.setEnableLogBlocks(enableLogBlocks);
                 }
             }
-        }, () -> new CDItemStackStatus());
+        }, CDItemStackStatus::new);
     }
 
     /**
