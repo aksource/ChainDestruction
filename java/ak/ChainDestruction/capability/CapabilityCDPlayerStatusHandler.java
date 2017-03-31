@@ -78,7 +78,7 @@ public class CapabilityCDPlayerStatusHandler {
                     instance.setEnableLogBlocks(enableLogBlocks);
                 }
             }
-        }, () -> new CDPlayerStatus());
+        }, CDPlayerStatus::new);
     }
 
     /**

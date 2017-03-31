@@ -11,7 +11,7 @@ import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.InputEvent;
 
 /**
- * クライアント側のマウス・キーb−どイベントクラス
+ * クライアント側のマウス・キーボードイベントクラス
  * Created by A.K. on 14/08/01.
  */
 public class ClientEvent {

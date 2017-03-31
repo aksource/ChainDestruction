@@ -5,7 +5,7 @@ import net.minecraft.util.EnumFacing;
 import java.util.Set;
 
 /**
- * EntityPlyaerに保持する連鎖破壊用ステータスのインターフェース
+ * EntityPlayerに保持する連鎖破壊用ステータスのインターフェース
  * Created by A.K. on 2016/09/19.
  */
 public interface ICDPlayerStatusHandler {

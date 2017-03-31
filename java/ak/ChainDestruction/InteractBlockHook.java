@@ -29,7 +29,6 @@ import net.minecraft.util.text.TextComponentString;
 import net.minecraft.world.World;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.util.FakePlayer;
-import net.minecraftforge.event.AttachCapabilitiesEvent;
 import net.minecraftforge.event.entity.player.PlayerDestroyItemEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.world.BlockEvent;
@@ -41,9 +40,7 @@ import java.util.List;
 import java.util.Set;
 
 import static ak.ChainDestruction.capability.CapabilityCDItemStackStatusHandler.CAPABILITY_CHAIN_DESTRUCTION_ITEM;
-import static ak.ChainDestruction.capability.CapabilityCDItemStackStatusHandler.CD_ITEM_STATUS;
 import static ak.ChainDestruction.capability.CapabilityCDPlayerStatusHandler.CAPABILITY_CHAIN_DESTRUCTION_PLAYER;
-import static ak.ChainDestruction.capability.CapabilityCDPlayerStatusHandler.CD_STATUS;
 
 public class InteractBlockHook {
     /**
@@ -284,30 +281,6 @@ public class InteractBlockHook {
         }
     }
 
-    /**
-     * Capabilityの登録
-     * @param event AttachCapabilitiesEvent.Entity
-     */
-    @SubscribeEvent
-    @SuppressWarnings("unused")
-    public void onAttachingEntity(AttachCapabilitiesEvent.Entity event) {
-        if (event.getEntity() instanceof EntityPlayer) {
-            event.addCapability(CD_STATUS, new CDPlayerStatus());
-        }
-    }
-
-    /**
-     * Capabilityの登録
-     * @param event AttachCapabilitiesEvent.Item
-     */
-    @SubscribeEvent
-    @SuppressWarnings("unused")
-    public void onAttachingItemStack(AttachCapabilitiesEvent.Item event) {
-        if (!event.getItemStack().isEmpty()) {
-            event.addCapability(CD_ITEM_STATUS, new CDItemStackStatus());
-        }
-    }
-
     @SubscribeEvent
     @SuppressWarnings("unused")
     //Dimension移動時や、リスポーン時に呼ばれるイベント。古いインスタンスと新しいインスタンスの両方を参照できる。
@@ -345,37 +318,6 @@ public class InteractBlockHook {
             ChainDestruction.digTaskEvent.digTaskSet.add(new DigTask(player, player.getHeldItemMainhand(), connectedBlockSet, blockPos));
         }
     }
-
-//    /**
-//     * ドロップアイテムがスポーンした際に呼ばれる処理。
-//     * @param event EntityJoinWorldEvent
-//     */
-//    @SuppressWarnings("unused")
-////    @SubscribeEvent
-//    public void entityItemJoin(EntityJoinWorldEvent event) {
-//        if (event.entity instanceof EntityItem && doChain && isEntityItemInRange((EntityItem)event.entity)) {
-//            dropItemSet.add((EntityItem)event.entity);
-//        }
-//    }
-//
-//    private boolean isEntityItemInRange(EntityItem entityItem) {
-//        return dropRangeX.contains(entityItem.posX) && dropRangeY.contains(entityItem.posY) && dropRangeZ.contains(entityItem.posZ);
-//    }
-
-    /*ドロップアイテムをプレイヤーのそばに持ってきて拾わせる*/
-//    private void getFirstDestroyedBlock(World world, EntityPlayer player) {
-//        if (dropItemSet.isEmpty()) return;
-//        double d0, d1, d2;
-//        float f1 = player.rotationYaw * (float)(2 * Math.PI / 360);
-//        for (EntityItem eItem : dropItemSet) {
-//            eItem.setNoPickupDelay();
-//            d0 = player.posX - MathHelper.sin(f1) * 0.5D;
-//            d1 = player.posY + 0.5D;
-//            d2 = player.posZ + MathHelper.cos(f1) * 0.5D;
-//            eItem.setPosition(d0, d1, d2);
-//        }
-//        dropItemSet.clear();
-//    }
 
     /**
      * 指定座標のブロックを破壊する処理
