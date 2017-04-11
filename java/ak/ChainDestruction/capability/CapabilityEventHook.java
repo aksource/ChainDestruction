@@ -34,7 +34,7 @@ public class CapabilityEventHook {
     @SuppressWarnings("unused")
     public void onAttachingItemStack(AttachCapabilitiesEvent.Item event) {
         if (event.getItemStack() != null
-                && !ChainDestruction.excludeItemPredicate.test(event.getItem().getRegistryName())) {
+                && !ChainDestruction.excludeItemPredicate.test(event.getItemStack().getItem().getRegistryName())) {
             event.addCapability(CD_ITEM_STATUS, new CDItemStackStatus(event.getItemStack()));
         }
     }
