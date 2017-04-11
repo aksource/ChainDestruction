@@ -26,7 +26,10 @@ import net.minecraftforge.fml.common.Loader;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
 import net.minecraftforge.fml.common.SidedProxy;
-import net.minecraftforge.fml.common.event.*;
+import net.minecraftforge.fml.common.event.FMLInitializationEvent;
+import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
+import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
+import net.minecraftforge.fml.common.event.FMLServerStartingEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.oredict.OreDictionary;
 
@@ -110,12 +113,6 @@ public class ChainDestruction {
 
     @SuppressWarnings("unused")
     @Mod.EventHandler
-    public void construction(FMLConstructionEvent event) {
-        MinecraftForge.EVENT_BUS.register(new CapabilityEventHook());
-    }
-
-    @SuppressWarnings("unused")
-    @Mod.EventHandler
     public void preInit(FMLPreInitializationEvent event) {
         config = new Configuration(event.getSuggestedConfigurationFile());
         config.load();
@@ -143,6 +140,7 @@ public class ChainDestruction {
         PacketHandler.init();
         CapabilityCDPlayerStatusHandler.register();
         CapabilityCDItemStackStatusHandler.register();
+        MinecraftForge.EVENT_BUS.register(new CapabilityEventHook());
     }
 
     @SuppressWarnings("unused")
