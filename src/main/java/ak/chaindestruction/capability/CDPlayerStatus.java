@@ -1,4 +1,4 @@
-package ak.ChainDestruction.capability;
+package ak.chaindestruction.capability;
 
 import com.google.common.collect.Sets;
 import net.minecraft.entity.player.EntityPlayer;

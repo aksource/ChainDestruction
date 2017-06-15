@@ -1,4 +1,4 @@
-package ak.ChainDestruction.network;
+package ak.chaindestruction.network;
 
 import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
 import io.netty.buffer.ByteBuf;

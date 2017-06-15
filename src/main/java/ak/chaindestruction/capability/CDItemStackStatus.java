@@ -1,6 +1,6 @@
-package ak.ChainDestruction.capability;
+package ak.chaindestruction.capability;
 
-import ak.ChainDestruction.ChainDestruction;
+import ak.chaindestruction.ChainDestruction;
 import com.google.common.collect.Sets;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
@@ -15,7 +15,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Set;
 
-import static ak.ChainDestruction.capability.CapabilityCDItemStackStatusHandler.CAPABILITY_CHAIN_DESTRUCTION_ITEM;
+import static ak.chaindestruction.capability.CapabilityCDItemStackStatusHandler.CAPABILITY_CHAIN_DESTRUCTION_ITEM;
 
 /**
  * ItemStack用連鎖破壊ステータス実装クラス

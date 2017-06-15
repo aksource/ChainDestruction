@@ -1,12 +1,12 @@
-package ak.ChainDestruction.capability;
+package ak.chaindestruction.capability;
 
-import ak.ChainDestruction.ChainDestruction;
+import ak.chaindestruction.ChainDestruction;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraftforge.event.AttachCapabilitiesEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 
-import static ak.ChainDestruction.capability.CapabilityCDItemStackStatusHandler.CD_ITEM_STATUS;
-import static ak.ChainDestruction.capability.CapabilityCDPlayerStatusHandler.CD_STATUS;
+import static ak.chaindestruction.capability.CapabilityCDItemStackStatusHandler.CD_ITEM_STATUS;
+import static ak.chaindestruction.capability.CapabilityCDPlayerStatusHandler.CD_STATUS;
 
 /**
  * Capability周りのイベントクラス

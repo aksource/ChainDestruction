@@ -1,11 +1,11 @@
-package ak.ChainDestruction;
+package ak.chaindestruction;
 
-import ak.ChainDestruction.capability.*;
-import ak.ChainDestruction.command.CommandCopyRtoLCDStatus;
-import ak.ChainDestruction.command.CommandResetCDPlayerStatus;
-import ak.ChainDestruction.command.CommandShowItemCDStatus;
-import ak.ChainDestruction.command.CommandShowPlayerCDStatus;
-import ak.ChainDestruction.network.PacketHandler;
+import ak.chaindestruction.capability.*;
+import ak.chaindestruction.command.CommandCopyRtoLCDStatus;
+import ak.chaindestruction.command.CommandResetCDPlayerStatus;
+import ak.chaindestruction.command.CommandShowItemCDStatus;
+import ak.chaindestruction.command.CommandShowPlayerCDStatus;
+import ak.chaindestruction.network.PacketHandler;
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Iterables;

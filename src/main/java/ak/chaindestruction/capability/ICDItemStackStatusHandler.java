@@ -1,4 +1,4 @@
-package ak.ChainDestruction.capability;
+package ak.chaindestruction.capability;
 
 import java.util.Set;
 

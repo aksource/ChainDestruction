@@ -1,6 +1,6 @@
-package ak.ChainDestruction.network;
+package ak.chaindestruction.network;
 
-import ak.ChainDestruction.ChainDestruction;
+import ak.chaindestruction.ChainDestruction;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
 import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;

@@ -1,14 +1,14 @@
-package ak.ChainDestruction.network;
+package ak.chaindestruction.network;
 
-import ak.ChainDestruction.capability.CDPlayerStatus;
-import ak.ChainDestruction.capability.ICDPlayerStatusHandler;
+import ak.chaindestruction.capability.CDPlayerStatus;
+import ak.chaindestruction.capability.ICDPlayerStatusHandler;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraftforge.fml.common.network.ByteBufUtils;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
 
-import static ak.ChainDestruction.capability.CapabilityCDPlayerStatusHandler.CAPABILITY_CHAIN_DESTRUCTION_PLAYER;
+import static ak.chaindestruction.capability.CapabilityCDPlayerStatusHandler.CAPABILITY_CHAIN_DESTRUCTION_PLAYER;
 
 /**
  * 連鎖は海洋メッセージクラス

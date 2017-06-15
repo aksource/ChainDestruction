@@ -1,7 +1,7 @@
-package ak.ChainDestruction;
+package ak.chaindestruction;
 
-import ak.ChainDestruction.network.MessageDigSound;
-import ak.ChainDestruction.network.PacketHandler;
+import ak.chaindestruction.network.MessageDigSound;
+import ak.chaindestruction.network.PacketHandler;
 import net.minecraft.block.Block;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;

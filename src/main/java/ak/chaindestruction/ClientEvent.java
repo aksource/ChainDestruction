@@ -1,8 +1,8 @@
-package ak.ChainDestruction;
+package ak.chaindestruction;
 
-import ak.ChainDestruction.network.MessageKeyPressed;
-import ak.ChainDestruction.network.MessageMousePressed;
-import ak.ChainDestruction.network.PacketHandler;
+import ak.chaindestruction.network.MessageKeyPressed;
+import ak.chaindestruction.network.MessageMousePressed;
+import ak.chaindestruction.network.PacketHandler;
 import ak.akapi.Constants;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayer;

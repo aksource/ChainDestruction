@@ -1,12 +1,12 @@
-package ak.ChainDestruction;
+package ak.chaindestruction;
 
-import ak.ChainDestruction.capability.CDItemStackStatus;
-import ak.ChainDestruction.capability.CDPlayerStatus;
-import ak.ChainDestruction.capability.ICDItemStackStatusHandler;
-import ak.ChainDestruction.capability.ICDPlayerStatusHandler;
-import ak.ChainDestruction.network.MessageCDStatusProperties;
-import ak.ChainDestruction.network.PacketHandler;
-import ak.MultiToolHolders.ItemMultiToolHolder;
+import ak.chaindestruction.capability.CDItemStackStatus;
+import ak.chaindestruction.capability.CDPlayerStatus;
+import ak.chaindestruction.capability.ICDItemStackStatusHandler;
+import ak.chaindestruction.capability.ICDPlayerStatusHandler;
+import ak.chaindestruction.network.MessageCDStatusProperties;
+import ak.chaindestruction.network.PacketHandler;
+import ak.multitoolholders.ItemMultiToolHolder;
 import ak.akapi.Constants;
 import com.google.common.collect.Sets;
 import net.minecraft.block.Block;
@@ -39,8 +39,8 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-import static ak.ChainDestruction.capability.CapabilityCDItemStackStatusHandler.CAPABILITY_CHAIN_DESTRUCTION_ITEM;
-import static ak.ChainDestruction.capability.CapabilityCDPlayerStatusHandler.CAPABILITY_CHAIN_DESTRUCTION_PLAYER;
+import static ak.chaindestruction.capability.CapabilityCDItemStackStatusHandler.CAPABILITY_CHAIN_DESTRUCTION_ITEM;
+import static ak.chaindestruction.capability.CapabilityCDPlayerStatusHandler.CAPABILITY_CHAIN_DESTRUCTION_PLAYER;
 
 public class InteractBlockHook {
     /**

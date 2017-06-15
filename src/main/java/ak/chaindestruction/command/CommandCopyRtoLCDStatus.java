@@ -1,7 +1,7 @@
-package ak.ChainDestruction.command;
+package ak.chaindestruction.command;
 
-import ak.ChainDestruction.capability.CapabilityCDItemStackStatusHandler;
-import ak.ChainDestruction.capability.ICDItemStackStatusHandler;
+import ak.chaindestruction.capability.CapabilityCDItemStackStatusHandler;
+import ak.chaindestruction.capability.ICDItemStackStatusHandler;
 import net.minecraft.command.CommandBase;
 import net.minecraft.command.CommandException;
 import net.minecraft.command.ICommandSender;
@@ -10,7 +10,7 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.MinecraftServer;
 
-import static ak.ChainDestruction.capability.CapabilityCDItemStackStatusHandler.CAPABILITY_CHAIN_DESTRUCTION_ITEM;
+import static ak.chaindestruction.capability.CapabilityCDItemStackStatusHandler.CAPABILITY_CHAIN_DESTRUCTION_ITEM;
 import static ak.akapi.Constants.COMMAND_COPY_R_TO_L;
 import static ak.akapi.Constants.COOMAND_USAGE_COPY_R_TO_L;
 

@@ -1,4 +1,4 @@
-package ak.ChainDestruction;
+package ak.chaindestruction;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.settings.KeyBinding;

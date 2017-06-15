@@ -1,8 +1,8 @@
-package ak.ChainDestruction.command;
+package ak.chaindestruction.command;
 
-import ak.ChainDestruction.capability.CDPlayerStatus;
-import ak.ChainDestruction.capability.CapabilityCDPlayerStatusHandler;
-import ak.ChainDestruction.capability.ICDPlayerStatusHandler;
+import ak.chaindestruction.capability.CDPlayerStatus;
+import ak.chaindestruction.capability.CapabilityCDPlayerStatusHandler;
+import ak.chaindestruction.capability.ICDPlayerStatusHandler;
 import net.minecraft.command.CommandBase;
 import net.minecraft.command.CommandException;
 import net.minecraft.command.ICommandSender;
@@ -10,7 +10,7 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.server.MinecraftServer;
 
-import static ak.ChainDestruction.capability.CapabilityCDPlayerStatusHandler.CAPABILITY_CHAIN_DESTRUCTION_PLAYER;
+import static ak.chaindestruction.capability.CapabilityCDPlayerStatusHandler.CAPABILITY_CHAIN_DESTRUCTION_PLAYER;
 import static ak.akapi.Constants.COMMAND_RESET_PLAYER_STATUS;
 import static ak.akapi.Constants.COMMAND_USAGE_RESET_PLAYER_STATUS;
 

@@ -1,6 +1,6 @@
-package ak.ChainDestruction.capability;
+package ak.chaindestruction.capability;
 
-import ak.ChainDestruction.ChainDestruction;
+import ak.chaindestruction.ChainDestruction;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Sets;
 import net.minecraft.nbt.NBTBase;

@@ -1,6 +1,6 @@
-package ak.ChainDestruction.capability;
+package ak.chaindestruction.capability;
 
-import ak.ChainDestruction.ChainDestruction;
+import ak.chaindestruction.ChainDestruction;
 import com.google.common.collect.Sets;
 import net.minecraft.nbt.NBTBase;
 import net.minecraft.nbt.NBTTagCompound;
@@ -15,7 +15,7 @@ import net.minecraftforge.common.util.Constants;
 
 import java.util.Set;
 
-import static ak.ChainDestruction.capability.CapabilityCDPlayerStatusHandler.COMMA_JOINER;
+import static ak.chaindestruction.capability.CapabilityCDPlayerStatusHandler.COMMA_JOINER;
 
 /**
  * 連鎖破壊ItemStackステータスハンドリングクラス

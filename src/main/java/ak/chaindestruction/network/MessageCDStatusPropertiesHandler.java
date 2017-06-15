@@ -1,13 +1,13 @@
-package ak.ChainDestruction.network;
+package ak.chaindestruction.network;
 
-import ak.ChainDestruction.capability.CDPlayerStatus;
-import ak.ChainDestruction.ChainDestruction;
-import ak.ChainDestruction.capability.ICDPlayerStatusHandler;
+import ak.chaindestruction.capability.CDPlayerStatus;
+import ak.chaindestruction.ChainDestruction;
+import ak.chaindestruction.capability.ICDPlayerStatusHandler;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
 import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
 
-import static ak.ChainDestruction.capability.CapabilityCDPlayerStatusHandler.CAPABILITY_CHAIN_DESTRUCTION_PLAYER;
+import static ak.chaindestruction.capability.CapabilityCDPlayerStatusHandler.CAPABILITY_CHAIN_DESTRUCTION_PLAYER;
 
 /**
  * 連鎖破壊ステータスハンドラクラス

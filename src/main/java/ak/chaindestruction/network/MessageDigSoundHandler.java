@@ -1,6 +1,6 @@
-package ak.ChainDestruction.network;
+package ak.chaindestruction.network;
 
-import ak.ChainDestruction.ChainDestruction;
+import ak.chaindestruction.ChainDestruction;
 import net.minecraft.block.Block;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.math.BlockPos;
