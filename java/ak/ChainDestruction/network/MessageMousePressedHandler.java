@@ -15,7 +15,7 @@ public class MessageMousePressedHandler implements IMessageHandler<MessageMouseP
     @Override
     public IMessage onMessage(MessageMousePressed message, MessageContext ctx) {
         EntityPlayer player = ctx.getServerHandler().playerEntity;
-        if (player != null && player.getHeldItemMainhand() != null) {
+        if (player != null && !player.getHeldItemMainhand().isEmpty()) {
             ItemStack equippedItem = player.getHeldItemMainhand();
             ChainDestruction.interactblockhook.doMouseEvent(equippedItem, player, message.getMouseIndex(), message.isFocusObject());
         }
