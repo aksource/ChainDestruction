@@ -13,8 +13,8 @@ import net.minecraft.entity.player.EntityPlayer;
 public class MessageKeyPressedHandler implements IMessageHandler<MessageKeyPressed, IMessage> {
     @Override
     public IMessage onMessage(MessageKeyPressed message, MessageContext ctx) {
-        if (ctx.getServerHandler().playerEntity != null) {
-            EntityPlayer player = ctx.getServerHandler().playerEntity;
+        if (ctx.getServerHandler().player != null) {
+            EntityPlayer player = ctx.getServerHandler().player;
             ChainDestruction.interactblockhook.doKeyEvent(player.getHeldItemMainhand(), player, message.key);
         }
         return null;

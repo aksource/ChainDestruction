@@ -1,6 +1,7 @@
 package ak.chaindestruction.capability;
 
 import ak.chaindestruction.ChainDestruction;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraftforge.event.AttachCapabilitiesEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
@@ -20,8 +21,8 @@ public class CapabilityEventHook {
      */
     @SubscribeEvent
     @SuppressWarnings("unused")
-    public void onAttachingEntity(AttachCapabilitiesEvent.Entity event) {
-        if (event.getEntity() instanceof EntityPlayer) {
+    public void onAttachingEntity(AttachCapabilitiesEvent<Entity> event) {
+        if (event.getObject() instanceof EntityPlayer) {
             event.addCapability(CD_STATUS, new CDPlayerStatus());
         }
     }

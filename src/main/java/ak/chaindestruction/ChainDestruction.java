@@ -52,7 +52,7 @@ public class ChainDestruction {
     public static final String MOD_MC_VERSION = "[1.11,1.19.99]";
     private static final Map<Block, Block> ALTERNATE_BLOCK_MAP = new HashMap<>();
     private static final Joiner AT_JOINER = Joiner.on('@');
-    @SidedProxy(clientSide = "ak.ChainDestruction.ClientProxy", serverSide = "ak.ChainDestruction.CommonProxy")
+    @SidedProxy(clientSide = "ak.chaindestruction.ClientProxy", serverSide = "ak.chaindestruction.CommonProxy")
     public static CommonProxy proxy;
     @SuppressWarnings("unused")
     public static Logger logger = Logger.getLogger(MOD_ID);

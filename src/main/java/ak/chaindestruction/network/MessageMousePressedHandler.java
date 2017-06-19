@@ -14,8 +14,8 @@ import net.minecraft.item.ItemStack;
 public class MessageMousePressedHandler implements IMessageHandler<MessageMousePressed, IMessage> {
     @Override
     public IMessage onMessage(MessageMousePressed message, MessageContext ctx) {
-        EntityPlayer player = ctx.getServerHandler().playerEntity;
-        if (player != null && player.getHeldItemMainhand() != null) {
+        EntityPlayer player = ctx.getServerHandler().player;
+        if (player != null && !player.getHeldItemMainhand().isEmpty()) {
             ItemStack equippedItem = player.getHeldItemMainhand();
             ChainDestruction.interactblockhook.doMouseEvent(equippedItem, player, message.getMouseIndex(), message.isFocusObject());
         }
