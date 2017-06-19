@@ -1,7 +1,7 @@
-package ak.ChainDestruction.command;
+package ak.chaindestruction.command;
 
-import ak.ChainDestruction.capability.CapabilityCDItemStackStatusHandler;
-import ak.ChainDestruction.capability.ICDItemStackStatusHandler;
+import ak.chaindestruction.capability.CapabilityCDItemStackStatusHandler;
+import ak.chaindestruction.capability.ICDItemStackStatusHandler;
 import net.minecraft.command.CommandBase;
 import net.minecraft.command.CommandException;
 import net.minecraft.command.ICommandSender;
@@ -11,8 +11,8 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.text.TextComponentString;
 
-import static ak.ChainDestruction.capability.CapabilityCDItemStackStatusHandler.CAPABILITY_CHAIN_DESTRUCTION_ITEM;
-import static ak.ChainDestruction.capability.CapabilityCDPlayerStatusHandler.CAPABILITY_CHAIN_DESTRUCTION_PLAYER;
+import static ak.chaindestruction.capability.CapabilityCDItemStackStatusHandler.CAPABILITY_CHAIN_DESTRUCTION_ITEM;
+import static ak.chaindestruction.capability.CapabilityCDPlayerStatusHandler.CAPABILITY_CHAIN_DESTRUCTION_PLAYER;
 import static ak.akapi.Constants.COMMAND_SHOW_ITEM_CD_STATUS;
 import static ak.akapi.Constants.COMMAND_USAGE_SHOW_ITEMSTATUS;
 

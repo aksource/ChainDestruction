@@ -1,4 +1,4 @@
-package ak.ChainDestruction.capability;
+package ak.chaindestruction.capability;
 
 import net.minecraft.util.EnumFacing;
 
