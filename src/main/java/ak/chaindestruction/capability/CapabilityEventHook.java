@@ -3,6 +3,7 @@ package ak.chaindestruction.capability;
 import ak.chaindestruction.ChainDestruction;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.item.ItemStack;
 import net.minecraftforge.event.AttachCapabilitiesEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 
@@ -33,9 +34,9 @@ public class CapabilityEventHook {
      */
     @SubscribeEvent
     @SuppressWarnings("unused")
-    public void onAttachingItemStack(AttachCapabilitiesEvent.Item event) {
-        if (!event.getItemStack().isEmpty()
-                && !ChainDestruction.excludeItemPredicate.test(event.getItemStack().getItem().getRegistryName())) {
+    public void onAttachingItemStack(AttachCapabilitiesEvent<ItemStack> event) {
+        if (!event.getObject().isEmpty()
+                && !ChainDestruction.excludeItemPredicate.test(event.getObject().getItem().getRegistryName())) {
             event.addCapability(CD_ITEM_STATUS, new CDItemStackStatus());
         }
     }
