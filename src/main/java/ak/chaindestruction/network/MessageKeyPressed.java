@@ -1,7 +1,7 @@
 package ak.chaindestruction.network;
 
-import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
 import io.netty.buffer.ByteBuf;
+import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
 
 /**
  * キー押下用メッセージクラス
@@ -11,6 +11,7 @@ public class MessageKeyPressed implements IMessage {
 
     public byte key;
 
+    @SuppressWarnings("unused")
     public MessageKeyPressed() {
     }
 

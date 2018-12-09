@@ -11,13 +11,14 @@ import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
 import static ak.chaindestruction.capability.CapabilityCDPlayerStatusHandler.CAPABILITY_CHAIN_DESTRUCTION_PLAYER;
 
 /**
- * 連鎖は海洋メッセージクラス
+ * 連鎖破壊用メッセージクラス
  * Created by A.K. on 14/06/02.
  */
 public class MessageCDStatusProperties implements IMessage {
 
     public NBTTagCompound data;
 
+    @SuppressWarnings("unused")
     public MessageCDStatusProperties() {
     }
 

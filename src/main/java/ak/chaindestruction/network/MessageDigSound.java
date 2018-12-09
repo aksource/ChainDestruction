@@ -12,11 +12,13 @@ public class MessageDigSound implements IMessage {
 
     private BlockPos blockPos;
 
-    public MessageDigSound(){}
+    @SuppressWarnings("unused")
+    public MessageDigSound() {}
 
     public MessageDigSound(BlockPos pos) {
         this.blockPos = pos;
     }
+
     @Override
     public void fromBytes(ByteBuf buf) {
         int x = buf.readInt();

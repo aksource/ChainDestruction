@@ -1,7 +1,7 @@
 package ak.chaindestruction.network;
 
-import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
 import io.netty.buffer.ByteBuf;
+import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
 
 /**
  * マウスクリック用メッセージクラス
@@ -11,12 +11,14 @@ public class MessageMousePressed implements IMessage {
     private byte mouseIndex;
     private boolean isFocusObject;
 
-    public MessageMousePressed(){}
+    @SuppressWarnings("unused")
+    public MessageMousePressed() {}
 
     public MessageMousePressed(byte mouseIndex, boolean isFocusObject) {
         this.mouseIndex = mouseIndex;
         this.isFocusObject = isFocusObject;
     }
+
     @Override
     public void fromBytes(ByteBuf buf) {
         this.mouseIndex = buf.readByte();

@@ -35,7 +35,7 @@ public class DigTaskEvent {
     @SuppressWarnings("unused")
     @SubscribeEvent
     public void deleteDigTaskOnDeath(LivingDeathEvent event) {
-        if (event.getEntityLiving() instanceof EntityPlayer && !((EntityPlayer) event.getEntityLiving()).getEntityWorld().isRemote) {
+        if (event.getEntityLiving() instanceof EntityPlayer && !(event.getEntityLiving()).getEntityWorld().isRemote) {
             for (DigTask digTask : digTaskSet) {
                 if (digTask.getDigger() == event.getEntityLiving()) {
                     digTaskRemoveSet.add(digTask);

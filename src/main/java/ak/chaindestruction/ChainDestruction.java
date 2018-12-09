@@ -6,17 +6,8 @@ import ak.chaindestruction.command.CommandResetCDPlayerStatus;
 import ak.chaindestruction.command.CommandShowItemCDStatus;
 import ak.chaindestruction.command.CommandShowPlayerCDStatus;
 import ak.chaindestruction.network.PacketHandler;
-import com.google.common.base.Function;
-import com.google.common.base.Joiner;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
-import net.minecraft.block.Block;
-import net.minecraft.block.state.BlockStateBase;
-import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.init.Blocks;
-import net.minecraft.init.Items;
-import net.minecraft.item.ItemStack;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.text.TextComponentString;
 import net.minecraftforge.common.MinecraftForge;
@@ -24,16 +15,15 @@ import net.minecraftforge.common.config.Configuration;
 import net.minecraftforge.event.entity.EntityJoinWorldEvent;
 import net.minecraftforge.fml.common.Loader;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
 import net.minecraftforge.fml.common.SidedProxy;
 import net.minecraftforge.fml.common.event.FMLInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLServerStartingEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-import net.minecraftforge.oredict.OreDictionary;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Set;
 import java.util.function.Predicate;
 import java.util.logging.Logger;
 
@@ -50,8 +40,6 @@ public class ChainDestruction {
     public static final String MOD_VERSION = "@VERSION@";
     public static final String MOD_DEPENDENCIES = "required-after:forge@[13.19.1,)";
     public static final String MOD_MC_VERSION = "[1.11,1.19.99]";
-    private static final Map<Block, Block> ALTERNATE_BLOCK_MAP = new HashMap<>();
-    private static final Joiner AT_JOINER = Joiner.on('@');
     @SidedProxy(clientSide = "ak.chaindestruction.ClientProxy", serverSide = "ak.chaindestruction.CommonProxy")
     public static CommonProxy proxy;
     @SuppressWarnings("unused")
@@ -68,48 +56,8 @@ public class ChainDestruction {
     public static DigTaskEvent digTaskEvent = new DigTaskEvent();
     public static boolean loadMTH = false;
     private static String[] excludeRegisterItem = new String[]{};
-    private static Function functionBlockStateBase = ObfuscationReflectionHelper.getPrivateValue(BlockStateBase.class, null, 1);
-
-    static {
-        ALTERNATE_BLOCK_MAP.put(Blocks.LIT_REDSTONE_ORE, Blocks.REDSTONE_ORE);
-        ALTERNATE_BLOCK_MAP.put(Blocks.LIT_FURNACE, Blocks.FURNACE);
-    }
 
     public Configuration config;
-
-    public static List<String> makeStringDataFromBlockState(IBlockState state) {
-        Block block = state.getBlock();
-        if (ALTERNATE_BLOCK_MAP.containsKey(block)) {
-            block = ALTERNATE_BLOCK_MAP.get(block);
-        }
-        ItemStack itemStack = new ItemStack(block, 1, block.damageDropped(state));
-        if (itemStack.getItem() == Items.AIR) return Collections.singletonList(makeString(state));
-        int[] oreIDs = OreDictionary.getOreIDs(itemStack);
-        if (oreIDs.length > 0) {
-            List<String> oreNames = new ArrayList<>(oreIDs.length);
-            for (int id : oreIDs) {
-                oreNames.add(OreDictionary.getOreName(id));
-            }
-            return oreNames;
-        } else {
-            String s = makeString(state);
-            return Collections.singletonList(s);
-        }
-
-    }
-
-    private static String makeString(IBlockState state) {
-        StringBuilder stringbuilder = new StringBuilder();
-        stringbuilder.append(state.getBlock().getRegistryName().toString());
-
-        if (!state.getProperties().isEmpty()) {
-            stringbuilder.append("[");
-            AT_JOINER.appendTo(stringbuilder, Iterables.transform(state.getProperties().entrySet(), functionBlockStateBase));
-            stringbuilder.append("]");
-        }
-
-        return stringbuilder.toString();
-    }
 
     @SuppressWarnings("unused")
     @Mod.EventHandler
