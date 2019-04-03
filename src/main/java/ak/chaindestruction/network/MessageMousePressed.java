@@ -1,39 +1,38 @@
 package ak.chaindestruction.network;
 
-import io.netty.buffer.ByteBuf;
-import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
+import net.minecraft.network.PacketBuffer;
 
 /**
- * マウスクリック用メッセージクラス
- * Created by A.K. on 14/10/14.
+ * マウスクリック用メッセージクラス Created by A.K. on 14/10/14.
  */
-public class MessageMousePressed implements IMessage {
-    private byte mouseIndex;
-    private boolean isFocusObject;
+public class MessageMousePressed {
 
-    @SuppressWarnings("unused")
-    public MessageMousePressed() {}
+  public static BiConsumer<MessageMousePressed, PacketBuffer> encoder = (messageMousePressed, packetBuffer) -> {
+    packetBuffer.writeByte(messageMousePressed.getMouseIndex())
+        .writeBoolean(messageMousePressed.isFocusObject);
+  };
 
-    public MessageMousePressed(byte mouseIndex, boolean isFocusObject) {
-        this.mouseIndex = mouseIndex;
-        this.isFocusObject = isFocusObject;
-    }
+  public static Function<PacketBuffer, MessageMousePressed> decoder = packetBuffer -> new MessageMousePressed(
+      packetBuffer.readByte(), packetBuffer.readBoolean());
+  private byte mouseIndex;
+  private boolean isFocusObject;
 
-    @Override
-    public void fromBytes(ByteBuf buf) {
-        this.mouseIndex = buf.readByte();
-    }
+  @SuppressWarnings("unused")
+  public MessageMousePressed() {
+  }
 
-    @Override
-    public void toBytes(ByteBuf buf) {
-        buf.writeByte(this.mouseIndex);
-    }
+  public MessageMousePressed(byte mouseIndex, boolean isFocusObject) {
+    this.mouseIndex = mouseIndex;
+    this.isFocusObject = isFocusObject;
+  }
 
-    public byte getMouseIndex() {
-        return this.mouseIndex;
-    }
+  byte getMouseIndex() {
+    return this.mouseIndex;
+  }
 
-    public boolean isFocusObject() {
-        return this.isFocusObject;
-    }
+  boolean isFocusObject() {
+    return this.isFocusObject;
+  }
 }

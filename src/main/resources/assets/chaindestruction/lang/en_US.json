@@ -1,0 +1,9 @@
+{
+  "Key.CDRegistItem": "RegChainDestructItem",
+  "Key.CDDIgUnder": "Dig Under Key",
+  "Key.CDTree": "Tree Mode Key",
+  "commands.cdresetplayerstatus": "/cdresetplayerstatus [username]...",
+  "commands.cdcopyrtol": "/cdcopyrtol [username]...",
+  "commands.cdshowplayerstatus": "/cdshowplayerstatus [username]...",
+  "commands.cdshowitemstatus": "/cdshowitemstatus [username]..."
+}

@@ -1,21 +1,22 @@
 package ak.chaindestruction;
 
+import ak.akapi.Constants;
 import ak.chaindestruction.network.MessageKeyPressed;
 import ak.chaindestruction.network.MessageMousePressed;
 import ak.chaindestruction.network.PacketHandler;
-import ak.akapi.Constants;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraftforge.fml.client.FMLClientHandler;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-import net.minecraftforge.fml.common.gameevent.InputEvent;
+import net.minecraft.util.math.RayTraceResult.Type;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.gameevent.TickEvent.ClientTickEvent;
+import net.minecraftforge.fml.common.gameevent.TickEvent.Phase;
 
 /**
  * クライアント側のマウス・キーボードイベントクラス
  * Created by A.K. on 14/08/01.
  */
 public class ClientEvent {
-    private static Minecraft mc = Minecraft.getMinecraft();
+    private static Minecraft mc = Minecraft.getInstance();
 
     /** チャタリング防止用 */
     private int mouseCounter = 0;
@@ -32,13 +33,11 @@ public class ClientEvent {
         return key;
     }
 
-    @SuppressWarnings("unused")
-    @SubscribeEvent
-    public void KeyPressEvent(InputEvent.KeyInputEvent event) {
-        if (FMLClientHandler.instance().getClient().inGameHasFocus && FMLClientHandler.instance().getClientPlayerEntity() != null) {
+    private void keyPressEvent() {
+        if (mc.isGameFocused() && mc.player != null) {
             byte keyIndex = getKeyIndex();
             if (keyIndex != -1) {
-                EntityPlayer player = FMLClientHandler.instance().getClientPlayerEntity();
+                EntityPlayer player = mc.player;
 //                doKeyClient(null, player, keyIndex);
                 PacketHandler.INSTANCE.sendToServer(new MessageKeyPressed(keyIndex));
             }
@@ -59,10 +58,8 @@ public class ClientEvent {
         return mouse;
     }
 
-    @SuppressWarnings("unused")
-    @SubscribeEvent
-    public void mouseClickEvent(InputEvent.MouseInputEvent event) {
-        if (mc.inGameHasFocus) {
+    private void mouseClickEvent() {
+        if (mc.isGameFocused()) {
             if (mouseCounter > 0) {
                 mouseCounter--;
             }
@@ -70,7 +67,7 @@ public class ClientEvent {
             if (mouseIndex != -1 && mouseIndex == Constants.MIDDLE_CLICK) {
                 if (mouseCounter == 0) {
                     mouseCounter = 5;
-                    boolean isFocusObject = mc.objectMouseOver != null || mc.pointedEntity != null;
+                    boolean isFocusObject = (mc.objectMouseOver != null && mc.objectMouseOver.type != Type.MISS) || mc.pointedEntity != null;
                     PacketHandler.INSTANCE.sendToServer(new MessageMousePressed(mouseIndex, isFocusObject));
                 }
             }
@@ -82,4 +79,12 @@ public class ClientEvent {
 //            ChainDestruction.digUnder = CDPlayerStatus.get(player).isDigUnder();
 //        }
 //    }
+    @SuppressWarnings("unused")
+    @SubscribeEvent
+    public void clientTickEvent(ClientTickEvent event) {
+        if (event.phase == Phase.END) {
+            mouseClickEvent();
+            keyPressEvent();
+        }
+    }
 }

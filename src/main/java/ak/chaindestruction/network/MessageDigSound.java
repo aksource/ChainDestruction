@@ -1,40 +1,32 @@
 package ak.chaindestruction.network;
 
-import io.netty.buffer.ByteBuf;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
+import net.minecraft.network.PacketBuffer;
 import net.minecraft.util.math.BlockPos;
-import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
 
 /**
- * ブロック採掘音用メッセージクラス
- * Created by AKIRA on 15/01/13.
+ * ブロック採掘音用メッセージクラス Created by A.K. on 15/01/13.
  */
-public class MessageDigSound implements IMessage {
+public class MessageDigSound {
 
-    private BlockPos blockPos;
+  public static BiConsumer<MessageDigSound, PacketBuffer> encoder = (messageDigSound, packetBuffer) -> {
+    packetBuffer.writeInt(messageDigSound.blockPos.getX()).writeInt(messageDigSound.blockPos.getY())
+        .writeInt(messageDigSound.blockPos.getZ());
+  };
+  public static Function<PacketBuffer, MessageDigSound> decoder = packetBuffer -> new MessageDigSound(
+      new BlockPos(packetBuffer.readInt(), packetBuffer.readInt(), packetBuffer.readInt()));
+  private BlockPos blockPos;
 
-    @SuppressWarnings("unused")
-    public MessageDigSound() {}
+  @SuppressWarnings("unused")
+  public MessageDigSound() {
+  }
 
-    public MessageDigSound(BlockPos pos) {
-        this.blockPos = pos;
-    }
+  public MessageDigSound(BlockPos pos) {
+    this.blockPos = pos;
+  }
 
-    @Override
-    public void fromBytes(ByteBuf buf) {
-        int x = buf.readInt();
-        int y = buf.readInt();
-        int z = buf.readInt();
-        this.blockPos = new BlockPos(x, y, z);
-    }
-
-    @Override
-    public void toBytes(ByteBuf buf) {
-        buf.writeInt(this.blockPos.getX());
-        buf.writeInt(this.blockPos.getY());
-        buf.writeInt(this.blockPos.getZ());
-    }
-
-    public BlockPos getBlockPos() {
-        return blockPos;
-    }
+  BlockPos getBlockPos() {
+    return blockPos;
+  }
 }

@@ -1,58 +1,52 @@
 package ak.chaindestruction.command;
 
+import static ak.akapi.Constants.COMMAND_SHOW_ITEM_CD_STATUS;
+
+import ak.chaindestruction.capability.CDItemStackStatus;
 import ak.chaindestruction.capability.CapabilityCDItemStackStatusHandler;
-import ak.chaindestruction.capability.ICDItemStackStatusHandler;
-import net.minecraft.command.CommandBase;
-import net.minecraft.command.CommandException;
-import net.minecraft.command.ICommandSender;
-import net.minecraft.entity.Entity;
+import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import java.util.Objects;
+import javax.annotation.Nullable;
+import net.minecraft.command.CommandSource;
+import net.minecraft.command.Commands;
+import net.minecraft.command.arguments.EntityArgument;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.ItemStack;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.text.TextComponentString;
 
-import static ak.chaindestruction.capability.CapabilityCDItemStackStatusHandler.CAPABILITY_CHAIN_DESTRUCTION_ITEM;
-import static ak.chaindestruction.capability.CapabilityCDPlayerStatusHandler.CAPABILITY_CHAIN_DESTRUCTION_PLAYER;
-import static ak.akapi.Constants.COMMAND_SHOW_ITEM_CD_STATUS;
-import static ak.akapi.Constants.COMMAND_USAGE_SHOW_ITEMSTATUS;
-
 /**
- * アイテムの現在の設定を表示するコマンド
- * Created by A.K. on 2016/09/28.
+ * アイテムの現在の設定を表示するコマンド Created by A.K. on 2016/09/28.
  */
-public class CommandShowItemCDStatus extends CommandBase {
-    @Override
-    public String getName() {
-        return COMMAND_SHOW_ITEM_CD_STATUS;
-    }
+public class CommandShowItemCDStatus {
 
-    @Override
-    public String getUsage(ICommandSender sender) {
-        return COMMAND_USAGE_SHOW_ITEMSTATUS;
-    }
+  public static void register(CommandDispatcher<CommandSource> commandDispatcher) {
+    commandDispatcher.register(
+        Commands.literal(COMMAND_SHOW_ITEM_CD_STATUS).requires(e -> e.hasPermissionLevel(2))
+            .executes(e -> execute(e.getSource(), null))
+            .then(Commands.argument("target", EntityArgument.player())
+                .executes(e -> execute(e.getSource(), EntityArgument.getPlayer(e, "target")))
+            ));
+  }
 
-    @Override
-    public void execute(MinecraftServer server, ICommandSender sender, String[] args) throws CommandException {
-        if (args.length == 0) {
-            EntityPlayer entityPlayer = getCommandSenderAsPlayer(sender);
-            ItemStack itemMainHand = entityPlayer.getHeldItemMainhand();
-            if (!itemMainHand.isEmpty() && itemMainHand.hasCapability(CAPABILITY_CHAIN_DESTRUCTION_ITEM, null)) {
-                ICDItemStackStatusHandler status = itemMainHand.getCapability(CAPABILITY_CHAIN_DESTRUCTION_ITEM, null);
-                String statusStr = CapabilityCDItemStackStatusHandler.makeItemsStatusToString(status);
-                entityPlayer.sendMessage(new TextComponentString(statusStr));
-            }
-        } else {
-            for (String username : args) {
-                Entity entity = getEntity(server, sender, username);
-                if (entity instanceof EntityPlayer && entity.hasCapability(CAPABILITY_CHAIN_DESTRUCTION_PLAYER, null)) {
-                    ItemStack itemMainHand = ((EntityPlayer) entity).getHeldItemMainhand();
-                    if (!itemMainHand.isEmpty() && itemMainHand.hasCapability(CAPABILITY_CHAIN_DESTRUCTION_ITEM, null)) {
-                        ICDItemStackStatusHandler status = itemMainHand.getCapability(CAPABILITY_CHAIN_DESTRUCTION_ITEM, null);
-                        String statusStr = CapabilityCDItemStackStatusHandler.makeItemsStatusToString(status);
-                        entity.sendMessage(new TextComponentString(statusStr));
-                    }
-                }
-            }
-        }
+  private static int execute(CommandSource commandSource, @Nullable EntityPlayer entityPlayer) {
+    if (Objects.isNull(entityPlayer)) {
+      try {
+        entityPlayer = commandSource.asPlayer();
+      } catch (CommandSyntaxException e) {
+        e.printStackTrace();
+        return 1;
+      }
     }
+    //noinspection ConstantConditions
+    if (Objects.nonNull(entityPlayer)) {
+      StringBuilder sb = new StringBuilder();
+      CDItemStackStatus.get(entityPlayer.getHeldItemMainhand()).ifPresent(status -> {
+        sb.append(CapabilityCDItemStackStatusHandler.makeItemsStatusToString(status));
+      });
+      entityPlayer.sendMessage(new TextComponentString(sb.toString()));
+    } else {
+      return 1;
+    }
+    return 0;
+  }
 }

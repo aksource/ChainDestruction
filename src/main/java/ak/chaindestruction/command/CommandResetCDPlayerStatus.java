@@ -1,55 +1,50 @@
 package ak.chaindestruction.command;
 
+import static ak.akapi.Constants.COMMAND_RESET_PLAYER_STATUS;
+
 import ak.chaindestruction.capability.CDPlayerStatus;
 import ak.chaindestruction.capability.CapabilityCDPlayerStatusHandler;
-import ak.chaindestruction.capability.ICDPlayerStatusHandler;
-import net.minecraft.command.CommandBase;
-import net.minecraft.command.CommandException;
-import net.minecraft.command.ICommandSender;
-import net.minecraft.entity.Entity;
+import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import java.util.Objects;
+import javax.annotation.Nullable;
+import net.minecraft.command.CommandSource;
+import net.minecraft.command.Commands;
+import net.minecraft.command.arguments.EntityArgument;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.server.MinecraftServer;
-
-import static ak.chaindestruction.capability.CapabilityCDPlayerStatusHandler.CAPABILITY_CHAIN_DESTRUCTION_PLAYER;
-import static ak.akapi.Constants.COMMAND_RESET_PLAYER_STATUS;
-import static ak.akapi.Constants.COMMAND_USAGE_RESET_PLAYER_STATUS;
 
 /**
- * プレイヤーの連鎖破壊設定を初期化するコマンド
- * Created by A.K. on 2016/09/25.
+ * プレイヤーの連鎖破壊設定を初期化するコマンド Created by A.K. on 2016/09/25.
  */
-public class CommandResetCDPlayerStatus extends CommandBase {
-    @Override
-    public String getName() {
-        return COMMAND_RESET_PLAYER_STATUS;
-    }
+public class CommandResetCDPlayerStatus {
 
-    @Override
-    public String getUsage(ICommandSender sender) {
-        return COMMAND_USAGE_RESET_PLAYER_STATUS;
-    }
+  public static void register(CommandDispatcher<CommandSource> commandDispatcher) {
+    commandDispatcher.register(
+        Commands.literal(COMMAND_RESET_PLAYER_STATUS).requires(e -> e.hasPermissionLevel(2))
+            .executes(e -> execute(e.getSource(), null))
+            .then(Commands.argument("target", EntityArgument.player())
+                .executes(e -> execute(e.getSource(), EntityArgument.getPlayer(e, "target")))
+            ));
+  }
 
-    @Override
-    public void execute(MinecraftServer server, ICommandSender sender, String[] args) throws CommandException {
-        if (args.length == 0) {
-            EntityPlayer entityPlayer = getCommandSenderAsPlayer(sender);
-            if (entityPlayer.hasCapability(CAPABILITY_CHAIN_DESTRUCTION_PLAYER, null)) {
-                ICDPlayerStatusHandler status = entityPlayer.getCapability(CAPABILITY_CHAIN_DESTRUCTION_PLAYER, null);
-                CapabilityCDPlayerStatusHandler.copyPlayerStatus(CDPlayerStatus.DEFAULT_PLAYER_STATUS, status);
-            }
-        } else {
-            for (String username : args) {
-                Entity entity = getEntity(server, sender, username);
-                if (entity instanceof EntityPlayer && entity.hasCapability(CAPABILITY_CHAIN_DESTRUCTION_PLAYER, null)) {
-                    ICDPlayerStatusHandler status = entity.getCapability(CAPABILITY_CHAIN_DESTRUCTION_PLAYER, null);
-                    CapabilityCDPlayerStatusHandler.copyPlayerStatus(CDPlayerStatus.DEFAULT_PLAYER_STATUS, status);
-                }
-            }
-        }
+  private static int execute(CommandSource commandSource, @Nullable EntityPlayer entityPlayer) {
+    if (Objects.isNull(entityPlayer)) {
+      try {
+        entityPlayer = commandSource.asPlayer();
+      } catch (CommandSyntaxException e) {
+        e.printStackTrace();
+        return 1;
+      }
     }
-
-    @Override
-    public int getRequiredPermissionLevel() {
-        return 2;
+    //noinspection ConstantConditions
+    if (Objects.nonNull(entityPlayer)) {
+      CDPlayerStatus.get(entityPlayer).ifPresent(status -> {
+        CapabilityCDPlayerStatusHandler
+            .copyPlayerStatus(CDPlayerStatus.DEFAULT_PLAYER_STATUS, status);
+      });
+    } else {
+      return 1;
     }
+    return 0;
+  }
 }

@@ -1,13 +1,12 @@
 package ak.chaindestruction;
 
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraftforge.event.entity.living.LivingDeathEvent;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-import net.minecraftforge.fml.common.gameevent.PlayerEvent;
-import net.minecraftforge.fml.common.gameevent.TickEvent;
-
 import java.util.HashSet;
 import java.util.Set;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraftforge.event.entity.living.LivingDeathEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.gameevent.PlayerEvent;
+import net.minecraftforge.fml.common.gameevent.TickEvent;
 
 /**
  * ブロック破壊のタスク処理イベントクラス
@@ -49,9 +48,9 @@ public class DigTaskEvent {
     @SuppressWarnings("unused")
     @SubscribeEvent
     public void deleteDigTaskOnLogOut(PlayerEvent.PlayerLoggedOutEvent event) {
-        if (!event.player.getEntityWorld().isRemote) {
+        if (!event.getPlayer().getEntityWorld().isRemote) {
             for (DigTask digTask : digTaskSet) {
-                if (digTask.getDigger() == event.player) {
+                if (digTask.getDigger() == event.getPlayer()) {
                     digTaskRemoveSet.add(digTask);
                 }
             }

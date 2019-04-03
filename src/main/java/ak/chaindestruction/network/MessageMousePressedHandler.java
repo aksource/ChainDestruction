@@ -1,24 +1,26 @@
 package ak.chaindestruction.network;
 
 import ak.chaindestruction.ChainDestruction;
-import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
-import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
-import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
+import java.util.function.BiConsumer;
+import java.util.function.Supplier;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
+import net.minecraftforge.fml.network.NetworkEvent.Context;
 
 /**
- * マウスクリック用メッセージハンドラクラス
- * Created by A.K. on 14/10/14.
+ * マウスクリック用メッセージハンドラクラス Created by A.K. on 14/10/14.
  */
-public class MessageMousePressedHandler implements IMessageHandler<MessageMousePressed, IMessage> {
-    @Override
-    public IMessage onMessage(MessageMousePressed message, MessageContext ctx) {
-        EntityPlayer player = ctx.getServerHandler().player;
-        if (player != null && !player.getHeldItemMainhand().isEmpty()) {
-            ItemStack equippedItem = player.getHeldItemMainhand();
-            ChainDestruction.interactblockhook.doMouseEvent(equippedItem, player, message.getMouseIndex(), message.isFocusObject());
-        }
-        return null;
+public class MessageMousePressedHandler implements
+    BiConsumer<MessageMousePressed, Supplier<Context>> {
+
+  @Override
+  public void accept(MessageMousePressed messageMousePressed, Supplier<Context> contextSupplier) {
+    EntityPlayer player = contextSupplier.get().getSender();
+    if (player != null && !player.getHeldItemMainhand().isEmpty()) {
+      ItemStack equippedItem = player.getHeldItemMainhand();
+      ChainDestruction.interactblockhook
+          .doMouseEvent(equippedItem, player, messageMousePressed.getMouseIndex(),
+              messageMousePressed.isFocusObject());
     }
+  }
 }
