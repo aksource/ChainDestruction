@@ -1,20 +1,21 @@
 package ak.chaindestruction.capability;
 
-import static ak.chaindestruction.capability.CapabilityCDPlayerStatusHandler.COMMA_JOINER;
-
 import ak.chaindestruction.ChainDestruction;
 import com.google.common.collect.Sets;
-import java.util.Set;
-import net.minecraft.nbt.INBTBase;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagList;
-import net.minecraft.nbt.NBTTagString;
-import net.minecraft.util.EnumFacing;
+import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.nbt.INBT;
+import net.minecraft.nbt.ListNBT;
+import net.minecraft.nbt.StringNBT;
+import net.minecraft.util.Direction;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.CapabilityInject;
 import net.minecraftforge.common.capabilities.CapabilityManager;
 import net.minecraftforge.common.util.Constants;
+
+import java.util.Set;
+
+import static ak.chaindestruction.capability.CapabilityCDPlayerStatusHandler.COMMA_JOINER;
 
 /**
  * 連鎖破壊ItemStackステータスハンドリングクラス
@@ -28,31 +29,31 @@ public class CapabilityCDItemStackStatusHandler {
     public static void register() {
         CapabilityManager.INSTANCE.register(ICDItemStackStatusHandler.class, new Capability.IStorage<ICDItemStackStatusHandler>() {
             @Override
-            public INBTBase writeNBT(Capability<ICDItemStackStatusHandler> capability, ICDItemStackStatusHandler instance, EnumFacing side) {
-                NBTTagCompound nbt = new NBTTagCompound();
-                NBTTagList nbtTagListEnableBlocks = new NBTTagList();
-                instance.getEnableBlocks().forEach(blockStr -> nbtTagListEnableBlocks.add(new NBTTagString(blockStr)));
-                nbt.put(CDPlayerStatus.NBT_STATUS_ENABLE_BLOCKS, nbtTagListEnableBlocks);
-                NBTTagList nbtTagListEnableLogBlocks = new NBTTagList();
-                instance.getEnableLogBlocks().forEach(blockStr -> nbtTagListEnableLogBlocks.add(new NBTTagString(blockStr)));
-                nbt.put(CDPlayerStatus.NBT_STATUS_ENABLE_LOG_BLOCKS, nbtTagListEnableLogBlocks);
+            public INBT writeNBT(Capability<ICDItemStackStatusHandler> capability, ICDItemStackStatusHandler instance, Direction side) {
+                CompoundNBT nbt = new CompoundNBT();
+                ListNBT ListNBTEnableBlocks = new ListNBT();
+                instance.getEnableBlocks().forEach(blockStr -> ListNBTEnableBlocks.add(new StringNBT(blockStr)));
+                nbt.put(CDPlayerStatus.NBT_STATUS_ENABLE_BLOCKS, ListNBTEnableBlocks);
+                ListNBT ListNBTEnableLogBlocks = new ListNBT();
+                instance.getEnableLogBlocks().forEach(blockStr -> ListNBTEnableLogBlocks.add(new StringNBT(blockStr)));
+                nbt.put(CDPlayerStatus.NBT_STATUS_ENABLE_LOG_BLOCKS, ListNBTEnableLogBlocks);
                 return nbt;
             }
 
             @Override
-            public void readNBT(Capability<ICDItemStackStatusHandler> capability, ICDItemStackStatusHandler instance, EnumFacing side, INBTBase nbt) {
-                if (nbt instanceof NBTTagCompound) {
-                    NBTTagCompound nbtTagCompound = (NBTTagCompound) nbt;
+            public void readNBT(Capability<ICDItemStackStatusHandler> capability, ICDItemStackStatusHandler instance, Direction side, INBT nbt) {
+                if (nbt instanceof CompoundNBT) {
+                    CompoundNBT CompoundNBT = (CompoundNBT) nbt;
                     Set<String> enableBlocks = Sets.newHashSet();
-                    NBTTagList nbtTagListEnableBlocks = nbtTagCompound.getList(CDPlayerStatus.NBT_STATUS_ENABLE_BLOCKS, Constants.NBT.TAG_STRING);
-                    for (int i = 0; i < nbtTagListEnableBlocks.size();i++) {
-                        enableBlocks.add(nbtTagListEnableBlocks.getString(i));
+                    ListNBT ListNBTEnableBlocks = CompoundNBT.getList(CDPlayerStatus.NBT_STATUS_ENABLE_BLOCKS, Constants.NBT.TAG_STRING);
+                    for (int i = 0; i < ListNBTEnableBlocks.size();i++) {
+                        enableBlocks.add(ListNBTEnableBlocks.getString(i));
                     }
                     instance.setEnableBlocks(enableBlocks);
                     Set<String> enableLogBlocks = Sets.newHashSet();
-                    NBTTagList nbtTagListEnableLogBlocks = nbtTagCompound.getList(CDPlayerStatus.NBT_STATUS_ENABLE_LOG_BLOCKS, Constants.NBT.TAG_STRING);
-                    for (int i = 0; i < nbtTagListEnableLogBlocks.size();i++) {
-                        enableLogBlocks.add(nbtTagListEnableLogBlocks.getString(i));
+                    ListNBT ListNBTEnableLogBlocks = CompoundNBT.getList(CDPlayerStatus.NBT_STATUS_ENABLE_LOG_BLOCKS, Constants.NBT.TAG_STRING);
+                    for (int i = 0; i < ListNBTEnableLogBlocks.size();i++) {
+                        enableLogBlocks.add(ListNBTEnableLogBlocks.getString(i));
                     }
                     instance.setEnableLogBlocks(enableLogBlocks);
                 }

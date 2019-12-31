@@ -3,7 +3,7 @@ package ak.chaindestruction.network;
 import ak.chaindestruction.ChainDestruction;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraftforge.fml.network.NetworkEvent.Context;
 
@@ -15,7 +15,7 @@ public class MessageMousePressedHandler implements
 
   @Override
   public void accept(MessageMousePressed messageMousePressed, Supplier<Context> contextSupplier) {
-    EntityPlayer player = contextSupplier.get().getSender();
+    PlayerEntity player = contextSupplier.get().getSender();
     if (player != null && !player.getHeldItemMainhand().isEmpty()) {
       ItemStack equippedItem = player.getHeldItemMainhand();
       ChainDestruction.interactblockhook

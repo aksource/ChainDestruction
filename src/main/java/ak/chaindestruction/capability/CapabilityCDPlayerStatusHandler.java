@@ -3,17 +3,18 @@ package ak.chaindestruction.capability;
 import ak.chaindestruction.ChainDestruction;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Sets;
-import java.util.Set;
-import net.minecraft.nbt.INBTBase;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagList;
-import net.minecraft.nbt.NBTTagString;
-import net.minecraft.util.EnumFacing;
+import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.nbt.INBT;
+import net.minecraft.nbt.ListNBT;
+import net.minecraft.nbt.StringNBT;
+import net.minecraft.util.Direction;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.CapabilityInject;
 import net.minecraftforge.common.capabilities.CapabilityManager;
 import net.minecraftforge.common.util.Constants;
+
+import java.util.Set;
 
 /**
  * 連鎖破壊ステータスハンドリングクラス
@@ -29,50 +30,50 @@ public class CapabilityCDPlayerStatusHandler {
     public static void register() {
         CapabilityManager.INSTANCE.register(ICDPlayerStatusHandler.class, new Capability.IStorage<ICDPlayerStatusHandler>() {
             @Override
-            public INBTBase writeNBT(Capability<ICDPlayerStatusHandler> capability, ICDPlayerStatusHandler instance, EnumFacing side) {
-                NBTTagCompound nbt = new NBTTagCompound();
+            public INBT writeNBT(Capability<ICDPlayerStatusHandler> capability, ICDPlayerStatusHandler instance, Direction side) {
+                CompoundNBT nbt = new CompoundNBT();
                 nbt.putByte(CDPlayerStatus.NBT_CLICK_FACE, (byte) instance.getFace().getIndex());
                 nbt.putBoolean(CDPlayerStatus.NBT_STATUS_DIG_UNDER, instance.isDigUnder());
                 nbt.putBoolean(CDPlayerStatus.NBT_STATUS_TREE_MODE, instance.isTreeMode());
                 nbt.putBoolean(CDPlayerStatus.NBT_STATUS_PRIVATE_MODE, instance.isPrivateRegisterMode());
                 nbt.putInt(CDPlayerStatus.NBT_STATUS_MAX_DESTROY_BLOCK, instance.getMaxDestroyedBlock());
-                NBTTagList nbtTagListEnableItems = new NBTTagList();
-                instance.getEnableItems().forEach(itemsStr -> nbtTagListEnableItems.add(new NBTTagString(itemsStr)));
-                nbt.put(CDPlayerStatus.NBT_STATUS_ENABLE_ITEMS, nbtTagListEnableItems);
-                NBTTagList nbtTagListEnableBlocks = new NBTTagList();
-                instance.getEnableBlocks().forEach(blockStr -> nbtTagListEnableBlocks.add(new NBTTagString(blockStr)));
-                nbt.put(CDPlayerStatus.NBT_STATUS_ENABLE_BLOCKS, nbtTagListEnableBlocks);
-                NBTTagList nbtTagListEnableLogBlocks = new NBTTagList();
-                instance.getEnableLogBlocks().forEach(blockStr -> nbtTagListEnableLogBlocks.add(new NBTTagString(blockStr)));
-                nbt.put(CDPlayerStatus.NBT_STATUS_ENABLE_LOG_BLOCKS, nbtTagListEnableLogBlocks);
+                ListNBT ListNBTEnableItems = new ListNBT();
+                instance.getEnableItems().forEach(itemsStr -> ListNBTEnableItems.add(new StringNBT(itemsStr)));
+                nbt.put(CDPlayerStatus.NBT_STATUS_ENABLE_ITEMS, ListNBTEnableItems);
+                ListNBT ListNBTEnableBlocks = new ListNBT();
+                instance.getEnableBlocks().forEach(blockStr -> ListNBTEnableBlocks.add(new StringNBT(blockStr)));
+                nbt.put(CDPlayerStatus.NBT_STATUS_ENABLE_BLOCKS, ListNBTEnableBlocks);
+                ListNBT ListNBTEnableLogBlocks = new ListNBT();
+                instance.getEnableLogBlocks().forEach(blockStr -> ListNBTEnableLogBlocks.add(new StringNBT(blockStr)));
+                nbt.put(CDPlayerStatus.NBT_STATUS_ENABLE_LOG_BLOCKS, ListNBTEnableLogBlocks);
                 return nbt;
             }
 
             @Override
-            public void readNBT(Capability<ICDPlayerStatusHandler> capability, ICDPlayerStatusHandler instance, EnumFacing side, INBTBase nbt) {
-                if (nbt instanceof NBTTagCompound) {
-                    NBTTagCompound nbtTagCompound = (NBTTagCompound) nbt;
-                    instance.setFace(EnumFacing.values()[nbtTagCompound.getByte(CDPlayerStatus.NBT_CLICK_FACE) & 0xFF]);
-                    instance.setDigUnder(nbtTagCompound.getBoolean(CDPlayerStatus.NBT_STATUS_DIG_UNDER));
-                    instance.setTreeMode(nbtTagCompound.getBoolean(CDPlayerStatus.NBT_STATUS_TREE_MODE));
-                    instance.setPrivateRegisterMode(nbtTagCompound.getBoolean(CDPlayerStatus.NBT_STATUS_PRIVATE_MODE));
-                    instance.setMaxDestroyedBlock(nbtTagCompound.getInt(CDPlayerStatus.NBT_STATUS_MAX_DESTROY_BLOCK));
+            public void readNBT(Capability<ICDPlayerStatusHandler> capability, ICDPlayerStatusHandler instance, Direction side, INBT nbt) {
+                if (nbt instanceof CompoundNBT) {
+                    CompoundNBT CompoundNBT = (CompoundNBT) nbt;
+                    instance.setFace(Direction.values()[CompoundNBT.getByte(CDPlayerStatus.NBT_CLICK_FACE) & 0xFF]);
+                    instance.setDigUnder(CompoundNBT.getBoolean(CDPlayerStatus.NBT_STATUS_DIG_UNDER));
+                    instance.setTreeMode(CompoundNBT.getBoolean(CDPlayerStatus.NBT_STATUS_TREE_MODE));
+                    instance.setPrivateRegisterMode(CompoundNBT.getBoolean(CDPlayerStatus.NBT_STATUS_PRIVATE_MODE));
+                    instance.setMaxDestroyedBlock(CompoundNBT.getInt(CDPlayerStatus.NBT_STATUS_MAX_DESTROY_BLOCK));
                     Set<String> enableItems = Sets.newHashSet();
-                    NBTTagList nbtTagListEnableItems = nbtTagCompound.getList(CDPlayerStatus.NBT_STATUS_ENABLE_ITEMS, Constants.NBT.TAG_STRING);
-                    for (int i = 0; i < nbtTagListEnableItems.size(); i++) {
-                        enableItems.add(nbtTagListEnableItems.getString(i));
+                    ListNBT ListNBTEnableItems = CompoundNBT.getList(CDPlayerStatus.NBT_STATUS_ENABLE_ITEMS, Constants.NBT.TAG_STRING);
+                    for (int i = 0; i < ListNBTEnableItems.size(); i++) {
+                        enableItems.add(ListNBTEnableItems.getString(i));
                     }
                     instance.setEnableItems(enableItems);
                     Set<String> enableBlocks = Sets.newHashSet();
-                    NBTTagList nbtTagListEnableBlocks = nbtTagCompound.getList(CDPlayerStatus.NBT_STATUS_ENABLE_BLOCKS, Constants.NBT.TAG_STRING);
-                    for (int i = 0; i < nbtTagListEnableBlocks.size(); i++) {
-                        enableBlocks.add(nbtTagListEnableBlocks.getString(i));
+                    ListNBT ListNBTEnableBlocks = CompoundNBT.getList(CDPlayerStatus.NBT_STATUS_ENABLE_BLOCKS, Constants.NBT.TAG_STRING);
+                    for (int i = 0; i < ListNBTEnableBlocks.size(); i++) {
+                        enableBlocks.add(ListNBTEnableBlocks.getString(i));
                     }
                     instance.setEnableBlocks(enableBlocks);
                     Set<String> enableLogBlocks = Sets.newHashSet();
-                    NBTTagList nbtTagListEnableLogBlocks = nbtTagCompound.getList(CDPlayerStatus.NBT_STATUS_ENABLE_LOG_BLOCKS, Constants.NBT.TAG_STRING);
-                    for (int i = 0; i < nbtTagListEnableLogBlocks.size(); i++) {
-                        enableLogBlocks.add(nbtTagListEnableLogBlocks.getString(i));
+                    ListNBT ListNBTEnableLogBlocks = CompoundNBT.getList(CDPlayerStatus.NBT_STATUS_ENABLE_LOG_BLOCKS, Constants.NBT.TAG_STRING);
+                    for (int i = 0; i < ListNBTEnableLogBlocks.size(); i++) {
+                        enableLogBlocks.add(ListNBTEnableLogBlocks.getString(i));
                     }
                     instance.setEnableLogBlocks(enableLogBlocks);
                 }

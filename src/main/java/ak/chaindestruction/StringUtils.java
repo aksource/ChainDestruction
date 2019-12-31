@@ -1,6 +1,18 @@
 package ak.chaindestruction;
 
 import com.google.common.base.Joiner;
+import net.minecraft.block.Block;
+import net.minecraft.block.BlockState;
+import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
+import net.minecraft.state.IProperty;
+import net.minecraft.state.StateHolder;
+import net.minecraft.tags.BlockTags;
+import net.minecraft.util.ResourceLocation;
+import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -8,17 +20,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import net.minecraft.block.Block;
-import net.minecraft.block.state.IBlockState;
-import net.minecraft.init.Items;
-import net.minecraft.item.ItemStack;
-import net.minecraft.state.AbstractStateHolder;
-import net.minecraft.state.IProperty;
-import net.minecraft.tags.BlockTags;
-import net.minecraft.util.ResourceLocation;
-import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
 
 /**
  * Created by A.K. on 2018/10/14.
@@ -28,7 +29,7 @@ public class StringUtils {
   private static final Joiner AT_JOINER = Joiner.on('@');
   private static Function<Entry<IProperty<?>, Comparable<?>>, String> functionBlockStateBase = ObfuscationReflectionHelper
       .getPrivateValue(
-          AbstractStateHolder.class, null, 0);
+          StateHolder.class, null, 0);
 
   /**
    * {@code ResourceLocation}から固有文字列を取得
@@ -41,7 +42,7 @@ public class StringUtils {
     return resourceLocation != null ? resourceLocation.toString() : "";
   }
 
-  public static List<String> makeStringDataFromBlockState(IBlockState state) {
+  public static List<String> makeStringDataFromBlockState(BlockState state) {
     Block block = state.getBlock();
     ItemStack itemStack = new ItemStack(block, 1);
     if (itemStack.getItem() == Items.AIR) {
@@ -56,7 +57,7 @@ public class StringUtils {
     }
   }
 
-  private static String makeString(IBlockState state) {
+  private static String makeString(BlockState state) {
     StringBuilder stringBuilder = new StringBuilder();
     if (state.getBlock().getRegistryName() != null) {
       stringBuilder.append(state.getBlock().getRegistryName().toString());
@@ -103,7 +104,7 @@ public class StringUtils {
    * @param state 破壊対象判定IBlockState
    * @return 含まれていたらtrue
    */
-  static boolean match(Set<String> set, IBlockState state) {
+  static boolean match(Set<String> set, BlockState state) {
     Block block = state.getBlock();
     String uidStr = getUniqueString(block.getRegistryName());
     String uidMetaStr = state.toString();

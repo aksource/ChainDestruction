@@ -5,11 +5,11 @@ import ak.chaindestruction.network.MessageKeyPressed;
 import ak.chaindestruction.network.MessageMousePressed;
 import ak.chaindestruction.network.PacketHandler;
 import net.minecraft.client.Minecraft;
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.math.RayTraceResult.Type;
+import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.event.TickEvent.ClientTickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.gameevent.TickEvent.ClientTickEvent;
-import net.minecraftforge.fml.common.gameevent.TickEvent.Phase;
 
 /**
  * クライアント側のマウス・キーボードイベントクラス
@@ -37,7 +37,7 @@ public class ClientEvent {
         if (mc.isGameFocused() && mc.player != null) {
             byte keyIndex = getKeyIndex();
             if (keyIndex != -1) {
-                EntityPlayer player = mc.player;
+                PlayerEntity player = mc.player;
 //                doKeyClient(null, player, keyIndex);
                 PacketHandler.INSTANCE.sendToServer(new MessageKeyPressed(keyIndex));
             }
@@ -67,14 +67,14 @@ public class ClientEvent {
             if (mouseIndex != -1 && mouseIndex == Constants.MIDDLE_CLICK) {
                 if (mouseCounter == 0) {
                     mouseCounter = 5;
-                    boolean isFocusObject = (mc.objectMouseOver != null && mc.objectMouseOver.type != Type.MISS) || mc.pointedEntity != null;
+                    boolean isFocusObject = (mc.objectMouseOver != null && mc.objectMouseOver.getType() != Type.MISS) || mc.pointedEntity != null;
                     PacketHandler.INSTANCE.sendToServer(new MessageMousePressed(mouseIndex, isFocusObject));
                 }
             }
         }
     }
 
-//    public void doKeyClient(ItemStack item, EntityPlayer player, byte key) {
+//    public void doKeyClient(ItemStack item, PlayerEntity player, byte key) {
 //        if (key == Constants.DigKEY) {
 //            ChainDestruction.digUnder = CDPlayerStatus.get(player).isDigUnder();
 //        }
@@ -82,7 +82,7 @@ public class ClientEvent {
     @SuppressWarnings("unused")
     @SubscribeEvent
     public void clientTickEvent(ClientTickEvent event) {
-        if (event.phase == Phase.END) {
+        if (event.phase == TickEvent.Phase.END) {
             mouseClickEvent();
             keyPressEvent();
         }

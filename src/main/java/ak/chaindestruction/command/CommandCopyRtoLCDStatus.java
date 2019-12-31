@@ -11,7 +11,7 @@ import javax.annotation.Nullable;
 import net.minecraft.command.CommandSource;
 import net.minecraft.command.Commands;
 import net.minecraft.command.arguments.EntityArgument;
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 
 /**
@@ -28,19 +28,19 @@ public class CommandCopyRtoLCDStatus {
             ));
   }
 
-  private static int execute(CommandSource commandSource, @Nullable EntityPlayer entityPlayer) {
-    if (Objects.isNull(entityPlayer)) {
+  private static int execute(CommandSource commandSource, @Nullable PlayerEntity PlayerEntity) {
+    if (Objects.isNull(PlayerEntity)) {
       try {
-        entityPlayer = commandSource.asPlayer();
+        PlayerEntity = commandSource.asPlayer();
       } catch (CommandSyntaxException e) {
         e.printStackTrace();
         return 1;
       }
     }
     //noinspection ConstantConditions
-    if (Objects.nonNull(entityPlayer)) {
-      ItemStack itemMainHand = entityPlayer.getHeldItemMainhand();
-      ItemStack itemOffHand = entityPlayer.getHeldItemOffhand();
+    if (Objects.nonNull(PlayerEntity)) {
+      ItemStack itemMainHand = PlayerEntity.getHeldItemMainhand();
+      ItemStack itemOffHand = PlayerEntity.getHeldItemOffhand();
       CDItemStackStatus.get(itemMainHand)
           .ifPresent((copyFrom) ->
               CDItemStackStatus.get(itemOffHand).ifPresent(

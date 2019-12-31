@@ -1,13 +1,13 @@
 package ak.chaindestruction.capability;
 
 import net.minecraft.entity.Entity;
-import net.minecraft.util.EnumFacing;
+import net.minecraft.util.Direction;
 import net.minecraft.util.math.BlockPos;
 
 import java.util.Set;
 
 /**
- * EntityPlayerに保持する連鎖破壊用ステータスのインターフェース
+ * PlayerEntityに保持する連鎖破壊用ステータスのインターフェース
  * Created by A.K. on 2016/09/19.
  */
 public interface ICDPlayerStatusHandler {
@@ -17,14 +17,14 @@ public interface ICDPlayerStatusHandler {
      *
      * @return 接触面
      */
-    EnumFacing getFace();
+    Direction getFace();
 
     /**
      * 破壊時の接触面設定
      *
      * @param face 接触面
      */
-    void setFace(EnumFacing face);
+    void setFace(Direction face);
 
     /**
      * 足元より下まで掘るかどうか

@@ -2,16 +2,13 @@ package ak.chaindestruction.capability;
 
 import ak.chaindestruction.ConfigUtils;
 import com.google.common.collect.Sets;
-import java.util.Set;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import net.minecraft.block.Blocks;
 import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.init.Blocks;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagList;
-import net.minecraft.nbt.NBTTagString;
-import net.minecraft.util.EnumFacing;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.nbt.ListNBT;
+import net.minecraft.nbt.StringNBT;
+import net.minecraft.util.Direction;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraftforge.common.capabilities.Capability;
@@ -19,11 +16,15 @@ import net.minecraftforge.common.capabilities.ICapabilitySerializable;
 import net.minecraftforge.common.util.Constants;
 import net.minecraftforge.common.util.LazyOptional;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.util.Set;
+
 /**
  * 連鎖破壊のプレイヤー別状態保存クラス Created by A.K. on 2015/09/26.
  */
 public class CDPlayerStatus implements ICDPlayerStatusHandler,
-    ICapabilitySerializable<NBTTagCompound> {
+    ICapabilitySerializable<CompoundNBT> {
 
   public static final String NBT_STATUS_DIG_UNDER = "cd:digUnder";
   public static final String NBT_CLICK_FACE = "cd:clickFace";
@@ -38,12 +39,12 @@ public class CDPlayerStatus implements ICDPlayerStatusHandler,
    */
   public static final ICDPlayerStatusHandler DEFAULT_PLAYER_STATUS = new ICDPlayerStatusHandler() {
     @Override
-    public EnumFacing getFace() {
-      return EnumFacing.DOWN;
+    public Direction getFace() {
+      return Direction.DOWN;
     }
 
     @Override
-    public void setFace(EnumFacing face) {
+    public void setFace(Direction face) {
     }
 
     @Override
@@ -99,7 +100,7 @@ public class CDPlayerStatus implements ICDPlayerStatusHandler,
 
     @Override
     public Set<String> getEnableBlocks() {
-      return Sets.newHashSet(Blocks.OBSIDIAN.getRegistryName().toString(), "glowstone", "ore");
+      return Sets.newHashSet(Blocks.OBSIDIAN.getRegistryName().toString(), "glowstone", "forge:ores");
     }
 
     @Override
@@ -108,7 +109,7 @@ public class CDPlayerStatus implements ICDPlayerStatusHandler,
 
     @Override
     public Set<String> getEnableLogBlocks() {
-      return Sets.newHashSet("logWood", "treeLeaves");
+      return Sets.newHashSet("minecraft:logs", "minecraft:leaves");
     }
 
     @Override
@@ -125,7 +126,7 @@ public class CDPlayerStatus implements ICDPlayerStatusHandler,
       return null;
     }
   };
-  private EnumFacing face = EnumFacing.DOWN;
+  private Direction face = Direction.DOWN;
   private Set<String> enableItems = Sets.newHashSet(
       "minecraft:diamond_axe", "minecraft:golden_axe", "minecraft:iron_axe", "minecraft:stone_axe",
       "minecraft:wooden_axe",
@@ -134,15 +135,15 @@ public class CDPlayerStatus implements ICDPlayerStatusHandler,
       "minecraft:diamond_pickaxe", "minecraft:golden_pickaxe", "minecraft:iron_pickaxe",
       "minecraft:stone_pickaxe", "minecraft:wooden_pickaxe");
   private Set<String> enableBlocks = Sets
-      .newHashSet(Blocks.OBSIDIAN.getRegistryName().toString(), "glowstone", "ore");
-  private Set<String> enableLogBlocks = Sets.newHashSet("logWood", "treeLeaves");
+      .newHashSet(Blocks.OBSIDIAN.getRegistryName().toString(), "glowstone", "forge:ores");
+  private Set<String> enableLogBlocks = Sets.newHashSet("minecraft:logs", "minecraft:leaves");
   private boolean digUnder = false;
   private boolean treeMode = false;
   private boolean privateRegisterMode = false;
 
   private int maxDestroyedBlock = 5;
 
-  public static LazyOptional<ICDPlayerStatusHandler> get(EntityPlayer player) {
+  public static LazyOptional<ICDPlayerStatusHandler> get(PlayerEntity player) {
     return player
         .getCapability(CapabilityCDPlayerStatusHandler.CAPABILITY_CHAIN_DESTRUCTION_PLAYER, null);
   }
@@ -150,66 +151,66 @@ public class CDPlayerStatus implements ICDPlayerStatusHandler,
   @Override
   @Nonnull
   public <T> LazyOptional<T> getCapability(@Nonnull Capability<T> capability,
-      @Nullable EnumFacing facing) {
+      @Nullable Direction facing) {
     return capability == CapabilityCDPlayerStatusHandler.CAPABILITY_CHAIN_DESTRUCTION_PLAYER
         ? CapabilityCDPlayerStatusHandler.CAPABILITY_CHAIN_DESTRUCTION_PLAYER
         .orEmpty(capability, LazyOptional.of(() -> this)) : LazyOptional.empty();
   }
 
   @Override
-  public NBTTagCompound serializeNBT() {
-    NBTTagCompound nbt = new NBTTagCompound();
+  public CompoundNBT serializeNBT() {
+    CompoundNBT nbt = new CompoundNBT();
     nbt.putByte(NBT_CLICK_FACE, (byte) face.getIndex());
     nbt.putBoolean(NBT_STATUS_DIG_UNDER, digUnder);
     nbt.putBoolean(NBT_STATUS_TREE_MODE, treeMode);
     nbt.putBoolean(NBT_STATUS_PRIVATE_MODE, privateRegisterMode);
     nbt.putInt(NBT_STATUS_MAX_DESTROY_BLOCK, maxDestroyedBlock);
-    NBTTagList nbtTagListEnableItems = new NBTTagList();
-    enableItems.forEach(itemsStr -> nbtTagListEnableItems.add(new NBTTagString(itemsStr)));
-    nbt.put(NBT_STATUS_ENABLE_ITEMS, nbtTagListEnableItems);
-    NBTTagList nbtTagListEnableBlocks = new NBTTagList();
-    enableBlocks.forEach(blockStr -> nbtTagListEnableBlocks.add(new NBTTagString(blockStr)));
-    nbt.put(NBT_STATUS_ENABLE_BLOCKS, nbtTagListEnableBlocks);
-    NBTTagList nbtTagListEnableLogBlocks = new NBTTagList();
-    enableLogBlocks.forEach(blockStr -> nbtTagListEnableLogBlocks.add(new NBTTagString(blockStr)));
-    nbt.put(NBT_STATUS_ENABLE_LOG_BLOCKS, nbtTagListEnableLogBlocks);
+    ListNBT ListNBTEnableItems = new ListNBT();
+    enableItems.forEach(itemsStr -> ListNBTEnableItems.add(new StringNBT(itemsStr)));
+    nbt.put(NBT_STATUS_ENABLE_ITEMS, ListNBTEnableItems);
+    ListNBT ListNBTEnableBlocks = new ListNBT();
+    enableBlocks.forEach(blockStr -> ListNBTEnableBlocks.add(new StringNBT(blockStr)));
+    nbt.put(NBT_STATUS_ENABLE_BLOCKS, ListNBTEnableBlocks);
+    ListNBT ListNBTEnableLogBlocks = new ListNBT();
+    enableLogBlocks.forEach(blockStr -> ListNBTEnableLogBlocks.add(new StringNBT(blockStr)));
+    nbt.put(NBT_STATUS_ENABLE_LOG_BLOCKS, ListNBTEnableLogBlocks);
     return nbt;
   }
 
   @Override
-  public void deserializeNBT(NBTTagCompound nbt) {
-    face = EnumFacing.values()[nbt.getByte(NBT_CLICK_FACE) & 0xFF];
+  public void deserializeNBT(CompoundNBT nbt) {
+    face = Direction.values()[nbt.getByte(NBT_CLICK_FACE) & 0xFF];
     digUnder = nbt.getBoolean(NBT_STATUS_DIG_UNDER);
     treeMode = nbt.getBoolean(NBT_STATUS_TREE_MODE);
     privateRegisterMode = nbt.getBoolean(NBT_STATUS_PRIVATE_MODE);
     maxDestroyedBlock = nbt.getInt(NBT_STATUS_MAX_DESTROY_BLOCK);
     enableItems = Sets.newHashSet();
-    NBTTagList nbtTagListEnableItems = nbt
+    ListNBT ListNBTEnableItems = nbt
         .getList(NBT_STATUS_ENABLE_ITEMS, Constants.NBT.TAG_STRING);
-    for (int i = 0; i < nbtTagListEnableItems.size(); i++) {
-      enableItems.add(nbtTagListEnableItems.getString(i));
+    for (int i = 0; i < ListNBTEnableItems.size(); i++) {
+      enableItems.add(ListNBTEnableItems.getString(i));
     }
     enableBlocks = Sets.newHashSet();
-    NBTTagList nbtTagListEnableBlocks = nbt
+    ListNBT ListNBTEnableBlocks = nbt
         .getList(NBT_STATUS_ENABLE_BLOCKS, Constants.NBT.TAG_STRING);
-    for (int i = 0; i < nbtTagListEnableBlocks.size(); i++) {
-      enableBlocks.add(nbtTagListEnableBlocks.getString(i));
+    for (int i = 0; i < ListNBTEnableBlocks.size(); i++) {
+      enableBlocks.add(ListNBTEnableBlocks.getString(i));
     }
     enableLogBlocks = Sets.newHashSet();
-    NBTTagList nbtTagListEnableLogBlocks = nbt
+    ListNBT ListNBTEnableLogBlocks = nbt
         .getList(NBT_STATUS_ENABLE_LOG_BLOCKS, Constants.NBT.TAG_STRING);
-    for (int i = 0; i < nbtTagListEnableLogBlocks.size(); i++) {
-      enableLogBlocks.add(nbtTagListEnableLogBlocks.getString(i));
+    for (int i = 0; i < ListNBTEnableLogBlocks.size(); i++) {
+      enableLogBlocks.add(ListNBTEnableLogBlocks.getString(i));
     }
   }
 
   @Override
-  public EnumFacing getFace() {
+  public Direction getFace() {
     return face;
   }
 
   @Override
-  public void setFace(EnumFacing face) {
+  public void setFace(Direction face) {
     this.face = face;
   }
 
@@ -289,7 +290,7 @@ public class CDPlayerStatus implements ICDPlayerStatusHandler,
     int maxDestroyedBlock = getMaxDestroyedBlock();
     if (isDigUnder()) {
       y = Math.max(ak.akapi.Constants.MIN_Y, targetPos.getY() - maxDestroyedBlock);
-    } else if (EnumFacing.UP != getFace()) {
+    } else if (Direction.UP != getFace()) {
       y = Math.max(ak.akapi.Constants.MIN_Y, MathHelper.floor(entity.posY));
     } else if (maxDestroyedBlock > 0) {
       y = Math.max(ak.akapi.Constants.MIN_Y, MathHelper.floor(entity.posY) - 1);

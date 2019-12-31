@@ -11,7 +11,7 @@ import javax.annotation.Nullable;
 import net.minecraft.command.CommandSource;
 import net.minecraft.command.Commands;
 import net.minecraft.command.arguments.EntityArgument;
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 
 /**
  * プレイヤーの連鎖破壊設定を初期化するコマンド Created by A.K. on 2016/09/25.
@@ -27,18 +27,18 @@ public class CommandResetCDPlayerStatus {
             ));
   }
 
-  private static int execute(CommandSource commandSource, @Nullable EntityPlayer entityPlayer) {
-    if (Objects.isNull(entityPlayer)) {
+  private static int execute(CommandSource commandSource, @Nullable PlayerEntity PlayerEntity) {
+    if (Objects.isNull(PlayerEntity)) {
       try {
-        entityPlayer = commandSource.asPlayer();
+        PlayerEntity = commandSource.asPlayer();
       } catch (CommandSyntaxException e) {
         e.printStackTrace();
         return 1;
       }
     }
     //noinspection ConstantConditions
-    if (Objects.nonNull(entityPlayer)) {
-      CDPlayerStatus.get(entityPlayer).ifPresent(status -> {
+    if (Objects.nonNull(PlayerEntity)) {
+      CDPlayerStatus.get(PlayerEntity).ifPresent(status -> {
         CapabilityCDPlayerStatusHandler
             .copyPlayerStatus(CDPlayerStatus.DEFAULT_PLAYER_STATUS, status);
       });

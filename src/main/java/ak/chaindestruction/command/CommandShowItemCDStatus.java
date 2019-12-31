@@ -11,8 +11,8 @@ import javax.annotation.Nullable;
 import net.minecraft.command.CommandSource;
 import net.minecraft.command.Commands;
 import net.minecraft.command.arguments.EntityArgument;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.util.text.TextComponentString;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.util.text.StringTextComponent;
 
 /**
  * アイテムの現在の設定を表示するコマンド Created by A.K. on 2016/09/28.
@@ -28,22 +28,22 @@ public class CommandShowItemCDStatus {
             ));
   }
 
-  private static int execute(CommandSource commandSource, @Nullable EntityPlayer entityPlayer) {
-    if (Objects.isNull(entityPlayer)) {
+  private static int execute(CommandSource commandSource, @Nullable PlayerEntity PlayerEntity) {
+    if (Objects.isNull(PlayerEntity)) {
       try {
-        entityPlayer = commandSource.asPlayer();
+        PlayerEntity = commandSource.asPlayer();
       } catch (CommandSyntaxException e) {
         e.printStackTrace();
         return 1;
       }
     }
     //noinspection ConstantConditions
-    if (Objects.nonNull(entityPlayer)) {
+    if (Objects.nonNull(PlayerEntity)) {
       StringBuilder sb = new StringBuilder();
-      CDItemStackStatus.get(entityPlayer.getHeldItemMainhand()).ifPresent(status -> {
+      CDItemStackStatus.get(PlayerEntity.getHeldItemMainhand()).ifPresent(status -> {
         sb.append(CapabilityCDItemStackStatusHandler.makeItemsStatusToString(status));
       });
-      entityPlayer.sendMessage(new TextComponentString(sb.toString()));
+      PlayerEntity.sendMessage(new StringTextComponent(sb.toString()));
     } else {
       return 1;
     }

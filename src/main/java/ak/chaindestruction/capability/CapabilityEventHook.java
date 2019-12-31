@@ -1,15 +1,16 @@
 package ak.chaindestruction.capability;
 
-import static ak.chaindestruction.capability.CapabilityCDItemStackStatusHandler.CD_ITEM_STATUS;
-import static ak.chaindestruction.capability.CapabilityCDPlayerStatusHandler.CD_STATUS;
-
 import ak.chaindestruction.ConfigUtils;
-import java.util.Objects;
 import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraftforge.event.AttachCapabilitiesEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+
+import java.util.Objects;
+
+import static ak.chaindestruction.capability.CapabilityCDItemStackStatusHandler.CD_ITEM_STATUS;
+import static ak.chaindestruction.capability.CapabilityCDPlayerStatusHandler.CD_STATUS;
 
 /**
  * Capability周りのイベントクラス Created by A.K. on 2017/03/25.
@@ -24,7 +25,7 @@ public class CapabilityEventHook {
   @SubscribeEvent
   @SuppressWarnings("unused")
   public void onAttachingEntity(AttachCapabilitiesEvent<Entity> event) {
-    if (event.getObject() instanceof EntityPlayer) {
+    if (event.getObject() instanceof PlayerEntity) {
       event.addCapability(CD_STATUS, new CDPlayerStatus());
     }
   }

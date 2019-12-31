@@ -12,8 +12,8 @@ import ak.chaindestruction.network.PacketHandler;
 import com.mojang.brigadier.CommandDispatcher;
 import net.minecraft.command.CommandSource;
 import net.minecraft.command.Commands;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.util.text.TextComponentString;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.util.text.StringTextComponent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.EntityJoinWorldEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
@@ -52,28 +52,6 @@ public class ChainDestruction {
     PacketHandler.init();
     CapabilityCDPlayerStatusHandler.register();
     CapabilityCDItemStackStatusHandler.register();
-//        config = new Configuration(event.getSuggestedConfigurationFile());
-//        config.load();
-//        maxYforTreeMode = config.get(Configuration.CATEGORY_GENERAL, "maxYforTreeMode", maxYforTreeMode, "Max Height of destroyed block for tree mode. Be careful to set over 200.", 0, 255).getInt();
-//        destroyingSequentially = config.get(Configuration.CATEGORY_GENERAL, "destroyingSequentially Mode", destroyingSequentially, "destroy blocks sequentially").getBoolean();
-//        digTaskMaxCounter = config.get(Configuration.CATEGORY_GENERAL, "digTaskMaxCounter", digTaskMaxCounter, "Tick Rate on destroying Sequentially Mode", 1, 100).getInt();
-//        notToDestroyItem = config.get(Configuration.CATEGORY_GENERAL, "notToDestroyItem", notToDestroyItem, "Stop Destruciton not to destroy item").getBoolean();
-//        excludeRegisterItem = config.get(Configuration.CATEGORY_GENERAL, "excludeRegisterItem", excludeRegisterItem, "Exclude Item to register chain destruction.").getStringList();
-//        excludeRegisterItemList.addAll(Arrays.asList(excludeRegisterItem));
-//        excludeItemPredicate = (resourceLocation) -> {
-//            boolean ret = false;
-//            if (resourceLocation == null) {
-//                return true;
-//            }
-//            for (String string : excludeRegisterItemList) {
-//                if (resourceLocation.toString().matches(string)) {
-//                    ret = true;
-//                    break;
-//                }
-//            }
-//            return ret;
-//        };
-//        config.save();
   }
 
   @SuppressWarnings("unused")
@@ -91,28 +69,18 @@ public class ChainDestruction {
     CommandShowPlayerCDStatus.register(commandDispatcher);
   }
 
-//    @SuppressWarnings("unused")
-//    @SubscribeEvent
-//    public void serverStart(final FMLServerStartingEvent event) {
-//        event.registerServerCommand(new CommandResetCDPlayerStatus());
-//        event.registerServerCommand(new CommandCopyRtoLCDStatus());
-//        event.registerServerCommand(new CommandShowPlayerCDStatus());
-//        event.registerServerCommand(new CommandShowItemCDStatus());
-//    }
-
-
   @SuppressWarnings("unused")
   @SubscribeEvent
   public void joinInWorld(final EntityJoinWorldEvent event) {
-    if (!event.getWorld().isRemote && event.getEntity() instanceof EntityPlayer) {
-      EntityPlayer player = (EntityPlayer) event.getEntity();
+    if (!event.getWorld().isRemote && event.getEntity() instanceof PlayerEntity) {
+      PlayerEntity player = (PlayerEntity) event.getEntity();
       CDPlayerStatus.get(player).ifPresent(status -> {
         String mode = status.isPrivateRegisterMode() ? "Private Register" : "Normal";
         String s = String
             .format("ChainDestruction Info Mode:%s, TreeMode:%b, Range:%d", mode,
                 status.isTreeMode(),
                 status.getMaxDestroyedBlock());
-        player.sendMessage(new TextComponentString(s));
+        player.sendMessage(new StringTextComponent(s));
       });
     }
   }

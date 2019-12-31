@@ -1,9 +1,9 @@
 package ak.chaindestruction;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 
 public class CommonProxy {
     public void registerClientInfo() {}
 
-    public EntityPlayer getEntityPlayer() {return null;}
+    public PlayerEntity getPlayerEntity() {return null;}
 }

@@ -3,7 +3,7 @@ package ak.chaindestruction.network;
 import ak.chaindestruction.ChainDestruction;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraftforge.fml.network.NetworkEvent.Context;
 
 /**
@@ -15,7 +15,7 @@ public class MessageKeyPressedHandler implements BiConsumer<MessageKeyPressed, S
     @Override
     public void accept(MessageKeyPressed messageKeyPressed, Supplier<Context> contextSupplier) {
         if (contextSupplier.get().getSender() != null) {
-            EntityPlayer player = contextSupplier.get().getSender();
+            PlayerEntity player = contextSupplier.get().getSender();
             ChainDestruction.interactblockhook.doKeyEvent(player.getHeldItemMainhand(), player, messageKeyPressed.getKey());
         }
     }

@@ -1,27 +1,28 @@
 package ak.chaindestruction.capability;
 
-import static ak.chaindestruction.capability.CapabilityCDItemStackStatusHandler.CAPABILITY_CHAIN_DESTRUCTION_ITEM;
-
 import ak.chaindestruction.ConfigUtils;
 import com.google.common.collect.Sets;
-import java.util.Set;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagList;
-import net.minecraft.nbt.NBTTagString;
-import net.minecraft.util.EnumFacing;
+import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.nbt.ListNBT;
+import net.minecraft.nbt.StringNBT;
+import net.minecraft.util.Direction;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ICapabilitySerializable;
 import net.minecraftforge.common.util.Constants;
 import net.minecraftforge.common.util.LazyOptional;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.util.Set;
+
+import static ak.chaindestruction.capability.CapabilityCDItemStackStatusHandler.CAPABILITY_CHAIN_DESTRUCTION_ITEM;
+
 /**
  * ItemStack用連鎖破壊ステータス実装クラス
  * Created by A.K. on 2016/09/25.
  */
-public class CDItemStackStatus implements ICDItemStackStatusHandler, ICapabilitySerializable<NBTTagCompound> {
+public class CDItemStackStatus implements ICDItemStackStatusHandler, ICapabilitySerializable<CompoundNBT> {
     private static final String NBT_STATUS_ENABLE_BLOCKS = "cd:enableBlocks";
     private static final String NBT_STATUS_ENABLE_LOG_BLOCKS = "cd:enableLogBlocks";
     private Set<String> enableBlocks = Sets.newHashSet();
@@ -60,37 +61,37 @@ public class CDItemStackStatus implements ICDItemStackStatusHandler, ICapability
 
     @Override
     @Nonnull
-    public <T> LazyOptional<T> getCapability(@Nonnull Capability<T> capability, @Nullable EnumFacing facing) {
+    public <T> LazyOptional<T> getCapability(@Nonnull Capability<T> capability, @Nullable Direction facing) {
         return !ConfigUtils.COMMON.excludeItemPredicate.test(this.itemStack.getItem().getRegistryName()) ? CAPABILITY_CHAIN_DESTRUCTION_ITEM.orEmpty(capability, LazyOptional.of(() -> this)) : LazyOptional.empty();
     }
 
     @Override
-    public NBTTagCompound serializeNBT() {
-        NBTTagCompound nbt = new NBTTagCompound();
-        NBTTagList nbtTagListEnableBlocks = new NBTTagList();
-        enableBlocks.forEach(blockStr -> nbtTagListEnableBlocks.add(new NBTTagString(blockStr)));
-        if (nbtTagListEnableBlocks.size() > 0) {
-            nbt.put(NBT_STATUS_ENABLE_BLOCKS, nbtTagListEnableBlocks);
+    public CompoundNBT serializeNBT() {
+        CompoundNBT nbt = new CompoundNBT();
+        ListNBT ListNBTEnableBlocks = new ListNBT();
+        enableBlocks.forEach(blockStr -> ListNBTEnableBlocks.add(new StringNBT(blockStr)));
+        if (ListNBTEnableBlocks.size() > 0) {
+            nbt.put(NBT_STATUS_ENABLE_BLOCKS, ListNBTEnableBlocks);
         }
-        NBTTagList nbtTagListEnableLogBlocks = new NBTTagList();
-        enableLogBlocks.forEach(blockStr -> nbtTagListEnableLogBlocks.add(new NBTTagString(blockStr)));
-        if (nbtTagListEnableLogBlocks.size() > 0) {
-            nbt.put(NBT_STATUS_ENABLE_LOG_BLOCKS, nbtTagListEnableLogBlocks);
+        ListNBT ListNBTEnableLogBlocks = new ListNBT();
+        enableLogBlocks.forEach(blockStr -> ListNBTEnableLogBlocks.add(new StringNBT(blockStr)));
+        if (ListNBTEnableLogBlocks.size() > 0) {
+            nbt.put(NBT_STATUS_ENABLE_LOG_BLOCKS, ListNBTEnableLogBlocks);
         }
         return nbt;
     }
 
     @Override
-    public void deserializeNBT(NBTTagCompound nbt) {
+    public void deserializeNBT(CompoundNBT nbt) {
         enableBlocks = Sets.newHashSet();
-        NBTTagList nbtTagListEnableBlocks = nbt.getList(NBT_STATUS_ENABLE_BLOCKS, Constants.NBT.TAG_STRING);
-        for (int i = 0; i < nbtTagListEnableBlocks.size();i++) {
-            enableBlocks.add(nbtTagListEnableBlocks.getString(i));
+        ListNBT ListNBTEnableBlocks = nbt.getList(NBT_STATUS_ENABLE_BLOCKS, Constants.NBT.TAG_STRING);
+        for (int i = 0; i < ListNBTEnableBlocks.size();i++) {
+            enableBlocks.add(ListNBTEnableBlocks.getString(i));
         }
         enableLogBlocks = Sets.newHashSet();
-        NBTTagList nbtTagListEnableLogBlocks = nbt.getList(NBT_STATUS_ENABLE_LOG_BLOCKS, Constants.NBT.TAG_STRING);
-        for (int i = 0; i < nbtTagListEnableLogBlocks.size();i++) {
-            enableLogBlocks.add(nbtTagListEnableLogBlocks.getString(i));
+        ListNBT ListNBTEnableLogBlocks = nbt.getList(NBT_STATUS_ENABLE_LOG_BLOCKS, Constants.NBT.TAG_STRING);
+        for (int i = 0; i < ListNBTEnableLogBlocks.size();i++) {
+            enableLogBlocks.add(ListNBTEnableLogBlocks.getString(i));
         }
     }
 }
