@@ -1,7 +1,10 @@
 package ak.chaindestruction.capability;
 
+import static ak.chaindestruction.capability.CapabilityCDPlayerStatusHandler.COMMA_JOINER;
+
 import ak.chaindestruction.ChainDestruction;
 import com.google.common.collect.Sets;
+import java.util.Set;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.nbt.INBT;
 import net.minecraft.nbt.ListNBT;
@@ -12,10 +15,6 @@ import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.CapabilityInject;
 import net.minecraftforge.common.capabilities.CapabilityManager;
 import net.minecraftforge.common.util.Constants;
-
-import java.util.Set;
-
-import static ak.chaindestruction.capability.CapabilityCDPlayerStatusHandler.COMMA_JOINER;
 
 /**
  * 連鎖破壊ItemStackステータスハンドリングクラス
@@ -32,10 +31,10 @@ public class CapabilityCDItemStackStatusHandler {
             public INBT writeNBT(Capability<ICDItemStackStatusHandler> capability, ICDItemStackStatusHandler instance, Direction side) {
                 CompoundNBT nbt = new CompoundNBT();
                 ListNBT ListNBTEnableBlocks = new ListNBT();
-                instance.getEnableBlocks().forEach(blockStr -> ListNBTEnableBlocks.add(new StringNBT(blockStr)));
+                instance.getEnableBlocks().forEach(blockStr -> ListNBTEnableBlocks.add(StringNBT.func_229705_a_(blockStr)));
                 nbt.put(CDPlayerStatus.NBT_STATUS_ENABLE_BLOCKS, ListNBTEnableBlocks);
                 ListNBT ListNBTEnableLogBlocks = new ListNBT();
-                instance.getEnableLogBlocks().forEach(blockStr -> ListNBTEnableLogBlocks.add(new StringNBT(blockStr)));
+                instance.getEnableLogBlocks().forEach(blockStr -> ListNBTEnableLogBlocks.add(StringNBT.func_229705_a_(blockStr)));
                 nbt.put(CDPlayerStatus.NBT_STATUS_ENABLE_LOG_BLOCKS, ListNBTEnableLogBlocks);
                 return nbt;
             }

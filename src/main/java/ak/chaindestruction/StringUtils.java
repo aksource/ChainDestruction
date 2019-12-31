@@ -29,7 +29,7 @@ public class StringUtils {
   private static final Joiner AT_JOINER = Joiner.on('@');
   private static Function<Entry<IProperty<?>, Comparable<?>>, String> functionBlockStateBase = ObfuscationReflectionHelper
       .getPrivateValue(
-          StateHolder.class, null, 0);
+          StateHolder.class, null, "field_177233_b");
 
   /**
    * {@code ResourceLocation}から固有文字列を取得

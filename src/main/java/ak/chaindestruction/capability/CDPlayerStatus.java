@@ -166,13 +166,13 @@ public class CDPlayerStatus implements ICDPlayerStatusHandler,
     nbt.putBoolean(NBT_STATUS_PRIVATE_MODE, privateRegisterMode);
     nbt.putInt(NBT_STATUS_MAX_DESTROY_BLOCK, maxDestroyedBlock);
     ListNBT ListNBTEnableItems = new ListNBT();
-    enableItems.forEach(itemsStr -> ListNBTEnableItems.add(new StringNBT(itemsStr)));
+    enableItems.forEach(itemsStr -> ListNBTEnableItems.add(StringNBT.func_229705_a_(itemsStr)));
     nbt.put(NBT_STATUS_ENABLE_ITEMS, ListNBTEnableItems);
     ListNBT ListNBTEnableBlocks = new ListNBT();
-    enableBlocks.forEach(blockStr -> ListNBTEnableBlocks.add(new StringNBT(blockStr)));
+    enableBlocks.forEach(blockStr -> ListNBTEnableBlocks.add(StringNBT.func_229705_a_(blockStr)));
     nbt.put(NBT_STATUS_ENABLE_BLOCKS, ListNBTEnableBlocks);
     ListNBT ListNBTEnableLogBlocks = new ListNBT();
-    enableLogBlocks.forEach(blockStr -> ListNBTEnableLogBlocks.add(new StringNBT(blockStr)));
+    enableLogBlocks.forEach(blockStr -> ListNBTEnableLogBlocks.add(StringNBT.func_229705_a_(blockStr)));
     nbt.put(NBT_STATUS_ENABLE_LOG_BLOCKS, ListNBTEnableLogBlocks);
     return nbt;
   }
@@ -291,9 +291,9 @@ public class CDPlayerStatus implements ICDPlayerStatusHandler,
     if (isDigUnder()) {
       y = Math.max(ak.akapi.Constants.MIN_Y, targetPos.getY() - maxDestroyedBlock);
     } else if (Direction.UP != getFace()) {
-      y = Math.max(ak.akapi.Constants.MIN_Y, MathHelper.floor(entity.posY));
+      y = Math.max(ak.akapi.Constants.MIN_Y, MathHelper.floor(entity.getPositionVec().y));
     } else if (maxDestroyedBlock > 0) {
-      y = Math.max(ak.akapi.Constants.MIN_Y, MathHelper.floor(entity.posY) - 1);
+      y = Math.max(ak.akapi.Constants.MIN_Y, MathHelper.floor(entity.getPositionVec().y) - 1);
     }
     return new BlockPos(
         targetPos.getX() - maxDestroyedBlock,

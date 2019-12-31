@@ -1,9 +1,10 @@
 {
   "homepage": "https://github.com/aksource/ChainDestruction",
-  "1.14.4": {
-    "1.6.2": "for 1.14.4"
+  "1.15.1": {
+    "1.6.3": "for 1.15.1"
   },
   "promos": {
+    "1.14.4-recommended": "1.6.2",
     "1.13.2-latest": "1.6.1",
     "1.13.2-recommended": "1.6.0",
     "1.12.2-latest": "1.5.6",

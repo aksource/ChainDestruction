@@ -38,13 +38,13 @@ public class CapabilityCDPlayerStatusHandler {
                 nbt.putBoolean(CDPlayerStatus.NBT_STATUS_PRIVATE_MODE, instance.isPrivateRegisterMode());
                 nbt.putInt(CDPlayerStatus.NBT_STATUS_MAX_DESTROY_BLOCK, instance.getMaxDestroyedBlock());
                 ListNBT ListNBTEnableItems = new ListNBT();
-                instance.getEnableItems().forEach(itemsStr -> ListNBTEnableItems.add(new StringNBT(itemsStr)));
+                instance.getEnableItems().forEach(itemsStr -> ListNBTEnableItems.add(StringNBT.func_229705_a_(itemsStr)));
                 nbt.put(CDPlayerStatus.NBT_STATUS_ENABLE_ITEMS, ListNBTEnableItems);
                 ListNBT ListNBTEnableBlocks = new ListNBT();
-                instance.getEnableBlocks().forEach(blockStr -> ListNBTEnableBlocks.add(new StringNBT(blockStr)));
+                instance.getEnableBlocks().forEach(blockStr -> ListNBTEnableBlocks.add(StringNBT.func_229705_a_(blockStr)));
                 nbt.put(CDPlayerStatus.NBT_STATUS_ENABLE_BLOCKS, ListNBTEnableBlocks);
                 ListNBT ListNBTEnableLogBlocks = new ListNBT();
-                instance.getEnableLogBlocks().forEach(blockStr -> ListNBTEnableLogBlocks.add(new StringNBT(blockStr)));
+                instance.getEnableLogBlocks().forEach(blockStr -> ListNBTEnableLogBlocks.add(StringNBT.func_229705_a_(blockStr)));
                 nbt.put(CDPlayerStatus.NBT_STATUS_ENABLE_LOG_BLOCKS, ListNBTEnableLogBlocks);
                 return nbt;
             }

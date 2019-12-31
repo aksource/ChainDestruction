@@ -1,5 +1,8 @@
 package ak.chaindestruction;
 
+import static ak.chaindestruction.capability.CapabilityCDItemStackStatusHandler.CAPABILITY_CHAIN_DESTRUCTION_ITEM;
+import static ak.chaindestruction.capability.CapabilityCDPlayerStatusHandler.CAPABILITY_CHAIN_DESTRUCTION_PLAYER;
+
 import ak.akapi.Constants;
 import ak.chaindestruction.capability.CDItemStackStatus;
 import ak.chaindestruction.capability.CDPlayerStatus;
@@ -7,6 +10,12 @@ import ak.chaindestruction.capability.ICDItemStackStatusHandler;
 import ak.chaindestruction.capability.ICDPlayerStatusHandler;
 import ak.chaindestruction.network.MessageCDStatusProperties;
 import ak.chaindestruction.network.PacketHandler;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
@@ -32,16 +41,6 @@ import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.world.BlockEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.network.NetworkDirection;
-
-import javax.annotation.Nonnull;
-import java.util.Iterator;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import static ak.chaindestruction.capability.CapabilityCDItemStackStatusHandler.CAPABILITY_CHAIN_DESTRUCTION_ITEM;
-import static ak.chaindestruction.capability.CapabilityCDPlayerStatusHandler.CAPABILITY_CHAIN_DESTRUCTION_PLAYER;
 
 public class InteractBlockHook {
 
@@ -78,7 +77,7 @@ public class InteractBlockHook {
         state.getBlock().onBlockHarvested(world, blockPos, state, player);
         state.getBlock().onPlayerDestroy(world, blockPos, state);
         state.getBlock()
-            .harvestBlock(world, player, new BlockPos(player.posX, player.posY, player.posZ), state,
+            .harvestBlock(world, player, new BlockPos(player.getPositionVec().x, player.getPositionVec().y, player.getPositionVec().z), state,
                 null, itemStack);
         if (ConfigUtils.COMMON.destroyingSequentially) {
           dropItemNearPlayer(world, player, blockPos);
@@ -88,7 +87,7 @@ public class InteractBlockHook {
               EnchantmentHelper.getEnchantmentLevel(Enchantments.FORTUNE, itemStack),
                   EnchantmentHelper.getEnchantmentLevel(Enchantments.SILK_TOUCH, itemStack));
           state.getBlock()
-              .dropXpOnBlockBreak(world, new BlockPos(player.posX, player.posY, player.posZ), exp);
+              .dropXpOnBlockBreak(world, new BlockPos(player.getPositionVec().x, player.getPositionVec().y, player.getPositionVec().z), exp);
         }
         if (itemStack.getCount() == 0) {
           destroyItem(player, itemStack, isMultiToolHolder, toolData, slotNum);
@@ -118,9 +117,9 @@ public class InteractBlockHook {
     float f1 = player.rotationYaw * (float) (2 * Math.PI / 360);
     for (ItemEntity eItem : entityItemList) {
       eItem.setNoPickupDelay();
-      d0 = player.posX - MathHelper.sin(f1) * 0.5D;
-      d1 = player.posY + 0.5D;
-      d2 = player.posZ + MathHelper.cos(f1) * 0.5D;
+      d0 = player.getPositionVec().x - MathHelper.sin(f1) * 0.5D;
+      d1 = player.getPositionVec().y + 0.5D;
+      d2 = player.getPositionVec().z + MathHelper.cos(f1) * 0.5D;
       eItem.setPosition(d0, d1, d2);
     }
   }
@@ -170,12 +169,12 @@ public class InteractBlockHook {
       if (key == Constants.RegKEY && !item.isEmpty()) {
         Set<String> enableItems = status.getEnableItems();
         String uniqueName = StringUtils.getUniqueString(item.getItem().getRegistryName());
-        if (player.isSneaking() && enableItems.contains(uniqueName)) {
+        if (player.func_225608_bj_() && enableItems.contains(uniqueName)) {
           enableItems.remove(uniqueName);
           chat = String.format("Remove Tool : %s", uniqueName);
           player.sendMessage(new StringTextComponent(chat));
         }
-        if (!player.isSneaking() && !enableItems.contains(uniqueName)) {
+        if (!player.func_225608_bj_() && !enableItems.contains(uniqueName)) {
           enableItems.add(uniqueName);
           chat = String.format("Add Tool : %s", uniqueName);
           player.sendMessage(new StringTextComponent(chat));
@@ -187,7 +186,7 @@ public class InteractBlockHook {
         player.sendMessage(new StringTextComponent(chat));
       }
       if (key == Constants.ModeKEY) {
-        if (player.isSneaking()) {
+        if (player.func_225608_bj_()) {
           status.setPrivateRegisterMode(!status.isPrivateRegisterMode());
           chat = String.format("Private Register Mode %b", status.isPrivateRegisterMode());
           player.sendMessage(new StringTextComponent(chat));
@@ -222,7 +221,7 @@ public class InteractBlockHook {
         String chat;
         if (mouse == Constants.MIDDLE_CLICK && !isFocusObject) {
           int maxDestroyedBlock = status.getMaxDestroyedBlock();
-          if (player.isSneaking() && maxDestroyedBlock > 0) {
+          if (player.func_225608_bj_() && maxDestroyedBlock > 0) {
             status.setMaxDestroyedBlock(--maxDestroyedBlock);
           } else {
             status.setMaxDestroyedBlock(++maxDestroyedBlock);
@@ -338,7 +337,7 @@ public class InteractBlockHook {
     //鉱石辞書名かMeta値付き固有文字列のリスト
     List<String> oreNames = StringUtils.makeStringDataFromBlockState(state);
     String chat;
-    if (player.isSneaking()) {
+    if (player.func_225608_bj_()) {
       //鉱石辞書名かBlockState付き固有文字列があって、登録されて無ければ、そちらを登録。
       if (!StringUtils.matchOreNames(set, oreNames)) {
         set.addAll(oreNames);
