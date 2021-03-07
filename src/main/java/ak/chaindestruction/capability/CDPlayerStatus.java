@@ -18,6 +18,7 @@ import net.minecraftforge.common.util.LazyOptional;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -100,7 +101,7 @@ public class CDPlayerStatus implements ICDPlayerStatusHandler,
 
     @Override
     public Set<String> getEnableBlocks() {
-      return Sets.newHashSet(Blocks.OBSIDIAN.getRegistryName().toString(), "glowstone", "forge:ores");
+      return Sets.newHashSet(Objects.requireNonNull(Blocks.OBSIDIAN.getRegistryName()).toString(), "glowstone", "forge:ores");
     }
 
     @Override
@@ -135,7 +136,7 @@ public class CDPlayerStatus implements ICDPlayerStatusHandler,
       "minecraft:diamond_pickaxe", "minecraft:golden_pickaxe", "minecraft:iron_pickaxe",
       "minecraft:stone_pickaxe", "minecraft:wooden_pickaxe");
   private Set<String> enableBlocks = Sets
-      .newHashSet(Blocks.OBSIDIAN.getRegistryName().toString(), "glowstone", "forge:ores");
+      .newHashSet(Objects.requireNonNull(Blocks.OBSIDIAN.getRegistryName()).toString(), "glowstone", "forge:ores");
   private Set<String> enableLogBlocks = Sets.newHashSet("minecraft:logs", "minecraft:leaves");
   private boolean digUnder = false;
   private boolean treeMode = false;

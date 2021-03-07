@@ -1,10 +1,6 @@
 package ak.chaindestruction;
 
-import static ak.chaindestruction.ChainDestruction.digTaskEvent;
-
 import com.google.common.collect.Lists;
-import java.util.List;
-import java.util.function.Predicate;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.common.ForgeConfigSpec.BooleanValue;
@@ -15,6 +11,11 @@ import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.config.ModConfig.Loading;
 import org.apache.logging.log4j.LogManager;
+
+import java.util.List;
+import java.util.function.Predicate;
+
+import static ak.chaindestruction.ChainDestruction.digTaskEvent;
 
 /**
  * Created by A.K. on 2019/03/25.
@@ -34,7 +35,7 @@ public class ConfigUtils {
   @SuppressWarnings("unused")
   @SubscribeEvent
   public static void configLoading(final Loading event) {
-    LogManager.getLogger().debug(ChainDestruction.MOD_ID, "Loaded ChainDestruction config file {}",
+    LogManager.getLogger().debug("Loaded ChainDestruction config file {}",
         event.getConfig().getFileName());
     COMMON.maxYforTreeMode = COMMON.maxYforTreeModeConfigValue.get();
     COMMON.destroyingSequentially = COMMON.destroyingSequentiallyConfigValue.get();
@@ -62,11 +63,11 @@ public class ConfigUtils {
     public boolean dropOnPlayer = true;
     public List<String> excludeRegisterItemList;
     public Predicate<ResourceLocation> excludeItemPredicate;
-    private IntValue maxYforTreeModeConfigValue;
-    private BooleanValue destroyingSequentiallyConfigValue;
-    private IntValue digTaskMaxCounterConfigValue;
-    private BooleanValue notToDestroyItemConfigValue;
-    private ConfigValue<String> excludeRegisterItemsConfigValue;
+    private final IntValue maxYforTreeModeConfigValue;
+    private final BooleanValue destroyingSequentiallyConfigValue;
+    private final IntValue digTaskMaxCounterConfigValue;
+    private final BooleanValue notToDestroyItemConfigValue;
+    private final ConfigValue<String> excludeRegisterItemsConfigValue;
 
     Common(Builder builder) {
       builder.comment("Common settings")
@@ -80,7 +81,7 @@ public class ConfigUtils {
       digTaskMaxCounterConfigValue = builder.comment("Tick Rate on destroying Sequentially Mode")
           .defineInRange("digTaskMaxCounter", 5,
               1, 100);
-      notToDestroyItemConfigValue = builder.comment("Stop Destruciton not to destroy item")
+      notToDestroyItemConfigValue = builder.comment("Stop Destruction not to destroy item")
           .define("notToDestroyItem", false);
       excludeRegisterItemsConfigValue = builder
           .comment("Exclude Item to register chain destruction.")

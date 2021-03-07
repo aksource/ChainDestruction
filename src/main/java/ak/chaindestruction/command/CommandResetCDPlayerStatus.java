@@ -1,17 +1,18 @@
 package ak.chaindestruction.command;
 
-import static ak.akapi.Constants.COMMAND_RESET_PLAYER_STATUS;
-
 import ak.chaindestruction.capability.CDPlayerStatus;
 import ak.chaindestruction.capability.CapabilityCDPlayerStatusHandler;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import java.util.Objects;
-import javax.annotation.Nullable;
 import net.minecraft.command.CommandSource;
 import net.minecraft.command.Commands;
 import net.minecraft.command.arguments.EntityArgument;
 import net.minecraft.entity.player.PlayerEntity;
+
+import javax.annotation.Nullable;
+import java.util.Objects;
+
+import static ak.akapi.Constants.COMMAND_RESET_PLAYER_STATUS;
 
 /**
  * プレイヤーの連鎖破壊設定を初期化するコマンド Created by A.K. on 2016/09/25.
@@ -27,21 +28,19 @@ public class CommandResetCDPlayerStatus {
             ));
   }
 
-  private static int execute(CommandSource commandSource, @Nullable PlayerEntity PlayerEntity) {
-    if (Objects.isNull(PlayerEntity)) {
+  private static int execute(CommandSource commandSource, @Nullable PlayerEntity playerEntity) {
+    if (Objects.isNull(playerEntity)) {
       try {
-        PlayerEntity = commandSource.asPlayer();
+        playerEntity = commandSource.asPlayer();
       } catch (CommandSyntaxException e) {
         e.printStackTrace();
         return 1;
       }
     }
     //noinspection ConstantConditions
-    if (Objects.nonNull(PlayerEntity)) {
-      CDPlayerStatus.get(PlayerEntity).ifPresent(status -> {
-        CapabilityCDPlayerStatusHandler
-            .copyPlayerStatus(CDPlayerStatus.DEFAULT_PLAYER_STATUS, status);
-      });
+    if (Objects.nonNull(playerEntity)) {
+      CDPlayerStatus.get(playerEntity).ifPresent(status -> CapabilityCDPlayerStatusHandler
+          .copyPlayerStatus(CDPlayerStatus.DEFAULT_PLAYER_STATUS, status));
     } else {
       return 1;
     }

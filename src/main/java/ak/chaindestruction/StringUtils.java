@@ -13,11 +13,8 @@ import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -39,7 +36,7 @@ public class StringUtils {
    */
   @Nonnull
   public static String getUniqueString(@Nullable ResourceLocation resourceLocation) {
-    return resourceLocation != null ? resourceLocation.toString() : "";
+    return Objects.nonNull(resourceLocation) ? resourceLocation.toString() : "";
   }
 
   public static List<String> makeStringDataFromBlockState(BlockState state) {
@@ -59,12 +56,13 @@ public class StringUtils {
 
   private static String makeString(BlockState state) {
     StringBuilder stringBuilder = new StringBuilder();
-    if (state.getBlock().getRegistryName() != null) {
+    if (Objects.nonNull(state.getBlock().getRegistryName())) {
       stringBuilder.append(state.getBlock().getRegistryName().toString());
     }
 
     if (!state.getProperties().isEmpty()) {
       stringBuilder.append("[");
+      assert functionBlockStateBase != null;
       AT_JOINER.appendTo(stringBuilder,
           state.getValues().entrySet().stream().map(functionBlockStateBase)
               .collect(Collectors.toList()));

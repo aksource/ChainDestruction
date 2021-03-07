@@ -164,9 +164,12 @@ public class InteractBlockHook {
    * @param player プレイヤー
    * @param key 押下キーを表すbyte
    */
-  public void doKeyEvent(@Nonnull ItemStack item, @Nonnull PlayerEntity player, byte key) {
+  public void doKeyEvent(@Nullable ItemStack item, @Nonnull PlayerEntity player, byte key) {
     CDPlayerStatus.get(player).ifPresent(status -> {
       String chat;
+      if (Objects.isNull(item)) {
+        return;
+      }
       if (key == Constants.RegKEY && !item.isEmpty()) {
         Set<String> enableItems = status.getEnableItems();
         String uniqueName = StringUtils.getUniqueString(item.getItem().getRegistryName());
@@ -190,12 +193,11 @@ public class InteractBlockHook {
         if (player.isSneaking()) {
           status.setPrivateRegisterMode(!status.isPrivateRegisterMode());
           chat = String.format("Private Register Mode %b", status.isPrivateRegisterMode());
-          player.sendMessage(new StringTextComponent(chat));
         } else {
           status.setTreeMode(!status.isTreeMode());
           chat = String.format("Tree Mode %b", status.isTreeMode());
-          player.sendMessage(new StringTextComponent(chat));
         }
+        player.sendMessage(new StringTextComponent(chat), Util.DUMMY_UUID);
       }
       PacketHandler.INSTANCE.sendTo(new MessageCDStatusProperties(player),
           ((ServerPlayerEntity) player).connection.getNetworkManager(),
@@ -436,7 +438,7 @@ public class InteractBlockHook {
         destroyBlock(world, player, player.getHeldItemMainhand(), connectedBlockSet);
       } else {
         ChainDestruction.digTaskEvent.digTaskSet
-            .add(new DigTask(player, player.getHeldItemMainhand(), connectedBlockSet, blockPos));
+            .add(new DigTask(player, player.getHeldItemMainhand(), connectedBlockSet));
       }
     });
   }

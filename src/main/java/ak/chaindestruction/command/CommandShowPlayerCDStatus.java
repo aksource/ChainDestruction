@@ -1,18 +1,20 @@
 package ak.chaindestruction.command;
 
-import static ak.akapi.Constants.COMMAND_SHOW_PLAYER_CD_STATUS;
-
 import ak.chaindestruction.capability.CDPlayerStatus;
 import ak.chaindestruction.capability.CapabilityCDPlayerStatusHandler;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import java.util.Objects;
-import javax.annotation.Nullable;
 import net.minecraft.command.CommandSource;
 import net.minecraft.command.Commands;
 import net.minecraft.command.arguments.EntityArgument;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.util.Util;
 import net.minecraft.util.text.StringTextComponent;
+
+import javax.annotation.Nullable;
+import java.util.Objects;
+
+import static ak.akapi.Constants.COMMAND_SHOW_PLAYER_CD_STATUS;
 
 /**
  * プレイヤーの現在の設定を表示するコマンド
@@ -29,22 +31,20 @@ public class CommandShowPlayerCDStatus {
             ));
   }
 
-  private static int execute(CommandSource commandSource, @Nullable PlayerEntity PlayerEntity) {
-    if (Objects.isNull(PlayerEntity)) {
+  private static int execute(CommandSource commandSource, @Nullable PlayerEntity playerEntity) {
+    if (Objects.isNull(playerEntity)) {
       try {
-        PlayerEntity = commandSource.asPlayer();
+        playerEntity = commandSource.asPlayer();
       } catch (CommandSyntaxException e) {
         e.printStackTrace();
         return 1;
       }
     }
     //noinspection ConstantConditions
-    if (Objects.nonNull(PlayerEntity)) {
+    if (Objects.nonNull(playerEntity)) {
       StringBuilder sb = new StringBuilder();
-      CDPlayerStatus.get(PlayerEntity).ifPresent(status -> {
-        sb.append(CapabilityCDPlayerStatusHandler.makePlayerStatusToString(status));
-      });
-      PlayerEntity.sendMessage(new StringTextComponent(sb.toString()));
+      CDPlayerStatus.get(playerEntity).ifPresent(status -> sb.append(CapabilityCDPlayerStatusHandler.makePlayerStatusToString(status)));
+      playerEntity.sendMessage(new StringTextComponent(sb.toString()), Util.DUMMY_UUID);
     } else {
       return 1;
     }

@@ -16,7 +16,7 @@ import java.util.Set;
 public class DigTaskEvent {
 
     public Set<DigTask> digTaskSet = new HashSet<>();
-    private Set<DigTask> digTaskRemoveSet = new HashSet<>();
+    private final Set<DigTask> digTaskRemoveSet = new HashSet<>();
 
     @SuppressWarnings("unused")
     @SubscribeEvent

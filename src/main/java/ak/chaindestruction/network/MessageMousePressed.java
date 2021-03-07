@@ -1,18 +1,17 @@
 package ak.chaindestruction.network;
 
+import net.minecraft.network.PacketBuffer;
+
 import java.util.function.BiConsumer;
 import java.util.function.Function;
-import net.minecraft.network.PacketBuffer;
 
 /**
  * マウスクリック用メッセージクラス Created by A.K. on 14/10/14.
  */
 public class MessageMousePressed {
 
-  public static BiConsumer<MessageMousePressed, PacketBuffer> encoder = (messageMousePressed, packetBuffer) -> {
-    packetBuffer.writeByte(messageMousePressed.getMouseIndex())
-        .writeBoolean(messageMousePressed.isFocusObject);
-  };
+  public static BiConsumer<MessageMousePressed, PacketBuffer> encoder = (messageMousePressed, packetBuffer) -> packetBuffer.writeByte(messageMousePressed.getMouseIndex())
+      .writeBoolean(messageMousePressed.isFocusObject);
 
   public static Function<PacketBuffer, MessageMousePressed> decoder = packetBuffer -> new MessageMousePressed(
       packetBuffer.readByte(), packetBuffer.readBoolean());

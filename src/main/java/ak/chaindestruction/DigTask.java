@@ -17,13 +17,12 @@ import java.util.LinkedHashSet;
  */
 public class DigTask {
 
-  private LinkedHashSet<BlockPos> blockToDestroySet = new LinkedHashSet<>();
-  private PlayerEntity digger;
-  private ItemStack heldItem;
+  private final LinkedHashSet<BlockPos> blockToDestroySet = new LinkedHashSet<>();
+  private final PlayerEntity digger;
+  private final ItemStack heldItem;
   private int counter;
 
-  public DigTask(PlayerEntity player, ItemStack itemStack, LinkedHashSet<BlockPos> blockPosSet,
-      BlockPos origin) {
+  public DigTask(PlayerEntity player, ItemStack itemStack, LinkedHashSet<BlockPos> blockPosSet) {
     this.digger = player;
     this.heldItem = itemStack;
     this.blockToDestroySet.addAll(blockPosSet);

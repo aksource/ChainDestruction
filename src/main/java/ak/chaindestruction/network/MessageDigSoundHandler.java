@@ -7,6 +7,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraftforge.fml.network.NetworkEvent.Context;
 
+import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
@@ -17,8 +18,10 @@ import java.util.function.Supplier;
 public class MessageDigSoundHandler implements BiConsumer<MessageDigSound, Supplier<Context>> {
     public void accept(MessageDigSound messageDigSound, Supplier<Context> contextSupplier) {
         PlayerEntity player = Minecraft.getInstance().player;
-        World world = player.getEntityWorld();
-        BlockPos blockPos = messageDigSound.getBlockPos();
-        world.playBroadcastSound(2001, blockPos, Block.getStateId(world.getBlockState(blockPos)));
+        if (Objects.nonNull(player)) {
+            World world = player.getEntityWorld();
+            BlockPos blockPos = messageDigSound.getBlockPos();
+            world.playBroadcastSound(2001, blockPos, Block.getStateId(world.getBlockState(blockPos)));
+        }
     }
 }

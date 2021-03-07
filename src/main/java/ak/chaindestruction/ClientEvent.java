@@ -5,18 +5,19 @@ import ak.chaindestruction.network.MessageKeyPressed;
 import ak.chaindestruction.network.MessageMousePressed;
 import ak.chaindestruction.network.PacketHandler;
 import net.minecraft.client.Minecraft;
-import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.math.RayTraceResult.Type;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.TickEvent.ClientTickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+
+import java.util.Objects;
 
 /**
  * クライアント側のマウス・キーボードイベントクラス
  * Created by A.K. on 14/08/01.
  */
 public class ClientEvent {
-    private static Minecraft mc = Minecraft.getInstance();
+    private static final Minecraft mc = Minecraft.getInstance();
 
     /** チャタリング防止用 */
     private int mouseCounter = 0;
@@ -34,10 +35,10 @@ public class ClientEvent {
     }
 
     private void keyPressEvent() {
-        if (mc.isGameFocused() && mc.player != null) {
+        if (mc.isGameFocused() && Objects.nonNull(mc.player)) {
             byte keyIndex = getKeyIndex();
             if (keyIndex != -1) {
-                PlayerEntity player = mc.player;
+//                PlayerEntity player = mc.player;
 //                doKeyClient(null, player, keyIndex);
                 PacketHandler.INSTANCE.sendToServer(new MessageKeyPressed(keyIndex));
             }
@@ -64,10 +65,10 @@ public class ClientEvent {
                 mouseCounter--;
             }
             byte mouseIndex = getMouseIndex();
-            if (mouseIndex != -1 && mouseIndex == Constants.MIDDLE_CLICK) {
+            if (mouseIndex == Constants.MIDDLE_CLICK) {
                 if (mouseCounter == 0) {
                     mouseCounter = 5;
-                    boolean isFocusObject = (mc.objectMouseOver != null && mc.objectMouseOver.getType() != Type.MISS) || mc.pointedEntity != null;
+                    boolean isFocusObject = (Objects.nonNull(mc.objectMouseOver) && mc.objectMouseOver.getType() != Type.MISS) || Objects.nonNull(mc.pointedEntity);
                     PacketHandler.INSTANCE.sendToServer(new MessageMousePressed(mouseIndex, isFocusObject));
                 }
             }
