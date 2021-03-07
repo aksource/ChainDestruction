@@ -7,7 +7,7 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
+import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.fml.network.NetworkDirection;
 
 import java.util.LinkedHashSet;
@@ -45,7 +45,10 @@ public class DigTask {
     }
     BlockPos first = blockToDestroySet.iterator().next();
     blockToDestroySet.remove(first);
-    World world = this.digger.getEntityWorld();
+    if (!(this.digger.getEntityWorld() instanceof ServerWorld)) {
+      return true;
+    }
+    ServerWorld world = (ServerWorld) this.digger.getEntityWorld();
     world.playBroadcastSound(2001, first, Block.getStateId(world.getBlockState(first)));
     PacketHandler.INSTANCE.sendTo(new MessageDigSound(first),
         ((ServerPlayerEntity) digger).connection.getNetworkManager(), NetworkDirection.PLAY_TO_CLIENT);

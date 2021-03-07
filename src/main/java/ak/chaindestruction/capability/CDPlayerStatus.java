@@ -166,13 +166,13 @@ public class CDPlayerStatus implements ICDPlayerStatusHandler,
     nbt.putBoolean(NBT_STATUS_PRIVATE_MODE, privateRegisterMode);
     nbt.putInt(NBT_STATUS_MAX_DESTROY_BLOCK, maxDestroyedBlock);
     ListNBT ListNBTEnableItems = new ListNBT();
-    enableItems.forEach(itemsStr -> ListNBTEnableItems.add(StringNBT.func_229705_a_(itemsStr)));
+    enableItems.forEach(itemsStr -> ListNBTEnableItems.add(StringNBT.valueOf(itemsStr)));
     nbt.put(NBT_STATUS_ENABLE_ITEMS, ListNBTEnableItems);
     ListNBT ListNBTEnableBlocks = new ListNBT();
-    enableBlocks.forEach(blockStr -> ListNBTEnableBlocks.add(StringNBT.func_229705_a_(blockStr)));
+    enableBlocks.forEach(blockStr -> ListNBTEnableBlocks.add(StringNBT.valueOf(blockStr)));
     nbt.put(NBT_STATUS_ENABLE_BLOCKS, ListNBTEnableBlocks);
     ListNBT ListNBTEnableLogBlocks = new ListNBT();
-    enableLogBlocks.forEach(blockStr -> ListNBTEnableLogBlocks.add(StringNBT.func_229705_a_(blockStr)));
+    enableLogBlocks.forEach(blockStr -> ListNBTEnableLogBlocks.add(StringNBT.valueOf(blockStr)));
     nbt.put(NBT_STATUS_ENABLE_LOG_BLOCKS, ListNBTEnableLogBlocks);
     return nbt;
   }

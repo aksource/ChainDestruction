@@ -69,12 +69,12 @@ public class CDItemStackStatus implements ICDItemStackStatusHandler, ICapability
     public CompoundNBT serializeNBT() {
         CompoundNBT nbt = new CompoundNBT();
         ListNBT ListNBTEnableBlocks = new ListNBT();
-        enableBlocks.forEach(blockStr -> ListNBTEnableBlocks.add(StringNBT.func_229705_a_(blockStr)));
+        enableBlocks.forEach(blockStr -> ListNBTEnableBlocks.add(StringNBT.valueOf(blockStr)));
         if (ListNBTEnableBlocks.size() > 0) {
             nbt.put(NBT_STATUS_ENABLE_BLOCKS, ListNBTEnableBlocks);
         }
         ListNBT ListNBTEnableLogBlocks = new ListNBT();
-        enableLogBlocks.forEach(blockStr -> ListNBTEnableLogBlocks.add(StringNBT.func_229705_a_(blockStr)));
+        enableLogBlocks.forEach(blockStr -> ListNBTEnableLogBlocks.add(StringNBT.valueOf(blockStr)));
         if (ListNBTEnableLogBlocks.size() > 0) {
             nbt.put(NBT_STATUS_ENABLE_LOG_BLOCKS, ListNBTEnableLogBlocks);
         }

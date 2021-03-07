@@ -11,10 +11,11 @@ import ak.chaindestruction.command.CommandShowPlayerCDStatus;
 import ak.chaindestruction.network.PacketHandler;
 import com.mojang.brigadier.CommandDispatcher;
 import net.minecraft.command.CommandSource;
-import net.minecraft.command.Commands;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.util.Util;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.event.entity.EntityJoinWorldEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -23,7 +24,6 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig.Type;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
-import net.minecraftforge.fml.event.lifecycle.FMLDedicatedServerSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 
 @Mod(ChainDestruction.MOD_ID)
@@ -39,7 +39,6 @@ public class ChainDestruction {
         FMLJavaModLoadingContext.get().getModEventBus();
     modEventBus.addListener(this::preInit);
     modEventBus.addListener(this::doClientStuff);
-    modEventBus.addListener(this::doServerStuff);
     MinecraftForge.EVENT_BUS.register(this);
     MinecraftForge.EVENT_BUS.register(new CapabilityEventHook());
     MinecraftForge.EVENT_BUS.register(interactblockhook);
@@ -60,9 +59,8 @@ public class ChainDestruction {
   }
 
   @SuppressWarnings("unused")
-  private void doServerStuff(final FMLDedicatedServerSetupEvent event) {
-    Commands commands = event.getServerSupplier().get().getCommandManager();
-    CommandDispatcher<CommandSource> commandDispatcher = commands.getDispatcher();
+  private void registerCommand(final RegisterCommandsEvent event) {
+    CommandDispatcher<CommandSource> commandDispatcher = event.getDispatcher();
     CommandCopyRtoLCDStatus.register(commandDispatcher);
     CommandResetCDPlayerStatus.register(commandDispatcher);
     CommandShowItemCDStatus.register(commandDispatcher);
@@ -80,7 +78,7 @@ public class ChainDestruction {
             .format("ChainDestruction Info Mode:%s, TreeMode:%b, Range:%d", mode,
                 status.isTreeMode(),
                 status.getMaxDestroyedBlock());
-        player.sendMessage(new StringTextComponent(s));
+        player.sendMessage(new StringTextComponent(s), Util.DUMMY_UUID);
       });
     }
   }

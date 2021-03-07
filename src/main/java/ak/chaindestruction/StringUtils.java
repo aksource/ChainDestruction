@@ -5,7 +5,7 @@ import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
-import net.minecraft.state.IProperty;
+import net.minecraft.state.Property;
 import net.minecraft.state.StateHolder;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.util.ResourceLocation;
@@ -27,9 +27,9 @@ import java.util.stream.Collectors;
 public class StringUtils {
 
   private static final Joiner AT_JOINER = Joiner.on('@');
-  private static Function<Entry<IProperty<?>, Comparable<?>>, String> functionBlockStateBase = ObfuscationReflectionHelper
+  private static final Function<Entry<Property<?>, Comparable<?>>, String> functionBlockStateBase = ObfuscationReflectionHelper
       .getPrivateValue(
-          StateHolder.class, null, "field_177233_b");
+          StateHolder.class, null, "field_235890_a_");
 
   /**
    * {@code ResourceLocation}から固有文字列を取得
