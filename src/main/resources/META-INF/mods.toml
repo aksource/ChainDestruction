@@ -1,5 +1,6 @@
 modLoader="javafml" #mandatory
-loaderVersion="[28,)" #mandatory (24 is current forge version)
+loaderVersion="[35,)" #mandatory (24 is current forge version)
+license="MIT License"
 issueTrackerURL="https://github.com/aksource/ChainDestruction/issues" #optional
 displayURL="https://github.com/aksource/ChainDestruction" #optional
 #logoFile="examplemod.png" #optional
@@ -7,7 +8,7 @@ credits="Thanks for Minecraft Forge developers" #optional
 authors="A.K." #optional
 [[mods]] #mandatory
 modId="chaindestruction" #mandatory
-version="1.14.4-1.6.2" #mandatory
+version="1.16.4-1.6.4" #mandatory
 displayName="ChainDestruction" #mandatory
 updateJSONURL="https://raw.githubusercontent.com/aksource/ChainDestruction/master/update.json" #optional
 description='''
