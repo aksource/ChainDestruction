@@ -1,52 +1,48 @@
-package ak.mcmod.chaindestruction.event;
+package ak.mcmod.chaindestruction.util;
 
+import ak.mcmod.ak_lib.block.BlockUtils;
+import ak.mcmod.ak_lib.item.ItemUtils;
+import ak.mcmod.ak_lib.util.StringUtils;
+import ak.mcmod.ak_lib.util.TailCall;
+import ak.mcmod.ak_lib.util.TailCallUtils;
 import ak.mcmod.chaindestruction.ChainDestruction;
-import ak.mcmod.chaindestruction.api.Constants;
 import ak.mcmod.chaindestruction.capability.CDItemStackStatus;
 import ak.mcmod.chaindestruction.capability.CDPlayerStatus;
 import ak.mcmod.chaindestruction.capability.ICDItemStackStatusHandler;
 import ak.mcmod.chaindestruction.capability.ICDPlayerStatusHandler;
-import ak.mcmod.chaindestruction.network.MessageCDStatusProperties;
-import ak.mcmod.chaindestruction.network.PacketHandler;
-import ak.mcmod.chaindestruction.util.DigTask;
-import ak.mcmod.chaindestruction.util.StringUtils;
+import com.google.common.collect.Queues;
+import com.google.common.collect.Sets;
 import mcp.MethodsReturnNonnullByDefault;
 import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.entity.item.EntityItem;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.init.Blocks;
 import net.minecraft.init.Enchantments;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTBase;
-import net.minecraft.util.EnumHand;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.text.TextComponentString;
 import net.minecraft.world.World;
-import net.minecraftforge.common.util.FakePlayer;
-import net.minecraftforge.event.entity.player.PlayerInteractEvent;
-import net.minecraftforge.event.world.BlockEvent;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 
 import javax.annotation.Nonnull;
 import javax.annotation.ParametersAreNonnullByDefault;
-import java.util.Iterator;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
+import java.util.*;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
 import static ak.mcmod.chaindestruction.capability.CapabilityCDItemStackStatusHandler.CAPABILITY_CHAIN_DESTRUCTION_ITEM;
-import static ak.mcmod.chaindestruction.capability.CapabilityCDPlayerStatusHandler.CAPABILITY_CHAIN_DESTRUCTION_PLAYER;
 
+/**
+ * Created by A.K. on 2021/09/18.
+ */
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
-public class InteractBlockHook {
+public class ChainDestructionLogic {
+  private ChainDestructionLogic(){}
+
   /**
    * 指定座標のブロックを破壊する処理
    *
@@ -73,7 +69,7 @@ public class InteractBlockHook {
           state.getBlock().dropXpOnBlockBreak(world, new BlockPos(player.posX, player.posY, player.posZ), exp);
         }
         if (item.getCount() == 0) {
-          destroyItem(player, item);
+          ItemUtils.destroyItem(player, item);
           return true;
         }
         return isItemBreakingSoon(item);
@@ -106,17 +102,6 @@ public class InteractBlockHook {
   }
 
   /**
-   * 手持ちアイテム破壊処理。ツールホルダー用
-   *
-   * @param player プレイヤー
-   * @param item   手持ちアイテム
-   */
-  public static void destroyItem(EntityPlayer player, ItemStack item) {
-    net.minecraftforge.event.ForgeEventFactory.onPlayerDestroyItem(player, item, EnumHand.MAIN_HAND);
-    player.setHeldItem(EnumHand.MAIN_HAND, ItemStack.EMPTY);
-  }
-
-  /**
    * ツールの耐久値が１以下の時を判定
    *
    * @param itemStack 手持ちアイテム
@@ -127,125 +112,6 @@ public class InteractBlockHook {
   }
 
   /**
-   * キーイベント処理。MessageHandlerから呼ばれる
-   *
-   * @param item   手持ちアイテム
-   * @param player プレイヤー
-   * @param key    押下キーを表すbyte
-   */
-  public void doKeyEvent(ItemStack item, EntityPlayer player, byte key) {
-    String chat;
-    ICDPlayerStatusHandler status = CDPlayerStatus.get(player);
-    if (key == Constants.RegKEY && !item.isEmpty()) {
-      Set<String> enableItems = status.getEnableItems();
-      String uniqueName = StringUtils.getUniqueString(item.getItem().getRegistryName());
-      if (player.isSneaking() && enableItems.contains(uniqueName)) {
-        enableItems.remove(uniqueName);
-        chat = String.format("Remove Tool : %s", uniqueName);
-        player.sendMessage(new TextComponentString(chat));
-      }
-      if (!player.isSneaking() && !enableItems.contains(uniqueName)) {
-        enableItems.add(uniqueName);
-        chat = String.format("Add Tool : %s", uniqueName);
-        player.sendMessage(new TextComponentString(chat));
-      }
-    }
-    if (key == Constants.DigKEY) {
-      status.setDigUnder(!status.isDigUnder());
-      chat = String.format("Dig Under %b", status.isDigUnder());
-      player.sendMessage(new TextComponentString(chat));
-    }
-    if (key == Constants.ModeKEY) {
-      if (player.isSneaking()) {
-        status.setPrivateRegisterMode(!status.isPrivateRegisterMode());
-        chat = String.format("Private Register Mode %b", status.isPrivateRegisterMode());
-        player.sendMessage(new TextComponentString(chat));
-      } else {
-        status.setTreeMode(!status.isTreeMode());
-        chat = String.format("Tree Mode %b", status.isTreeMode());
-        player.sendMessage(new TextComponentString(chat));
-      }
-    }
-    PacketHandler.INSTANCE.sendTo(new MessageCDStatusProperties(player), (EntityPlayerMP) player);
-  }
-
-  /**
-   * マウスイベント処理。MessageHandlerから呼ばれる
-   *
-   * @param item          手持ちアイテム
-   * @param player        プレイヤー
-   * @param mouse         押下したマウスのキーを表すbyte
-   * @param isFocusObject オブジェクトにフォーカスしているかどうか
-   */
-  public void doMouseEvent(ItemStack item, EntityPlayer player, byte mouse, boolean isFocusObject) {
-    try {
-      ICDPlayerStatusHandler status = CDPlayerStatus.get(player);
-      if (!status.getEnableItems().contains(StringUtils.getUniqueString(item.getItem().getRegistryName()))) {
-        return;
-      }
-      String chat;
-      if (mouse == Constants.MIDDLE_CLICK && !isFocusObject) {
-        int maxDestroyedBlock = status.getMaxDestroyedBlock();
-        if (player.isSneaking() && maxDestroyedBlock > 0) {
-          status.setMaxDestroyedBlock(--maxDestroyedBlock);
-        } else {
-          status.setMaxDestroyedBlock(++maxDestroyedBlock);
-        }
-        chat = String.format("New Max Destroyed : %d", maxDestroyedBlock);
-        player.sendMessage(new TextComponentString(chat));
-      }
-    } catch (Exception e) {
-      e.printStackTrace();
-    }
-  }
-
-  /**
-   * ブロックを右クリックした際に呼ばれるイベント
-   *
-   * @param event 右クリックイベント
-   */
-  @SuppressWarnings("unused")
-  @SubscribeEvent
-  public void onRightClickBlock(PlayerInteractEvent.RightClickBlock event) {
-    EntityPlayer player = event.getEntityPlayer();
-    ICDPlayerStatusHandler status = CDPlayerStatus.get(player);
-    World world = player.getEntityWorld();
-    ItemStack itemStack = player.getHeldItemMainhand();
-    if (world.isRemote || itemStack.isEmpty()) return;
-    String uniqueName = StringUtils.getUniqueString(itemStack.getItem().getRegistryName());
-    if (status.getEnableItems().contains(uniqueName)) {
-      IBlockState state = world.getBlockState(event.getPos());
-      if (status.isPrivateRegisterMode() && itemStack.hasCapability(CAPABILITY_CHAIN_DESTRUCTION_ITEM, null)) {
-        ICDItemStackStatusHandler itemStatus = CDItemStackStatus.get(itemStack);
-        Set<String> enableBlocks = status.isTreeMode() ? itemStatus.getEnableLogBlocks() : itemStatus.getEnableBlocks();
-        addAndRemoveBlocks(enableBlocks, player, state);
-      } else {
-        addAndRemoveBlocks(status.isTreeMode() ? status.getEnableLogBlocks() : status.getEnableBlocks(), player, state);
-
-      }
-    }
-  }
-
-  @SuppressWarnings("unused")
-  @SubscribeEvent
-  public void onLeftClickBlock(PlayerInteractEvent.LeftClickBlock event) {
-    EntityPlayer player = event.getEntityPlayer();
-    ICDPlayerStatusHandler status = CDPlayerStatus.get(player);
-    Set<String> enableItems = status.getEnableItems();
-    World world = player.getEntityWorld();
-    ItemStack itemStack = player.getHeldItemMainhand();
-    if (world.isRemote || itemStack.isEmpty()) return;
-    String uniqueName = StringUtils.getUniqueString(itemStack.getItem().getRegistryName());
-    if (enableItems.contains(uniqueName)) {
-      IBlockState state = world.getBlockState(event.getPos());
-      if (checkBlockValidate(player, state, itemStack)
-              && enableItems.contains(StringUtils.getUniqueString(itemStack.getItem().getRegistryName()))) {
-        status.setFace(event.getFace());
-      }
-    }
-  }
-
-  /**
    * IBlockStateが破壊対象かどうかを判定
    *
    * @param player   プレイヤー
@@ -253,16 +119,25 @@ public class InteractBlockHook {
    * @param heldItem 手持ちアイテム
    * @return 破壊対象かどうか
    */
-  private boolean checkBlockValidate(EntityPlayer player, IBlockState state, ItemStack heldItem) {
+  public static boolean checkBlockValidate(EntityPlayer player, IBlockState state, ItemStack heldItem) {
     ICDPlayerStatusHandler status = CDPlayerStatus.get(player);
+    if (Objects.isNull(status)) {
+      return false;
+    }
     if (heldItem.isEmpty()) {
       return false;
     }
-    if (status.isPrivateRegisterMode() && heldItem.hasCapability(CAPABILITY_CHAIN_DESTRUCTION_ITEM, null)) {
+    boolean canHarvestBlock = heldItem.canHarvestBlock(state);
+    if (status.getModeType() == ModeType.BRANCH_MINING || status.getModeType() == ModeType.WALL_MINING) {
+      return canHarvestBlock;
+    } else if (status.isPrivateRegisterMode() && heldItem.hasCapability(CAPABILITY_CHAIN_DESTRUCTION_ITEM, null)) {
       ICDItemStackStatusHandler itemStatus = CDItemStackStatus.get(heldItem);
-      return StringUtils.match(status.isTreeMode() ? itemStatus.getEnableLogBlocks() : itemStatus.getEnableBlocks(), state);
+      if (Objects.isNull(itemStatus)) {
+        return false;
+      }
+      return StringUtils.match(status.isTreeMode() ? itemStatus.getEnableLogBlocks() : itemStatus.getEnableBlocks(), state) && canHarvestBlock;
     }
-    return StringUtils.match(status.isTreeMode() ? status.getEnableLogBlocks() : status.getEnableBlocks(), state);
+    return StringUtils.match(status.isTreeMode() ? status.getEnableLogBlocks() : status.getEnableBlocks(), state) && canHarvestBlock;
 
   }
 
@@ -273,7 +148,7 @@ public class InteractBlockHook {
    * @param player プレイヤー
    * @param state  対象ブロックのIBlockState
    */
-  private void addAndRemoveBlocks(Set<String> set, EntityPlayer player, IBlockState state) {
+  public static void addAndRemoveBlocks(Set<String> set, EntityPlayer player, IBlockState state) {
     Block block = state.getBlock();
     //ブロックの固有文字列
     String uidStr = StringUtils.getUniqueString(block.getRegistryName());
@@ -310,40 +185,13 @@ public class InteractBlockHook {
    * @param pair2 判定されるIBlockState
    * @return 同じ鉱石辞書名を含む場合はtrue
    */
-  private boolean matchTwoBlocks(IBlockState pair1, IBlockState pair2) {
+  private static boolean matchTwoBlocks(IBlockState pair1, IBlockState pair2) {
     List<String> targetOreNames = StringUtils.makeStringDataFromBlockState(pair1);
     List<String> checkOreNames = StringUtils.makeStringDataFromBlockState(pair2);
     for (String str : checkOreNames) {
       if (targetOreNames.contains(str)) return true;
     }
     return false;
-  }
-
-  /*偽装しているブロックへの対応含めこちらで処理したほうが良い*/
-  @SuppressWarnings("unused")
-  @SubscribeEvent
-  public void blockBreakingEvent(BlockEvent.BreakEvent event) {
-    if (!(event.getPlayer() instanceof FakePlayer) && !event.getWorld().isRemote) {
-      if (isChainDestructionActionable(event.getPlayer(), event.getState(), event.getPlayer().getHeldItemMainhand())) {
-        setup(event.getState(), event.getPlayer(), event.getWorld(), event.getPos());
-      }
-    }
-  }
-
-  @SubscribeEvent
-  @SuppressWarnings("unused")
-  //Dimension移動時や、リスポーン時に呼ばれるイベント。古いインスタンスと新しいインスタンスの両方を参照できる。
-  public void onCloningPlayer(net.minecraftforge.event.entity.player.PlayerEvent.Clone event) {
-    //死亡時に呼ばれてるかどうか
-    if (event.isWasDeath()) {
-      //古いカスタムデータ
-      ICDPlayerStatusHandler oldCDS = event.getOriginal().getCapability(CAPABILITY_CHAIN_DESTRUCTION_PLAYER, null);
-      //新しいカスタムデータ
-      ICDPlayerStatusHandler newCDS = event.getEntityPlayer().getCapability(CAPABILITY_CHAIN_DESTRUCTION_PLAYER, null);
-      NBTBase nbt = CAPABILITY_CHAIN_DESTRUCTION_PLAYER.getStorage().writeNBT(CAPABILITY_CHAIN_DESTRUCTION_PLAYER, oldCDS, null);
-      CAPABILITY_CHAIN_DESTRUCTION_PLAYER.getStorage().readNBT(CAPABILITY_CHAIN_DESTRUCTION_PLAYER, newCDS, null, nbt);
-
-    }
   }
 
   /**
@@ -354,20 +202,26 @@ public class InteractBlockHook {
    * @param heldItem 手持ちアイテム
    * @return 連鎖破壊処理が動くならtrue
    */
-  private boolean isChainDestructionActionable(EntityPlayer player, IBlockState state, ItemStack heldItem) {
+  public static boolean isChainDestructionActionable(EntityPlayer player, IBlockState state, ItemStack heldItem) {
     ICDPlayerStatusHandler status = CDPlayerStatus.get(player);
+    if (Objects.isNull(status)) {
+      return false;
+    }
     return checkBlockValidate(player, state, heldItem)
             && status.getEnableItems().contains(StringUtils.getUniqueString(heldItem.getItem().getRegistryName()));
   }
 
-  private void setup(IBlockState firstBrokenBlockState, EntityPlayer player, World world, BlockPos blockPos) {
+  public static void setup(IBlockState firstBrokenBlockState, EntityPlayer player, World world, BlockPos blockPos) {
     ICDPlayerStatusHandler status = CDPlayerStatus.get(player);
+    if (Objects.isNull(status)) {
+      return;
+    }
     Set<BlockPos> searchedBlockSet = searchBlock(world, status, player, firstBrokenBlockState, blockPos);
     LinkedHashSet<BlockPos> connectedBlockSet = getConnectedBlockSet(status, blockPos, searchedBlockSet);
     if (!ChainDestruction.destroyingSequentially) {
       destroyBlock(world, player, player.getHeldItemMainhand(), connectedBlockSet);
     } else {
-      ChainDestruction.digTaskEvent.digTaskSet.add(new DigTask(player, player.getHeldItemMainhand(), connectedBlockSet, blockPos));
+      ChainDestruction.digTaskEvent.digTaskSet.add(new DigTask(player, player.getHeldItemMainhand(), connectedBlockSet));
     }
   }
 
@@ -380,13 +234,45 @@ public class InteractBlockHook {
    * @param targetPos 最初に破壊したブロックの座標
    * @return 最初に破壊したブロックと同種ブロックの座標集合
    */
-  @Nonnull
-  private Set<BlockPos> searchBlock(World world, ICDPlayerStatusHandler status, EntityPlayer player, IBlockState target, BlockPos targetPos) {
+  private static Set<BlockPos> searchBlock(World world, ICDPlayerStatusHandler status, EntityPlayer player, IBlockState target, BlockPos targetPos) {
     BlockPos minPos = status.getMinPos(player, targetPos);
     BlockPos maxPos = status.getMaxPos(targetPos);
-    return StreamSupport.stream(BlockPos.getAllInBox(minPos, maxPos).spliterator(), true)
-            .filter(blockPos -> checkBlock(status, target, world.getBlockState(blockPos), player.getHeldItemMainhand()))
-            .collect(Collectors.toSet());
+    int distance = status.isTreeMode() ? 3 : 2;
+    Queue<BlockPos> blockPosQueue = Queues.newArrayDeque();
+    blockPosQueue.add(targetPos);
+    Predicate<BlockPos> checkPredicate = (blockPos) -> checkBlock(status, target, world.getBlockState(blockPos),
+            player.getHeldItemMainhand());
+    Predicate<BlockPos> rangePredicate = (blockPos) -> {
+      boolean ret = blockPos.getX() >= minPos.getX() && blockPos.getY() >= minPos.getY() && blockPos.getZ() >= minPos.getZ();
+      ret &= blockPos.getX() <= maxPos.getX() && blockPos.getY() <= maxPos.getY() && blockPos.getZ() <= maxPos.getZ();
+      return ret;
+    };
+    Function<BlockPos, Collection<BlockPos>> nextTargetGetter =
+            (blockPos) -> BlockUtils.getBlockPosListWithinManhattan(blockPos, distance);
+    return searchBlockCall(checkPredicate, rangePredicate, nextTargetGetter, blockPosQueue, Sets.newLinkedHashSet()).call();
+  }
+
+  /**
+   * Search blocks to be destroyed.
+   *
+   * @param checkPredicate   Predicate for checking Block on BlockPos is valid
+   * @param rangePredicate   Predicate for checking Block on BlockPos is in range
+   * @param nextTargetGetter Function to get next target BlockPos collection
+   * @param queue            queue of BlockPos to be checked
+   * @param set              set of BlockPos that Block on BlockPos is valid and in range
+   * @return LinkedHashSet of BlockPos that Block on BlockPos is valid and in range
+   */
+  private static TailCall<LinkedHashSet<BlockPos>> searchBlockCall(Predicate<BlockPos> checkPredicate,
+                                                                   Predicate<BlockPos> rangePredicate,
+                                                                   Function<BlockPos, Collection<BlockPos>> nextTargetGetter,
+                                                                   Queue<BlockPos> queue, LinkedHashSet<BlockPos> set) {
+    BlockPos blockPos = queue.poll();
+    if (rangePredicate.test(blockPos) && checkPredicate.test(blockPos) && !set.contains(blockPos)) {
+      set.add(blockPos);
+      queue.addAll(nextTargetGetter.apply(blockPos));
+    }
+    return queue.isEmpty() ? TailCallUtils.complete(set)
+            : TailCallUtils.nextCall(() -> searchBlockCall(checkPredicate, rangePredicate, nextTargetGetter, queue, set));
   }
 
   /**
@@ -398,7 +284,7 @@ public class InteractBlockHook {
    * @return 最初のブロックとつながっているブロックの座標集合
    */
   @Nonnull
-  private LinkedHashSet<BlockPos> getConnectedBlockSet(ICDPlayerStatusHandler status, BlockPos origin, Set<BlockPos> searchedBlockSet) {
+  private static LinkedHashSet<BlockPos> getConnectedBlockSet(ICDPlayerStatusHandler status, BlockPos origin, Set<BlockPos> searchedBlockSet) {
     LinkedHashSet<BlockPos> connectedBlockSet = new LinkedHashSet<>();
     connectedBlockSet.add(origin);
     int distance = status.isTreeMode() ? 3 : 1;
@@ -430,7 +316,7 @@ public class InteractBlockHook {
    * @param item              手持ちアイテム
    * @param connectedBlockSet つながっているブロックの座標集合
    */
-  private void destroyBlock(World world, EntityPlayer player, ItemStack item, LinkedHashSet<BlockPos> connectedBlockSet) {
+  private static void destroyBlock(World world, EntityPlayer player, ItemStack item, LinkedHashSet<BlockPos> connectedBlockSet) {
     for (BlockPos blockPos : connectedBlockSet) {
       if (destroyBlockAtPosition(world, player, blockPos, item)) {
         break;
@@ -447,15 +333,21 @@ public class InteractBlockHook {
    * @param heldItem 手持ちアイテム
    * @return 同種ならtrue
    */
-  private boolean checkBlock(ICDPlayerStatusHandler status, IBlockState target, IBlockState check, ItemStack heldItem) {
+  private static boolean checkBlock(ICDPlayerStatusHandler status, IBlockState target, IBlockState check, ItemStack heldItem) {
     if (check.getBlock() == Blocks.AIR) return false;
-    if (status.isTreeMode()) {
+    boolean canHarvestBlock = heldItem.canHarvestBlock(check);
+    if (status.getModeType() == ModeType.BRANCH_MINING || status.getModeType() == ModeType.WALL_MINING) {
+      return canHarvestBlock;
+    } else if (status.isTreeMode()) {
       if (status.isPrivateRegisterMode() && heldItem.hasCapability(CAPABILITY_CHAIN_DESTRUCTION_ITEM, null)) {
         ICDItemStackStatusHandler itemStatus = CDItemStackStatus.get(heldItem);
-        return StringUtils.match(status.isTreeMode() ? itemStatus.getEnableLogBlocks() : itemStatus.getEnableBlocks(), check);
+        if (Objects.isNull(itemStatus)) {
+          return false;
+        }
+        return StringUtils.match(status.isTreeMode() ? itemStatus.getEnableLogBlocks() : itemStatus.getEnableBlocks(), check) && canHarvestBlock;
       }
-      return StringUtils.match(status.getEnableLogBlocks(), check);
+      return StringUtils.match(status.getEnableLogBlocks(), check) && canHarvestBlock;
     }
-    return matchTwoBlocks(target, check);
+    return matchTwoBlocks(target, check) && canHarvestBlock;
   }
 }

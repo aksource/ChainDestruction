@@ -1,7 +1,6 @@
 package ak.mcmod.chaindestruction.util;
 
 import ak.mcmod.chaindestruction.ChainDestruction;
-import ak.mcmod.chaindestruction.event.InteractBlockHook;
 import ak.mcmod.chaindestruction.network.MessageDigSound;
 import ak.mcmod.chaindestruction.network.PacketHandler;
 import net.minecraft.block.Block;
@@ -22,7 +21,7 @@ public class DigTask {
     private final EntityPlayer digger;
     private final ItemStack heldItem;
     private int counter;
-    public DigTask(EntityPlayer player, ItemStack itemStack, LinkedHashSet<BlockPos> blockPosSet, BlockPos origin) {
+    public DigTask(EntityPlayer player, ItemStack itemStack, LinkedHashSet<BlockPos> blockPosSet) {
         this.digger = player;
         this.heldItem = itemStack;
         this.blockToDestroySet.addAll(blockPosSet);
@@ -45,7 +44,7 @@ public class DigTask {
         World world = this.digger.getEntityWorld();
         world.playBroadcastSound(2001, first, Block.getStateId(world.getBlockState(first)));
         PacketHandler.INSTANCE.sendTo(new MessageDigSound(first), (EntityPlayerMP)digger);
-        return InteractBlockHook.destroyBlockAtPosition(world, digger, first, heldItem);
+        return ChainDestructionLogic.destroyBlockAtPosition(world, digger, first, heldItem);
     }
 
     public EntityPlayer getDigger() {

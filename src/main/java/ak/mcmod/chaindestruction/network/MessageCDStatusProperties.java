@@ -16,24 +16,24 @@ import static ak.mcmod.chaindestruction.capability.CapabilityCDPlayerStatusHandl
  */
 public class MessageCDStatusProperties implements IMessage {
 
-    public NBTTagCompound data;
+  public NBTTagCompound data;
 
-    @SuppressWarnings("unused")
-    public MessageCDStatusProperties() {
-    }
+  @SuppressWarnings("unused")
+  public MessageCDStatusProperties() {
+  }
 
-    public MessageCDStatusProperties(EntityPlayer entityPlayer) {
-        ICDPlayerStatusHandler instance = CDPlayerStatus.get(entityPlayer);
-        this.data = (NBTTagCompound) CAPABILITY_CHAIN_DESTRUCTION_PLAYER.getStorage().writeNBT(CAPABILITY_CHAIN_DESTRUCTION_PLAYER, instance, null);
-    }
+  public MessageCDStatusProperties(EntityPlayer entityPlayer) {
+    ICDPlayerStatusHandler instance = CDPlayerStatus.get(entityPlayer);
+    this.data = (NBTTagCompound) CAPABILITY_CHAIN_DESTRUCTION_PLAYER.getStorage().writeNBT(CAPABILITY_CHAIN_DESTRUCTION_PLAYER, instance, null);
+  }
 
-    @Override
-    public void fromBytes(ByteBuf buf) {
-        data = ByteBufUtils.readTag(buf);
-    }
+  @Override
+  public void fromBytes(ByteBuf buf) {
+    data = ByteBufUtils.readTag(buf);
+  }
 
-    @Override
-    public void toBytes(ByteBuf buf) {
-        ByteBufUtils.writeTag(buf, data);
-    }
+  @Override
+  public void toBytes(ByteBuf buf) {
+    ByteBufUtils.writeTag(buf, data);
+  }
 }

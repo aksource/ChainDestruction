@@ -2,38 +2,44 @@ package ak.mcmod.chaindestruction.capability;
 
 import ak.mcmod.chaindestruction.ChainDestruction;
 import com.google.common.collect.Sets;
+import mcp.MethodsReturnNonnullByDefault;
 import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTBase;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.nbt.NBTTagString;
 import net.minecraft.util.EnumFacing;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ICapabilitySerializable;
-import net.minecraftforge.common.util.Constants;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.Set;
 
+import static ak.mcmod.chaindestruction.api.Constants.NBT_STATUS_ENABLE_BLOCKS;
+import static ak.mcmod.chaindestruction.api.Constants.NBT_STATUS_ENABLE_LOG_BLOCKS;
 import static ak.mcmod.chaindestruction.capability.CapabilityCDItemStackStatusHandler.CAPABILITY_CHAIN_DESTRUCTION_ITEM;
+import static net.minecraftforge.common.util.Constants.NBT.TAG_STRING;
 
 /**
  * ItemStack用連鎖破壊ステータス実装クラス
  * Created by A.K. on 2016/09/25.
  */
-public class CDItemStackStatus implements ICDItemStackStatusHandler, ICapabilitySerializable<NBTTagCompound> {
-    public static final String NBT_STATUS_ENABLE_BLOCKS = "cd:enableBlocks";
-    public static final String NBT_STATUS_ENABLE_LOG_BLOCKS = "cd:enableLogBlocks";
+@MethodsReturnNonnullByDefault
+@ParametersAreNonnullByDefault
+public class CDItemStackStatus implements ICDItemStackStatusHandler, ICapabilitySerializable<NBTTagCompound>, Capability.IStorage<ICDItemStackStatusHandler> {
     public Set<String> enableBlocks = Sets.newHashSet();
     public Set<String> enableLogBlocks = Sets.newHashSet();
     private final ItemStack itemStack;
 
-    CDItemStackStatus() {
+    public CDItemStackStatus() {
         this.itemStack = ItemStack.EMPTY;
     }
     CDItemStackStatus(ItemStack itemStack) {
         this.itemStack = itemStack;
     }
+
+    @Nullable
     public static ICDItemStackStatusHandler get(ItemStack itemStack) {
         return itemStack.getCapability(CAPABILITY_CHAIN_DESTRUCTION_ITEM, null);
     }
@@ -59,13 +65,13 @@ public class CDItemStackStatus implements ICDItemStackStatusHandler, ICapability
     }
 
     @Override
-    public boolean hasCapability(@Nonnull Capability<?> capability, @Nullable EnumFacing facing) {
+    public boolean hasCapability(Capability<?> capability, @Nullable EnumFacing facing) {
         return !ChainDestruction.excludeItemPredicate.test(this.itemStack.getItem().getRegistryName()) &&
                 capability == CAPABILITY_CHAIN_DESTRUCTION_ITEM;
     }
 
     @Override
-    public <T> T getCapability(@Nonnull Capability<T> capability, @Nullable EnumFacing facing) {
+    public <T> T getCapability(Capability<T> capability, @Nullable EnumFacing facing) {
         return hasCapability(capability, facing) ? CAPABILITY_CHAIN_DESTRUCTION_ITEM.cast(this) : null;
     }
 
@@ -88,14 +94,30 @@ public class CDItemStackStatus implements ICDItemStackStatusHandler, ICapability
     @Override
     public void deserializeNBT(NBTTagCompound nbt) {
         enableBlocks = Sets.newHashSet();
-        NBTTagList nbtTagListEnableBlocks = nbt.getTagList(NBT_STATUS_ENABLE_BLOCKS, Constants.NBT.TAG_STRING);
+        NBTTagList nbtTagListEnableBlocks = nbt.getTagList(NBT_STATUS_ENABLE_BLOCKS, TAG_STRING);
         for (int i = 0; i < nbtTagListEnableBlocks.tagCount();i++) {
             enableBlocks.add(nbtTagListEnableBlocks.getStringTagAt(i));
         }
         enableLogBlocks = Sets.newHashSet();
-        NBTTagList nbtTagListEnableLogBlocks = nbt.getTagList(NBT_STATUS_ENABLE_LOG_BLOCKS, Constants.NBT.TAG_STRING);
+        NBTTagList nbtTagListEnableLogBlocks = nbt.getTagList(NBT_STATUS_ENABLE_LOG_BLOCKS, TAG_STRING);
         for (int i = 0; i < nbtTagListEnableLogBlocks.tagCount();i++) {
             enableLogBlocks.add(nbtTagListEnableLogBlocks.getStringTagAt(i));
+        }
+    }
+
+    @Nullable
+    @Override
+    public NBTBase writeNBT(Capability<ICDItemStackStatusHandler> capability, ICDItemStackStatusHandler instance, EnumFacing side) {
+        if (capability == CAPABILITY_CHAIN_DESTRUCTION_ITEM) {
+            return serializeNBT();
+        }
+        return null;
+    }
+
+    @Override
+    public void readNBT(Capability<ICDItemStackStatusHandler> capability, ICDItemStackStatusHandler instance, EnumFacing side, NBTBase nbt) {
+        if (capability == CAPABILITY_CHAIN_DESTRUCTION_ITEM) {
+            deserializeNBT((NBTTagCompound) nbt);
         }
     }
 }

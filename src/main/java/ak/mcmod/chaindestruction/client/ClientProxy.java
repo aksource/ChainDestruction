@@ -1,7 +1,7 @@
 package ak.mcmod.chaindestruction.client;
 
 import ak.mcmod.chaindestruction.CommonProxy;
-import ak.mcmod.chaindestruction.client.event.ClientEvent;
+import ak.mcmod.chaindestruction.client.event.ClientEvents;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.settings.KeyBinding;
 import net.minecraft.entity.player.EntityPlayer;
@@ -19,7 +19,7 @@ public class ClientProxy extends CommonProxy {
 
     @Override
     public void registerClientInfo() {
-        MinecraftForge.EVENT_BUS.register(new ClientEvent());
+        MinecraftForge.EVENT_BUS.register(new ClientEvents());
         ClientRegistry.registerKeyBinding(REGISTER_ITEM_KEY);
         ClientRegistry.registerKeyBinding(DIG_UNDER_KEY);
         ClientRegistry.registerKeyBinding(TREE_KEY);

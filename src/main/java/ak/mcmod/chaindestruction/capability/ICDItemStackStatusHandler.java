@@ -1,11 +1,16 @@
 package ak.mcmod.chaindestruction.capability;
 
+import mcp.MethodsReturnNonnullByDefault;
+
+import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.Set;
 
 /**
  * プライベートモード時のItemStackに保持する情報のインターフェース
  * Created by A.K. on 2016/09/25.
  */
+@ParametersAreNonnullByDefault
+@MethodsReturnNonnullByDefault
 public interface ICDItemStackStatusHandler {
     /**
      * 連鎖破壊対象ブロックの集合

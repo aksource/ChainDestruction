@@ -1,28 +1,25 @@
 package ak.mcmod.chaindestruction;
 
-import ak.mcmod.chaindestruction.capability.*;
+import ak.mcmod.chaindestruction.capability.CapabilityCDItemStackStatusHandler;
+import ak.mcmod.chaindestruction.capability.CapabilityCDPlayerStatusHandler;
 import ak.mcmod.chaindestruction.command.CommandCopyRtoLCDStatus;
 import ak.mcmod.chaindestruction.command.CommandResetCDPlayerStatus;
 import ak.mcmod.chaindestruction.command.CommandShowItemCDStatus;
 import ak.mcmod.chaindestruction.command.CommandShowPlayerCDStatus;
-import ak.mcmod.chaindestruction.event.DigTaskEvent;
-import ak.mcmod.chaindestruction.event.InteractBlockHook;
+import ak.mcmod.chaindestruction.event.BlockEvents;
+import ak.mcmod.chaindestruction.event.CapabilityEvents;
+import ak.mcmod.chaindestruction.event.DigTaskEvents;
+import ak.mcmod.chaindestruction.event.EntityEvents;
 import ak.mcmod.chaindestruction.network.PacketHandler;
 import com.google.common.collect.Sets;
-import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.text.TextComponentString;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.config.Configuration;
-import net.minecraftforge.event.entity.EntityJoinWorldEvent;
-import net.minecraftforge.fml.common.Loader;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.SidedProxy;
 import net.minecraftforge.fml.common.event.FMLInitializationEvent;
-import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLServerStartingEvent;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 
 import java.util.Arrays;
 import java.util.Set;
@@ -54,14 +51,11 @@ public class ChainDestruction {
     public static boolean notToDestroyItem = false;
     public static final Set<String> excludeRegisterItemSet = Sets.newHashSet();
     public static Predicate<ResourceLocation> excludeItemPredicate;
-    public static InteractBlockHook interactblockhook;
-    public static final DigTaskEvent digTaskEvent = new DigTaskEvent();
-    public static boolean loadMTH = false;
+    public static final DigTaskEvents digTaskEvent = new DigTaskEvents();
     private static String[] excludeRegisterItem = new String[]{};
 
     public Configuration config;
 
-    @SuppressWarnings("unused")
     @Mod.EventHandler
     public void preInit(FMLPreInitializationEvent event) {
         config = new Configuration(event.getSuggestedConfigurationFile());
@@ -69,7 +63,7 @@ public class ChainDestruction {
         maxYforTreeMode = config.get(Configuration.CATEGORY_GENERAL, "maxYforTreeMode", maxYforTreeMode, "Max Height of destroyed block for tree mode. Be careful to set over 200.", 0, 255).getInt();
         destroyingSequentially = config.get(Configuration.CATEGORY_GENERAL, "destroyingSequentially Mode", destroyingSequentially, "destroy blocks sequentially").getBoolean();
         digTaskMaxCounter = config.get(Configuration.CATEGORY_GENERAL, "digTaskMaxCounter", digTaskMaxCounter, "Tick Rate on destroying Sequentially Mode", 1, 100).getInt();
-        notToDestroyItem = config.get(Configuration.CATEGORY_GENERAL, "notToDestroyItem", notToDestroyItem, "Stop Destruciton not to destroy item").getBoolean();
+        notToDestroyItem = config.get(Configuration.CATEGORY_GENERAL, "notToDestroyItem", notToDestroyItem, "Stop Destruction not to destroy item").getBoolean();
         excludeRegisterItem = config.get(Configuration.CATEGORY_GENERAL, "excludeRegisterItem", excludeRegisterItem, "Exclude Item to register chain destruction.").getStringList();
         excludeRegisterItemSet.addAll(Arrays.asList(excludeRegisterItem));
         excludeItemPredicate = (resourceLocation) -> {
@@ -86,48 +80,29 @@ public class ChainDestruction {
             return ret;
         };
         config.save();
-        interactblockhook = new InteractBlockHook();
         PacketHandler.init();
         CapabilityCDPlayerStatusHandler.register();
         CapabilityCDItemStackStatusHandler.register();
-        MinecraftForge.EVENT_BUS.register(new CapabilityEventHook());
+        MinecraftForge.EVENT_BUS.register(CapabilityEvents.class);
     }
 
     @SuppressWarnings("unused")
     @Mod.EventHandler
     public void load(FMLInitializationEvent event) {
         proxy.registerClientInfo();
-        MinecraftForge.EVENT_BUS.register(interactblockhook);
+        MinecraftForge.EVENT_BUS.register(BlockEvents.class);
+        MinecraftForge.EVENT_BUS.register(EntityEvents.class);
         MinecraftForge.EVENT_BUS.register(this);
         if (destroyingSequentially) {
             MinecraftForge.EVENT_BUS.register(digTaskEvent);
         }
     }
 
-    @SuppressWarnings("unused")
-    @Mod.EventHandler
-    public void postInit(FMLPostInitializationEvent event) {
-        loadMTH = Loader.isModLoaded("MultiToolHolders");
-    }
-
-    @SuppressWarnings("unused")
     @Mod.EventHandler
     public void serverStart(FMLServerStartingEvent event) {
         event.registerServerCommand(new CommandResetCDPlayerStatus());
         event.registerServerCommand(new CommandCopyRtoLCDStatus());
         event.registerServerCommand(new CommandShowPlayerCDStatus());
         event.registerServerCommand(new CommandShowItemCDStatus());
-    }
-
-    @SuppressWarnings("unused")
-    @SubscribeEvent
-    public void joinInWorld(EntityJoinWorldEvent event) {
-        if (!event.getWorld().isRemote && event.getEntity() instanceof EntityPlayer) {
-            EntityPlayer player = (EntityPlayer) event.getEntity();
-            ICDPlayerStatusHandler status = CDPlayerStatus.get(player);
-            String mode = status.isPrivateRegisterMode() ? "Private Register" : "Normal";
-            String s = String.format("ChainDestruction Info Mode:%s, TreeMode:%b, Range:%d", mode, status.isTreeMode(), status.getMaxDestroyedBlock());
-            player.sendMessage(new TextComponentString(s));
-        }
     }
 }

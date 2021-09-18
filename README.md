@@ -1,7 +1,7 @@
 ChainDestruction
 ================
 
-this add chain destruction system in Minecraft
+this adds chain destruction system in Minecraft
 
 
 # How to use

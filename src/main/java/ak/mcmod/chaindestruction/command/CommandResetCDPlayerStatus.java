@@ -42,14 +42,14 @@ public class CommandResetCDPlayerStatus extends CommandBase {
             EntityPlayer entityPlayer = getCommandSenderAsPlayer(sender);
             if (entityPlayer.hasCapability(CAPABILITY_CHAIN_DESTRUCTION_PLAYER, null)) {
                 ICDPlayerStatusHandler status = entityPlayer.getCapability(CAPABILITY_CHAIN_DESTRUCTION_PLAYER, null);
-                CapabilityCDPlayerStatusHandler.copyPlayerStatus(CDPlayerStatus.DEFAULT_PLAYER_STATUS, Objects.requireNonNull(status));
+                CapabilityCDPlayerStatusHandler.copyPlayerStatus(new CDPlayerStatus(), Objects.requireNonNull(status));
             }
         } else {
             for (String username : args) {
                 Entity entity = getEntity(server, sender, username);
                 if (entity instanceof EntityPlayer && entity.hasCapability(CAPABILITY_CHAIN_DESTRUCTION_PLAYER, null)) {
                     ICDPlayerStatusHandler status = entity.getCapability(CAPABILITY_CHAIN_DESTRUCTION_PLAYER, null);
-                    CapabilityCDPlayerStatusHandler.copyPlayerStatus(CDPlayerStatus.DEFAULT_PLAYER_STATUS, Objects.requireNonNull(status));
+                    CapabilityCDPlayerStatusHandler.copyPlayerStatus(new CDPlayerStatus(), Objects.requireNonNull(status));
                 }
             }
         }

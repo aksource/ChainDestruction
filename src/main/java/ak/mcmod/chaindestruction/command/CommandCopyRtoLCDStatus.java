@@ -17,7 +17,7 @@ import java.util.Objects;
 
 import static ak.mcmod.chaindestruction.capability.CapabilityCDItemStackStatusHandler.CAPABILITY_CHAIN_DESTRUCTION_ITEM;
 import static ak.mcmod.chaindestruction.api.Constants.COMMAND_COPY_R_TO_L;
-import static ak.mcmod.chaindestruction.api.Constants.COOMAND_USAGE_COPY_R_TO_L;
+import static ak.mcmod.chaindestruction.api.Constants.COMMAND_USAGE_COPY_R_TO_L;
 
 /**
  * 右手のアイテムの設定を左手のアイテムにコピーするコマンド
@@ -34,7 +34,7 @@ public class CommandCopyRtoLCDStatus extends CommandBase {
 
     @Override
     public String getUsage(ICommandSender sender) {
-        return COOMAND_USAGE_COPY_R_TO_L;
+        return COMMAND_USAGE_COPY_R_TO_L;
     }
 
     @Override

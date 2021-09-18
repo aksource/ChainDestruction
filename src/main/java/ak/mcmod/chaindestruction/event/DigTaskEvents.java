@@ -18,7 +18,7 @@ import java.util.Set;
  */
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
-public class DigTaskEvent {
+public class DigTaskEvents {
 
     public final Set<DigTask> digTaskSet = new HashSet<>();
     private final Set<DigTask> digTaskRemoveSet = new HashSet<>();

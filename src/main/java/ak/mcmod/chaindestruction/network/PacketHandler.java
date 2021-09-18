@@ -10,12 +10,12 @@ import net.minecraftforge.fml.relauncher.Side;
  */
 public class PacketHandler {
 
-    public static final SimpleNetworkWrapper INSTANCE = NetworkRegistry.INSTANCE.newSimpleChannel("chaindestruction");
+  public static final SimpleNetworkWrapper INSTANCE = NetworkRegistry.INSTANCE.newSimpleChannel("chaindestruction");
 
-    public static void init() {
-        INSTANCE.registerMessage(MessageKeyPressedHandler.class, MessageKeyPressed.class, 0, Side.SERVER);
-        INSTANCE.registerMessage(MessageMousePressedHandler.class, MessageMousePressed.class, 1, Side.SERVER);
-        INSTANCE.registerMessage(MessageDigSoundHandler.class, MessageDigSound.class, 2, Side.CLIENT);
-        INSTANCE.registerMessage(MessageCDStatusPropertiesHandler.class, MessageCDStatusProperties.class, 3, Side.CLIENT);
-    }
+  public static void init() {
+    INSTANCE.registerMessage(MessageKeyPressedHandler.class, MessageKeyPressed.class, 0, Side.SERVER);
+    INSTANCE.registerMessage(MessageMousePressedHandler.class, MessageMousePressed.class, 1, Side.SERVER);
+    INSTANCE.registerMessage(MessageDigSoundHandler.class, MessageDigSound.class, 2, Side.CLIENT);
+    INSTANCE.registerMessage(MessageCDStatusPropertiesHandler.class, MessageCDStatusProperties.class, 3, Side.CLIENT);
+  }
 }

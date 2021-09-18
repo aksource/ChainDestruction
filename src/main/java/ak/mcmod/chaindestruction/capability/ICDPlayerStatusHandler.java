@@ -1,15 +1,20 @@
 package ak.mcmod.chaindestruction.capability;
 
+import ak.mcmod.chaindestruction.util.ModeType;
+import mcp.MethodsReturnNonnullByDefault;
 import net.minecraft.entity.Entity;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.BlockPos;
 
+import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.Set;
 
 /**
  * EntityPlayerに保持する連鎖破壊用ステータスのインターフェース
  * Created by A.K. on 2016/09/19.
  */
+@ParametersAreNonnullByDefault
+@MethodsReturnNonnullByDefault
 public interface ICDPlayerStatusHandler {
 
     /**
@@ -52,7 +57,20 @@ public interface ICDPlayerStatusHandler {
      *
      * @param treeMode 設定・解除
      */
+    @Deprecated
     void setTreeMode(boolean treeMode);
+
+    /**
+     * Get ModeType
+     * @return ModeType
+     */
+    ModeType getModeType();
+
+    /**
+     * Set ModeType
+     * @param modeType ModeType
+     */
+    void setModeType(ModeType modeType);
 
     /**
      * アイテムごとの設定を有効にするかどうか
