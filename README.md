@@ -30,7 +30,13 @@ this adds chain destruction system in Minecraft
 ## Change branch-mining mode
 1. Press 'SEMICOLON' key (changeable in game).
 1. Changed wood-cutter mode to branch-mining mode.
-- In branch-mining mode, all registered block is in 3 * 3 * 3 range of broken block is broken.
+- In branch-mining mode, blocks in 2 * 1 and selected range depth.
+
+
+## Change wall-mining mode
+1. Press 'SEMICOLON' key (changeable in game).
+1. Changed branch-mining mode to branch-mining mode.
+- In wall-mining mode, blocks in selected range width and height and 1 depth.
 
 
 ## Change individual tool mode
