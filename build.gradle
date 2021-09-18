@@ -14,7 +14,7 @@ apply plugin: 'eclipse'
 apply plugin: 'idea'
 
 def mc_version = '1.16.4'
-def aklib_version = '1.0.0.0'
+def aklib_version = '1.0.1.0'
 version = "${mc_version}-1.6.5.0" as Object
 group = 'ak.mcmod.chaindestruction' // http://maven.apache.org/guides/mini/guide-naming-conventions.html
 archivesBaseName = 'chain-destruction'

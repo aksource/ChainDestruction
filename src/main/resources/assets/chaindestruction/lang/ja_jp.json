@@ -1,9 +1,9 @@
 {
-  "Key.CDRegistItem": "一括破壊アイテム登録キー",
-  "Key.CDDIgUnder": "下方採掘キー",
-  "Key.CDTree": "木こりモードキー",
-  "commands.cdresetplayerstatus": "/cdresetplayerstatus [username]...",
-  "commands.cdcopyrtol": "/cdcopyrtol [username]...",
-  "commands.cdshowplayerstatus": "/cdshowplayerstatus [username]...",
-  "commands.cdshowitemstatus": "/cdshowitemstatus [username]..."
+  "chaindestruction.key.register_item": "一括破壊アイテム登録キー",
+  "chaindestruction.key.enable_digging_under": "下方採掘キー",
+  "chaindestruction.key.change_mode": "モード切り替えキー",
+  "chaindestruction.commands.reset_player_status": "/cdresetplayerstatus [username]...",
+  "chaindestruction.commands.copy_r_to_l": "/cdcopyrtol [username]...",
+  "chaindestruction.commands.show_player_status": "/cdshowplayerstatus [username]...",
+  "chaindestruction.commands.show_item_status": "/cdshowitemstatus [username]..."
 }

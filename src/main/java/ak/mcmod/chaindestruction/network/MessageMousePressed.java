@@ -10,11 +10,11 @@ import java.util.function.Function;
  */
 public class MessageMousePressed {
 
-  public static final BiConsumer<MessageMousePressed, PacketBuffer> encoder = (messageMousePressed, packetBuffer) -> packetBuffer.writeByte(messageMousePressed.getMouseIndex())
-      .writeBoolean(messageMousePressed.isFocusObject);
+  public static final BiConsumer<MessageMousePressed, PacketBuffer> ENCODER = (messageMousePressed, packetBuffer) -> packetBuffer.writeByte(messageMousePressed.getMouseIndex())
+          .writeBoolean(messageMousePressed.isFocusObject);
 
-  public static final Function<PacketBuffer, MessageMousePressed> decoder = packetBuffer -> new MessageMousePressed(
-      packetBuffer.readByte(), packetBuffer.readBoolean());
+  public static final Function<PacketBuffer, MessageMousePressed> DECODER = packetBuffer -> new MessageMousePressed(
+          packetBuffer.readByte(), packetBuffer.readBoolean());
   private byte mouseIndex;
   private boolean isFocusObject;
 

@@ -25,11 +25,11 @@ public class CommandResetCDPlayerStatus {
 
   public static void register(final CommandDispatcher<CommandSource> commandDispatcher) {
     commandDispatcher.register(
-        Commands.literal(COMMAND_RESET_PLAYER_STATUS).requires(e -> e.hasPermission(2))
-            .executes(e -> execute(e.getSource(), null))
-            .then(Commands.argument("target", EntityArgument.player())
-                .executes(e -> execute(e.getSource(), EntityArgument.getPlayer(e, "target")))
-            ));
+            Commands.literal(COMMAND_RESET_PLAYER_STATUS).requires(e -> e.hasPermission(2))
+                    .executes(e -> execute(e.getSource(), null))
+                    .then(Commands.argument("target", EntityArgument.player())
+                            .executes(e -> execute(e.getSource(), EntityArgument.getPlayer(e, "target")))
+                    ));
   }
 
   private static int execute(CommandSource commandSource, @Nullable PlayerEntity playerEntity) {
@@ -44,7 +44,7 @@ public class CommandResetCDPlayerStatus {
     //noinspection ConstantConditions
     if (Objects.nonNull(playerEntity)) {
       CDPlayerStatus.get(playerEntity).ifPresent(status -> CapabilityCDPlayerStatusHandler
-          .copyPlayerStatus(CDPlayerStatus.DEFAULT_PLAYER_STATUS, status));
+              .copyPlayerStatus(new CDPlayerStatus(), status));
     } else {
       return 1;
     }

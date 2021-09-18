@@ -11,10 +11,10 @@ import java.util.function.Function;
  */
 public class MessageDigSound {
 
-  public static final BiConsumer<MessageDigSound, PacketBuffer> encoder = (messageDigSound, packetBuffer) -> packetBuffer.writeInt(messageDigSound.blockPos.getX()).writeInt(messageDigSound.blockPos.getY())
-      .writeInt(messageDigSound.blockPos.getZ());
-  public static final Function<PacketBuffer, MessageDigSound> decoder = packetBuffer -> new MessageDigSound(
-      new BlockPos(packetBuffer.readInt(), packetBuffer.readInt(), packetBuffer.readInt()));
+  public static final BiConsumer<MessageDigSound, PacketBuffer> ENCODER = (messageDigSound, packetBuffer) -> packetBuffer.writeInt(messageDigSound.blockPos.getX()).writeInt(messageDigSound.blockPos.getY())
+          .writeInt(messageDigSound.blockPos.getZ());
+  public static final Function<PacketBuffer, MessageDigSound> DECODER = packetBuffer -> new MessageDigSound(
+          new BlockPos(packetBuffer.readInt(), packetBuffer.readInt(), packetBuffer.readInt()));
   private BlockPos blockPos;
 
   @SuppressWarnings("unused")

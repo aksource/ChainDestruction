@@ -26,31 +26,31 @@ public class CommandCopyRtoLCDStatus {
 
   public static void register(final CommandDispatcher<CommandSource> commandDispatcher) {
     commandDispatcher.register(
-        Commands.literal(COMMAND_COPY_R_TO_L).requires(e -> e.hasPermission(2))
-            .executes(e -> execute(e.getSource(), null))
-            .then(Commands.argument("target", EntityArgument.player())
-                .executes(e -> execute(e.getSource(), EntityArgument.getPlayer(e, "target")))
-            ));
+            Commands.literal(COMMAND_COPY_R_TO_L).requires(e -> e.hasPermission(2))
+                    .executes(e -> execute(e.getSource(), null))
+                    .then(Commands.argument("target", EntityArgument.player())
+                            .executes(e -> execute(e.getSource(), EntityArgument.getPlayer(e, "target")))
+                    ));
   }
 
-  private static int execute(CommandSource commandSource, @Nullable PlayerEntity PlayerEntity) {
-    if (Objects.isNull(PlayerEntity)) {
+  private static int execute(CommandSource commandSource, @Nullable PlayerEntity playerEntity) {
+    if (Objects.isNull(playerEntity)) {
       try {
-        PlayerEntity = commandSource.getPlayerOrException();
+        playerEntity = commandSource.getPlayerOrException();
       } catch (CommandSyntaxException e) {
         e.printStackTrace();
         return 1;
       }
     }
     //noinspection ConstantConditions
-    if (Objects.nonNull(PlayerEntity)) {
-      ItemStack itemMainHand = PlayerEntity.getMainHandItem();
-      ItemStack itemOffHand = PlayerEntity.getOffhandItem();
+    if (Objects.nonNull(playerEntity)) {
+      ItemStack itemMainHand = playerEntity.getMainHandItem();
+      ItemStack itemOffHand = playerEntity.getOffhandItem();
       CDItemStackStatus.get(itemMainHand)
-          .ifPresent((copyFrom) ->
-              CDItemStackStatus.get(itemOffHand).ifPresent(
-                  (copyTo) -> CapabilityCDItemStackStatusHandler
-                      .copyItemState(copyFrom, copyTo)));
+              .ifPresent((copyFrom) ->
+                      CDItemStackStatus.get(itemOffHand).ifPresent(
+                              (copyTo) -> CapabilityCDItemStackStatusHandler
+                                      .copyItemState(copyFrom, copyTo)));
     } else {
       return 1;
     }

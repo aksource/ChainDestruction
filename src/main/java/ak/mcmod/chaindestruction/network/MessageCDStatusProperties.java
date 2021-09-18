@@ -16,10 +16,10 @@ import static ak.mcmod.chaindestruction.capability.CapabilityCDPlayerStatusHandl
  */
 public class MessageCDStatusProperties {
 
-  public static final BiConsumer<MessageCDStatusProperties, PacketBuffer> encoder = (messageCDStatusProperties, packetBuffer) -> packetBuffer
-      .writeNbt(messageCDStatusProperties.getData());
-  public static final Function<PacketBuffer, MessageCDStatusProperties> decoder = packetBuffer -> new MessageCDStatusProperties(
-      packetBuffer.readNbt());
+  public static final BiConsumer<MessageCDStatusProperties, PacketBuffer> ENCODER = (messageCDStatusProperties, packetBuffer) -> packetBuffer
+          .writeNbt(messageCDStatusProperties.getData());
+  public static final Function<PacketBuffer, MessageCDStatusProperties> DECODER = packetBuffer -> new MessageCDStatusProperties(
+          packetBuffer.readNbt());
 
   private CompoundNBT data;
 
@@ -33,12 +33,12 @@ public class MessageCDStatusProperties {
 
   public MessageCDStatusProperties(PlayerEntity PlayerEntity) {
     this.data = CDPlayerStatus.get(PlayerEntity)
-        .map(instance -> {
-          CompoundNBT CompoundNBT = (CompoundNBT) CAPABILITY_CHAIN_DESTRUCTION_PLAYER.getStorage()
-            .writeNBT(CAPABILITY_CHAIN_DESTRUCTION_PLAYER, instance, null);
-          return Objects.nonNull(CompoundNBT) ? CompoundNBT : new CompoundNBT();
-        })
-        .orElse(new CompoundNBT());
+            .map(instance -> {
+              CompoundNBT CompoundNBT = (CompoundNBT) CAPABILITY_CHAIN_DESTRUCTION_PLAYER.getStorage()
+                      .writeNBT(CAPABILITY_CHAIN_DESTRUCTION_PLAYER, instance, null);
+              return Objects.nonNull(CompoundNBT) ? CompoundNBT : new CompoundNBT();
+            })
+            .orElse(new CompoundNBT());
   }
 
   CompoundNBT getData() {

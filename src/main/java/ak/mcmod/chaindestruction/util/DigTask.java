@@ -1,6 +1,5 @@
 package ak.mcmod.chaindestruction.util;
 
-import ak.mcmod.chaindestruction.event.InteractBlockHook;
 import ak.mcmod.chaindestruction.network.MessageDigSound;
 import ak.mcmod.chaindestruction.network.PacketHandler;
 import mcp.MethodsReturnNonnullByDefault;
@@ -13,7 +12,9 @@ import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.fml.network.NetworkDirection;
 
 import javax.annotation.ParametersAreNonnullByDefault;
-import java.util.LinkedHashSet;
+import java.util.ArrayDeque;
+import java.util.Collection;
+import java.util.Queue;
 
 /**
  * ブロック破壊のタスククラス Created by A.K. on 15/01/13.
@@ -22,15 +23,15 @@ import java.util.LinkedHashSet;
 @ParametersAreNonnullByDefault
 public class DigTask {
 
-  private final LinkedHashSet<BlockPos> blockToDestroySet = new LinkedHashSet<>();
+  private final Queue<BlockPos> queue = new ArrayDeque<>();
   private final PlayerEntity digger;
   private final ItemStack heldItem;
   private int counter;
 
-  public DigTask(PlayerEntity player, ItemStack itemStack, LinkedHashSet<BlockPos> blockPosSet) {
+  public DigTask(PlayerEntity player, ItemStack itemStack, Collection<BlockPos> blockPosSet) {
     this.digger = player;
     this.heldItem = itemStack;
-    this.blockToDestroySet.addAll(blockPosSet);
+    this.queue.addAll(blockPosSet);
   }
 
   //return true : when all block destroyed or heldItem broken
@@ -44,19 +45,18 @@ public class DigTask {
   }
 
   public boolean destroyBlock() {
-    if (blockToDestroySet.isEmpty()) {
+    if (queue.isEmpty()) {
       return true;
     }
-    BlockPos first = blockToDestroySet.iterator().next();
-    blockToDestroySet.remove(first);
+    BlockPos first = queue.poll();
     if (!(this.digger.getCommandSenderWorld() instanceof ServerWorld)) {
       return true;
     }
     ServerWorld world = (ServerWorld) this.digger.getCommandSenderWorld();
     world.globalLevelEvent(2001, first, Block.getId(world.getBlockState(first)));
     PacketHandler.INSTANCE.sendTo(new MessageDigSound(first),
-        ((ServerPlayerEntity) digger).connection.getConnection(), NetworkDirection.PLAY_TO_CLIENT);
-    return InteractBlockHook.destroyBlockAtPosition(world, digger, first, heldItem);
+            ((ServerPlayerEntity) digger).connection.getConnection(), NetworkDirection.PLAY_TO_CLIENT);
+    return ChainDestructionLogic.destroyBlockAtPosition(world, digger, first, heldItem);
   }
 
   public PlayerEntity getDigger() {

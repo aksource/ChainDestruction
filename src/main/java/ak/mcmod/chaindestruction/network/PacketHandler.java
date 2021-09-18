@@ -10,23 +10,23 @@ import net.minecraftforge.fml.network.simple.SimpleChannel;
 public class PacketHandler {
 
   public static final SimpleChannel INSTANCE = NetworkRegistry.ChannelBuilder
-      .named(new ResourceLocation("chaindestruction", "channel"))
-      .networkProtocolVersion(() -> "1").clientAcceptedVersions(e -> true)
-      .serverAcceptedVersions(e -> true).simpleChannel();
+          .named(new ResourceLocation("chaindestruction", "channel"))
+          .networkProtocolVersion(() -> "1").clientAcceptedVersions(e -> true)
+          .serverAcceptedVersions(e -> true).simpleChannel();
 
   public static void init() {
     INSTANCE
-        .registerMessage(0, MessageKeyPressed.class, MessageKeyPressed.encoder,
-            MessageKeyPressed.decoder, new MessageKeyPressedHandler());
-    INSTANCE.registerMessage(1, MessageMousePressed.class, MessageMousePressed.encoder,
-        MessageMousePressed.decoder,
-        new MessageMousePressedHandler());
+            .registerMessage(0, MessageKeyPressed.class, MessageKeyPressed.ENCODER,
+                    MessageKeyPressed.DECODER, new MessageKeyPressedHandler());
+    INSTANCE.registerMessage(1, MessageMousePressed.class, MessageMousePressed.ENCODER,
+            MessageMousePressed.DECODER,
+            new MessageMousePressedHandler());
     INSTANCE
-        .registerMessage(2, MessageDigSound.class, MessageDigSound.encoder, MessageDigSound.decoder,
-            new MessageDigSoundHandler());
+            .registerMessage(2, MessageDigSound.class, MessageDigSound.ENCODER, MessageDigSound.DECODER,
+                    new MessageDigSoundHandler());
     INSTANCE
-        .registerMessage(3, MessageCDStatusProperties.class, MessageCDStatusProperties.encoder,
-            MessageCDStatusProperties.decoder,
-            new MessageCDStatusPropertiesHandler());
+            .registerMessage(3, MessageCDStatusProperties.class, MessageCDStatusProperties.ENCODER,
+                    MessageCDStatusProperties.DECODER,
+                    new MessageCDStatusPropertiesHandler());
   }
 }

@@ -10,10 +10,10 @@ import java.util.function.Function;
  */
 public class MessageKeyPressed {
 
-  public static final BiConsumer<MessageKeyPressed, PacketBuffer> encoder = ((messageKeyPressed, packetBuffer) -> packetBuffer
-      .writeByte(messageKeyPressed.getKey()));
-  public static final Function<PacketBuffer, MessageKeyPressed> decoder = packetBuffer -> new MessageKeyPressed(
-      packetBuffer.readByte());
+  public static final BiConsumer<MessageKeyPressed, PacketBuffer> ENCODER = ((messageKeyPressed, packetBuffer) -> packetBuffer
+          .writeByte(messageKeyPressed.getKey()));
+  public static final Function<PacketBuffer, MessageKeyPressed> DECODER = packetBuffer -> new MessageKeyPressed(
+          packetBuffer.readByte());
   private byte key;
 
   @SuppressWarnings("unused")
