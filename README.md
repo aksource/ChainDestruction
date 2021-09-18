@@ -20,11 +20,24 @@ this adds chain destruction system in Minecraft
 1. Break a registered block using a registered tool.
 1. When a block is just broken, same block next to be broken block is also broken.(Chain destruction)
 
-## Change woodcutter mode
+## Change wood-cutting mode
 1. Press 'SEMICOLON' key (changeable in game).
-1. Changed normal mode to wood cutter mode.
+1. Changed normal mode to wood-cutter mode.
 - In woodcutter mode, block registration is different to normal mode.
-- In woodcutter mode, all registered block is in 3 * 3 * 3 range of broken block is broken.
+- In woodcutter mode, all registered block is in 3 * 3 * 3 range centered at target block is broken.
+
+
+## Change branch-mining mode
+1. Press 'SEMICOLON' key (changeable in game).
+1. Changed wood-cutter mode to branch-mining mode.
+- In branch-mining mode, blocks in 2 * 1 and selected range depth.
+
+
+## Change wall-mining mode
+1. Press 'SEMICOLON' key (changeable in game).
+1. Changed branch-mining mode to branch-mining mode.
+- In wall-mining mode, blocks in selected range width and height and 1 depth.
+
 
 ## Change individual tool mode
 1. Press 'Shift' key and 'SEMICOLON' key (changeable in game).
