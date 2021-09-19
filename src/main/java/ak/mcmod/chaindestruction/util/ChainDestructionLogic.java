@@ -26,8 +26,8 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.text.TextComponentString;
 import net.minecraft.world.World;
+import net.minecraftforge.common.ForgeHooks;
 
-import javax.annotation.Nonnull;
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.*;
 import java.util.function.Function;
@@ -117,9 +117,10 @@ public class ChainDestructionLogic {
    * @param player   プレイヤー
    * @param state    判定されるIBlockState
    * @param heldItem 手持ちアイテム
+   * @param canHarvestBlock 手持ちアイテムで対象ブロックを採掘可能か
    * @return 破壊対象かどうか
    */
-  public static boolean checkBlockValidate(EntityPlayer player, IBlockState state, ItemStack heldItem) {
+  public static boolean checkBlockValidate(EntityPlayer player, IBlockState state, ItemStack heldItem, boolean canHarvestBlock) {
     ICDPlayerStatusHandler status = CDPlayerStatus.get(player);
     if (Objects.isNull(status)) {
       return false;
@@ -127,7 +128,6 @@ public class ChainDestructionLogic {
     if (heldItem.isEmpty()) {
       return false;
     }
-    boolean canHarvestBlock = heldItem.canHarvestBlock(state);
     if (status.getModeType() == ModeType.BRANCH_MINING || status.getModeType() == ModeType.WALL_MINING) {
       return canHarvestBlock;
     } else if (status.isPrivateRegisterMode() && heldItem.hasCapability(CAPABILITY_CHAIN_DESTRUCTION_ITEM, null)) {
@@ -197,17 +197,19 @@ public class ChainDestructionLogic {
   /**
    * 連鎖破壊処理が動くかどうか
    *
+   * @param world    ワールド
    * @param player   プレイヤー
    * @param state    破壊した最初のブロックのIBlockState
+   * @param blockPos 破壊した最初のブロックのBlockPos
    * @param heldItem 手持ちアイテム
    * @return 連鎖破壊処理が動くならtrue
    */
-  public static boolean isChainDestructionActionable(EntityPlayer player, IBlockState state, ItemStack heldItem) {
+  public static boolean isChainDestructionActionable(World world ,EntityPlayer player, IBlockState state, BlockPos blockPos, ItemStack heldItem) {
     ICDPlayerStatusHandler status = CDPlayerStatus.get(player);
     if (Objects.isNull(status)) {
       return false;
     }
-    return checkBlockValidate(player, state, heldItem)
+    return checkBlockValidate(player, state, heldItem, ForgeHooks.canHarvestBlock(state.getBlock(), player, world, blockPos))
             && status.getEnableItems().contains(StringUtils.getUniqueString(heldItem.getItem().getRegistryName()));
   }
 
@@ -216,12 +218,11 @@ public class ChainDestructionLogic {
     if (Objects.isNull(status)) {
       return;
     }
-    Set<BlockPos> searchedBlockSet = searchBlock(world, status, player, firstBrokenBlockState, blockPos);
-    LinkedHashSet<BlockPos> connectedBlockSet = getConnectedBlockSet(status, blockPos, searchedBlockSet);
+    LinkedHashSet<BlockPos> searchedBlockSet = searchBlock(world, status, player, firstBrokenBlockState, blockPos);
     if (!ChainDestruction.destroyingSequentially) {
-      destroyBlock(world, player, player.getHeldItemMainhand(), connectedBlockSet);
+      destroyBlock(world, player, player.getHeldItemMainhand(), searchedBlockSet);
     } else {
-      ChainDestruction.digTaskEvent.digTaskSet.add(new DigTask(player, player.getHeldItemMainhand(), connectedBlockSet));
+      ChainDestruction.digTaskEvent.digTaskSet.add(new DigTask(player, player.getHeldItemMainhand(), searchedBlockSet));
     }
   }
 
@@ -234,14 +235,14 @@ public class ChainDestructionLogic {
    * @param targetPos 最初に破壊したブロックの座標
    * @return 最初に破壊したブロックと同種ブロックの座標集合
    */
-  private static Set<BlockPos> searchBlock(World world, ICDPlayerStatusHandler status, EntityPlayer player, IBlockState target, BlockPos targetPos) {
+  private static LinkedHashSet<BlockPos> searchBlock(World world, ICDPlayerStatusHandler status, EntityPlayer player, IBlockState target, BlockPos targetPos) {
     BlockPos minPos = status.getMinPos(player, targetPos);
     BlockPos maxPos = status.getMaxPos(targetPos);
     int distance = status.isTreeMode() ? 3 : 2;
     Queue<BlockPos> blockPosQueue = Queues.newArrayDeque();
     blockPosQueue.add(targetPos);
     Predicate<BlockPos> checkPredicate = (blockPos) -> checkBlock(status, target, world.getBlockState(blockPos),
-            player.getHeldItemMainhand());
+            player.getHeldItemMainhand(), ForgeHooks.canHarvestBlock(world.getBlockState(blockPos).getBlock(), player, world, blockPos));
     Predicate<BlockPos> rangePredicate = (blockPos) -> {
       boolean ret = blockPos.getX() >= minPos.getX() && blockPos.getY() >= minPos.getY() && blockPos.getZ() >= minPos.getZ();
       ret &= blockPos.getX() <= maxPos.getX() && blockPos.getY() <= maxPos.getY() && blockPos.getZ() <= maxPos.getZ();
@@ -276,39 +277,6 @@ public class ChainDestructionLogic {
   }
 
   /**
-   * 範囲内の同種ブロックから最初のブロックとつながっているブロックを取得する
-   *
-   * @param status           連鎖破壊ステータスクラス
-   * @param origin           最初に破壊したブロック
-   * @param searchedBlockSet 同種ブロックの座標集合
-   * @return 最初のブロックとつながっているブロックの座標集合
-   */
-  @Nonnull
-  private static LinkedHashSet<BlockPos> getConnectedBlockSet(ICDPlayerStatusHandler status, BlockPos origin, Set<BlockPos> searchedBlockSet) {
-    LinkedHashSet<BlockPos> connectedBlockSet = new LinkedHashSet<>();
-    connectedBlockSet.add(origin);
-    int distance = status.isTreeMode() ? 3 : 1;
-    boolean check = true;
-    while (check) {
-      check = false;
-      Iterator<BlockPos> iterator = searchedBlockSet.iterator();
-      while (iterator.hasNext()) {
-        BlockPos blockPos = iterator.next();
-        for (BlockPos listedBlockPos : connectedBlockSet) {
-          if (listedBlockPos.distanceSq(blockPos) <= distance) {
-            connectedBlockSet.add(blockPos);
-            iterator.remove();
-            check = true;
-            break;
-          }
-        }
-      }
-    }
-    connectedBlockSet.remove(origin);
-    return connectedBlockSet;
-  }
-
-  /**
    * 第四引数の集合内の座標にあるブロックを破壊する処理
    *
    * @param world             Worldクラス
@@ -331,11 +299,12 @@ public class ChainDestructionLogic {
    * @param target   最初のブロック
    * @param check    壊そうとしているブロック
    * @param heldItem 手持ちアイテム
+   * @param canHarvestBlock 手持ちアイテムで対象ブロックを採掘可能か
    * @return 同種ならtrue
    */
-  private static boolean checkBlock(ICDPlayerStatusHandler status, IBlockState target, IBlockState check, ItemStack heldItem) {
+  private static boolean checkBlock(ICDPlayerStatusHandler status, IBlockState target,
+                                    IBlockState check, ItemStack heldItem, boolean canHarvestBlock) {
     if (check.getBlock() == Blocks.AIR) return false;
-    boolean canHarvestBlock = heldItem.canHarvestBlock(check);
     if (status.getModeType() == ModeType.BRANCH_MINING || status.getModeType() == ModeType.WALL_MINING) {
       return canHarvestBlock;
     } else if (status.isTreeMode()) {
