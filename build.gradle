@@ -15,7 +15,7 @@ apply plugin: 'idea'
 
 def mc_version = '1.12.2'
 def aklib_version = '1.0.1.0'
-version = "${mc_version}-1.6.5.0" as Object
+version = "${mc_version}-1.6.5.1" as Object
 group = 'ak.mcmod.chaindestruction' // http://maven.apache.org/guides/mini/guide-naming-conventions.html
 archivesBaseName = 'chain-destruction'
 tasks.withType(JavaCompile) {

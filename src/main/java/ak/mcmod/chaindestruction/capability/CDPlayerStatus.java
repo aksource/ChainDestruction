@@ -203,7 +203,7 @@ public class CDPlayerStatus implements ICDPlayerStatusHandler, ICapabilitySerial
     public BlockPos getMinPos(Entity entity, BlockPos targetPos) {
         int y = targetPos.getY();
         int maxDestroyedBlock = getMaxDestroyedBlock();
-        if (isDigUnder()) {
+        if (isDigUnder() && (ModeType.NORMAL == getModeType() || ModeType.TREE == getModeType())) {
             y = Math.max(ak.mcmod.chaindestruction.api.Constants.MIN_Y, targetPos.getY() - maxDestroyedBlock);
         } else if (EnumFacing.UP != getFace()) {
             y = Math.max(ak.mcmod.chaindestruction.api.Constants.MIN_Y, MathHelper.floor(entity.posY));
