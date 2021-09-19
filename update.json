@@ -1,7 +1,7 @@
 {
   "homepage": "https://github.com/aksource/ChainDestruction",
   "1.16.4": {
-    "1.6.5.1": "for 1.16.4"
+    "1.6.5.1": "fixed branch-mining mode and wall-mining mode dig blocks which y coordinate is under player y coordinate."
   },
   "promos": {
     "1.15.1-recommended": "1.6.3",
