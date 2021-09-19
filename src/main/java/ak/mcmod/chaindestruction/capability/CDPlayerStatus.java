@@ -213,7 +213,7 @@ public class CDPlayerStatus implements ICDPlayerStatusHandler,
   public BlockPos getMinPos(Entity entity, BlockPos targetPos) {
     int y = targetPos.getY();
     int maxDestroyedBlock = getMaxDestroyedBlock();
-    if (isDigUnder()) {
+    if (isDigUnder() && (ModeType.NORMAL == getModeType() || ModeType.TREE == getModeType())) {
       y = Math.max(MIN_Y, targetPos.getY() - maxDestroyedBlock);
     } else if (Direction.UP != getFace()) {
       y = Math.max(MIN_Y, MathHelper.floor(entity.position().y));
