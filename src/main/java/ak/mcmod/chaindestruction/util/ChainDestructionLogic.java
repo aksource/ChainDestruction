@@ -26,8 +26,10 @@ import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.text.StringTextComponent;
+import net.minecraft.world.IWorld;
 import net.minecraft.world.World;
 import net.minecraft.world.server.ServerWorld;
+import net.minecraftforge.common.ForgeHooks;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.*;
@@ -124,17 +126,17 @@ public class ChainDestructionLogic {
   /**
    * BlockStateが破壊対象かどうかを判定
    *
-   * @param player   プレイヤー
-   * @param state    判定されるBlockState
-   * @param heldItem 手持ちアイテム
+   * @param player          プレイヤー
+   * @param state           判定されるBlockState
+   * @param heldItem        手持ちアイテム
+   * @param canHarvestBlock 手持ちアイテムで対象ブロックを採掘可能か
    * @return 破壊対象かどうか
    */
-  public static boolean checkBlockValidate(PlayerEntity player, BlockState state, ItemStack heldItem) {
+  public static boolean checkBlockValidate(PlayerEntity player, BlockState state, ItemStack heldItem, boolean canHarvestBlock) {
     return CDPlayerStatus.get(player).map(status -> {
       if (heldItem.isEmpty()) {
         return false;
       }
-      boolean canHarvestBlock = heldItem.isCorrectToolForDrops(state);
       if (status.getModeType() == ModeType.BRANCH_MINING || status.getModeType() == ModeType.WALL_MINING) {
         return canHarvestBlock;
       } else if (status.isPrivateRegisterMode() && heldItem
@@ -209,13 +211,15 @@ public class ChainDestructionLogic {
   /**
    * 連鎖破壊処理が動くかどうか
    *
+   * @param world    ワールド
    * @param player   プレイヤー
-   * @param state    破壊した最初のブロックのIBlockState
+   * @param state    破壊した最初のブロックのBlockState
+   * @param blockPos 破壊した最初のブロックのBlockPos
    * @param heldItem 手持ちアイテム
    * @return 連鎖破壊処理が動くならtrue
    */
-  public static boolean isChainDestructionActionable(PlayerEntity player, BlockState state, ItemStack heldItem) {
-    return CDPlayerStatus.get(player).map(status -> checkBlockValidate(player, state, heldItem)
+  public static boolean isChainDestructionActionable(IWorld world, PlayerEntity player, BlockState state, BlockPos blockPos, ItemStack heldItem) {
+    return CDPlayerStatus.get(player).map(status -> checkBlockValidate(player, state, heldItem, ForgeHooks.canHarvestBlock(state, player, world, blockPos))
             && status.getEnableItems()
             .contains(StringUtils.getUniqueString(heldItem.getItem().getRegistryName()))).orElse(false);
   }
@@ -251,7 +255,7 @@ public class ChainDestructionLogic {
     Queue<BlockPos> blockPosQueue = Queues.newArrayDeque();
     blockPosQueue.add(targetPos);
     Predicate<BlockPos> checkPredicate = (blockPos) -> checkBlock(status, target, world.getBlockState(blockPos),
-            player.getMainHandItem());
+            player.getMainHandItem(), ForgeHooks.canHarvestBlock(world.getBlockState(blockPos), player, world, blockPos));
     Predicate<BlockPos> rangePredicate = (blockPos) -> {
       boolean ret = blockPos.getX() >= minPos.getX() && blockPos.getY() >= minPos.getY() && blockPos.getZ() >= minPos.getZ();
       ret &= blockPos.getX() <= maxPos.getX() && blockPos.getY() <= maxPos.getY() && blockPos.getZ() <= maxPos.getZ();
@@ -305,18 +309,18 @@ public class ChainDestructionLogic {
   /**
    * 壊そうとしているブロックが最初に壊したブロックと同じかどうか判定
    *
-   * @param status   プレイヤーの設定情報
-   * @param target   最初のブロック
-   * @param check    壊そうとしているブロック
-   * @param heldItem 手持ちアイテム
+   * @param status          プレイヤーの設定情報
+   * @param target          最初のブロック
+   * @param check           壊そうとしているブロック
+   * @param heldItem        手持ちアイテム
+   * @param canHarvestBlock 手持ちアイテムで対象ブロックを採掘可能か
    * @return 同種ならtrue
    */
   private static boolean checkBlock(ICDPlayerStatusHandler status, BlockState target,
-                                    BlockState check, ItemStack heldItem) {
+                                    BlockState check, ItemStack heldItem, boolean canHarvestBlock) {
     if (check.getBlock() == Blocks.AIR) {
       return false;
     }
-    boolean canHarvestBlock = heldItem.isCorrectToolForDrops(check);
     if (status.getModeType() == ModeType.BRANCH_MINING || status.getModeType() == ModeType.WALL_MINING) {
       return canHarvestBlock;
     } else if (status.isTreeMode()) {

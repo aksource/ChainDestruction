@@ -10,6 +10,7 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.world.World;
 import net.minecraft.world.server.ServerWorld;
+import net.minecraftforge.common.ForgeHooks;
 import net.minecraftforge.common.util.FakePlayer;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.world.BlockEvent;
@@ -35,7 +36,8 @@ public class BlockEvents {
       String uniqueName = StringUtils.getUniqueString(itemStack.getItem().getRegistryName());
       if (enableItems.contains(uniqueName)) {
         BlockState state = world.getBlockState(event.getPos());
-        if (ChainDestructionLogic.checkBlockValidate(player, state, itemStack)) {
+        boolean canHarvestBlock = ForgeHooks.canHarvestBlock(state, player, world, event.getPos());
+        if (ChainDestructionLogic.checkBlockValidate(player, state, itemStack, canHarvestBlock)) {
           status.setFace(event.getFace());
         }
       }
@@ -46,7 +48,7 @@ public class BlockEvents {
   @SubscribeEvent
   public static void blockBreakingEvent(final BlockEvent.BreakEvent event) {
     if (!(event.getPlayer() instanceof FakePlayer) && !event.getWorld().isClientSide()) {
-      if (ChainDestructionLogic.isChainDestructionActionable(event.getPlayer(), event.getState(),
+      if (ChainDestructionLogic.isChainDestructionActionable(event.getWorld(), event.getPlayer(), event.getState(), event.getPos(),
               event.getPlayer().getMainHandItem())) {
         ChainDestructionLogic.setup(event.getState(), event.getPlayer(), (ServerWorld) event.getWorld(), event.getPos());
       }
