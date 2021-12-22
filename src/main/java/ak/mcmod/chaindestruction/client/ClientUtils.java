@@ -2,8 +2,8 @@ package ak.mcmod.chaindestruction.client;
 
 import ak.mcmod.chaindestruction.client.event.ClientEvents;
 import net.minecraft.client.KeyMapping;
+import net.minecraftforge.client.ClientRegistry;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.fmlclient.registry.ClientRegistry;
 import org.lwjgl.glfw.GLFW;
 
 import static ak.mcmod.chaindestruction.api.Constants.*;

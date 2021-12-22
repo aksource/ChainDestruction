@@ -13,17 +13,17 @@ apply from: 'https://raw.githubusercontent.com/SizableShrimp/Forge-Class-Remappe
 apply plugin: 'eclipse'
 apply plugin: 'idea'
 
-def mc_version = '1.17.1'
-def forge_version = '37.1.1'
-def aklib_version = '1.0.2.0'
+def mc_version = '1.18.1'
+def forge_version = '39.0.7'
+def aklib_version = '1.0.2.1'
 def mod_id = 'chaindestruction'
-version = "${mc_version}-1.6.6.0" as Object
+version = "${mc_version}-1.6.6.1" as Object
 group = 'ak.mcmod' // http://maven.apache.org/guides/mini/guide-naming-conventions.html
 archivesBaseName = 'chain-destruction'
 tasks.withType(JavaCompile) {
     options.encoding = 'UTF-8'
 }
-java.toolchain.languageVersion = JavaLanguageVersion.of(16)
+java.toolchain.languageVersion = JavaLanguageVersion.of(17)
 
 minecraft {
     // the mappings can be changed at any time, and must be in the following format.
@@ -128,11 +128,11 @@ jar.finalizedBy('reobfJar')
 // Example for how to get properties into the manifest for reading by the runtime..
 jar {
     manifest {
-        attributes(["Specification-Title": "chaindestruction",
+        attributes(["Specification-Title": mod_id,
                     "Specification-Vendor": "ak",
-                    "Specification-Version": "${forge_version}", // We are version 1 of the modlauncher specification
+                    "Specification-Version": forge_version, // We are version 1 of the modlauncher specification
                     "Implementation-Title": project.name,
-                    "Implementation-Version": "${archiveVersion}",
+                    "Implementation-Version": archiveVersion,
                     "Implementation-Vendor" :"ak",
                     "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")],)
     }

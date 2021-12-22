@@ -168,7 +168,7 @@ public class ChainDestructionLogic {
     var chat = "";
     if (player.isShiftKeyDown()) {
       //鉱石辞書名かBlockState付き固有文字列があって、登録されて無ければ、そちらを登録。
-      if (!StringUtils.matchOreNames(set, tags)) {
+      if (!StringUtils.matchTagNames(set, tags)) {
         set.addAll(tags);
         chat = String.format("Add Block : %s", tags);
         player.sendMessage(new TextComponent(chat), Util.NIL_UUID);
