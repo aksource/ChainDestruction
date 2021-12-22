@@ -1,6 +1,6 @@
 package ak.mcmod.chaindestruction.network;
 
-import net.minecraft.network.PacketBuffer;
+import net.minecraft.network.FriendlyByteBuf;
 
 import java.util.function.BiConsumer;
 import java.util.function.Function;
@@ -10,10 +10,10 @@ import java.util.function.Function;
  */
 public class MessageMousePressed {
 
-  public static final BiConsumer<MessageMousePressed, PacketBuffer> ENCODER = (messageMousePressed, packetBuffer) -> packetBuffer.writeByte(messageMousePressed.getMouseIndex())
+  public static final BiConsumer<MessageMousePressed, FriendlyByteBuf> ENCODER = (messageMousePressed, packetBuffer) -> packetBuffer.writeByte(messageMousePressed.getMouseIndex())
           .writeBoolean(messageMousePressed.isFocusObject);
 
-  public static final Function<PacketBuffer, MessageMousePressed> DECODER = packetBuffer -> new MessageMousePressed(
+  public static final Function<FriendlyByteBuf, MessageMousePressed> DECODER = packetBuffer -> new MessageMousePressed(
           packetBuffer.readByte(), packetBuffer.readBoolean());
   private byte mouseIndex;
   private boolean isFocusObject;

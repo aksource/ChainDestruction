@@ -2,8 +2,8 @@
   "chaindestruction.key.register_item": "一括破壊アイテム登録キー",
   "chaindestruction.key.enable_digging_under": "下方採掘キー",
   "chaindestruction.key.change_mode": "モード切り替えキー",
-  "chaindestruction.commands.reset_player_status": "/cdresetplayerstatus [username]...",
-  "chaindestruction.commands.copy_r_to_l": "/cdcopyrtol [username]...",
-  "chaindestruction.commands.show_player_status": "/cdshowplayerstatus [username]...",
-  "chaindestruction.commands.show_item_status": "/cdshowitemstatus [username]..."
+  "chaindestruction.commands.player_status.reset.success": "追加ステータスを初期化しました。",
+  "chaindestruction.commands.player_status.add.forbidden_tag.success": "登録禁止文字列「%s」を追加しました。",
+  "chaindestruction.commands.player_status.remove.forbidden_tag.success": "登録禁止文字列「%s」を削除しました。",
+  "chaindestruction.commands.item_status.copy.success": "追加アイテムステータスをコピーしました。"
 }

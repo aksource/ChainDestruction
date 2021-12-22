@@ -1,8 +1,6 @@
 package ak.mcmod.chaindestruction;
 
 import ak.mcmod.ak_lib.common.ForgeModEntryPoint;
-import ak.mcmod.chaindestruction.capability.CapabilityCDItemStackStatusHandler;
-import ak.mcmod.chaindestruction.capability.CapabilityCDPlayerStatusHandler;
 import ak.mcmod.chaindestruction.client.ClientUtils;
 import ak.mcmod.chaindestruction.event.*;
 import ak.mcmod.chaindestruction.network.PacketHandler;
@@ -34,8 +32,6 @@ public class ChainDestruction extends ForgeModEntryPoint {
   @Override
   protected void setupCommon(final FMLCommonSetupEvent event) {
     PacketHandler.init();
-    CapabilityCDPlayerStatusHandler.register();
-    CapabilityCDItemStackStatusHandler.register();
   }
 
   @Override

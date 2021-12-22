@@ -2,13 +2,13 @@ package ak.mcmod.chaindestruction.network;
 
 import ak.mcmod.ak_lib.util.StringUtils;
 import ak.mcmod.chaindestruction.api.Constants;
-import ak.mcmod.chaindestruction.capability.CDPlayerStatus;
-import mcp.MethodsReturnNonnullByDefault;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.Util;
-import net.minecraft.util.text.StringTextComponent;
-import net.minecraftforge.fml.network.NetworkEvent.Context;
+import ak.mcmod.chaindestruction.capability.CapabilityAdditionalPlayerStatus;
+import net.minecraft.MethodsReturnNonnullByDefault;
+import net.minecraft.Util;
+import net.minecraft.network.chat.TextComponent;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraftforge.fmllegacy.network.NetworkEvent;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.Objects;
@@ -21,7 +21,7 @@ import java.util.function.Supplier;
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
 public class MessageMousePressedHandler implements
-        BiConsumer<MessageMousePressed, Supplier<Context>> {
+        BiConsumer<MessageMousePressed, Supplier<NetworkEvent.Context>> {
 
   /**
    * マウスイベント処理。MessageHandlerから呼ばれる
@@ -31,15 +31,15 @@ public class MessageMousePressedHandler implements
    * @param mouse         押下したマウスのキーを表すbyte
    * @param isFocusObject オブジェクトにフォーカスしているかどうか
    */
-  public static void doMouseEvent(ItemStack item, PlayerEntity player, byte mouse,
+  public static void doMouseEvent(ItemStack item, Player player, byte mouse,
                                   boolean isFocusObject) {
     try {
-      CDPlayerStatus.get(player).ifPresent(status -> {
+      player.getCapability(CapabilityAdditionalPlayerStatus.CAPABILITY).ifPresent(status -> {
         if (!status.getEnableItems()
                 .contains(StringUtils.getUniqueString(item.getItem().getRegistryName()))) {
           return;
         }
-        String chat;
+        var chat = "";
         if (mouse == Constants.MIDDLE_CLICK && !isFocusObject) {
           int maxDestroyedBlock = status.getMaxDestroyedBlock();
           if (player.isShiftKeyDown() && maxDestroyedBlock > 0) {
@@ -48,7 +48,7 @@ public class MessageMousePressedHandler implements
             status.setMaxDestroyedBlock(++maxDestroyedBlock);
           }
           chat = String.format("New Max Destroyed : %d", maxDestroyedBlock);
-          player.sendMessage(new StringTextComponent(chat), Util.NIL_UUID);
+          player.sendMessage(new TextComponent(chat), Util.NIL_UUID);
         }
       });
     } catch (Exception e) {
@@ -57,10 +57,10 @@ public class MessageMousePressedHandler implements
   }
 
   @Override
-  public void accept(MessageMousePressed messageMousePressed, Supplier<Context> contextSupplier) {
-    PlayerEntity player = contextSupplier.get().getSender();
+  public void accept(MessageMousePressed messageMousePressed, Supplier<NetworkEvent.Context> contextSupplier) {
+    var player = contextSupplier.get().getSender();
     if (Objects.nonNull(player) && !player.getMainHandItem().isEmpty()) {
-      ItemStack equippedItem = player.getMainHandItem();
+      var equippedItem = player.getMainHandItem();
       doMouseEvent(equippedItem, player, messageMousePressed.getMouseIndex(),
               messageMousePressed.isFocusObject());
     }

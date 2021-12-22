@@ -1,6 +1,6 @@
 package ak.mcmod.chaindestruction.network;
 
-import net.minecraft.network.PacketBuffer;
+import net.minecraft.network.FriendlyByteBuf;
 
 import java.util.function.BiConsumer;
 import java.util.function.Function;
@@ -10,9 +10,9 @@ import java.util.function.Function;
  */
 public class MessageKeyPressed {
 
-  public static final BiConsumer<MessageKeyPressed, PacketBuffer> ENCODER = ((messageKeyPressed, packetBuffer) -> packetBuffer
+  public static final BiConsumer<MessageKeyPressed, FriendlyByteBuf> ENCODER = ((messageKeyPressed, packetBuffer) -> packetBuffer
           .writeByte(messageKeyPressed.getKey()));
-  public static final Function<PacketBuffer, MessageKeyPressed> DECODER = packetBuffer -> new MessageKeyPressed(
+  public static final Function<FriendlyByteBuf, MessageKeyPressed> DECODER = packetBuffer -> new MessageKeyPressed(
           packetBuffer.readByte());
   private byte key;
 

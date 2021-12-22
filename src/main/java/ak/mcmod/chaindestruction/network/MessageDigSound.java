@@ -1,7 +1,8 @@
 package ak.mcmod.chaindestruction.network;
 
-import net.minecraft.network.PacketBuffer;
-import net.minecraft.util.math.BlockPos;
+
+import net.minecraft.core.BlockPos;
+import net.minecraft.network.FriendlyByteBuf;
 
 import java.util.function.BiConsumer;
 import java.util.function.Function;
@@ -11,9 +12,9 @@ import java.util.function.Function;
  */
 public class MessageDigSound {
 
-  public static final BiConsumer<MessageDigSound, PacketBuffer> ENCODER = (messageDigSound, packetBuffer) -> packetBuffer.writeInt(messageDigSound.blockPos.getX()).writeInt(messageDigSound.blockPos.getY())
+  public static final BiConsumer<MessageDigSound, FriendlyByteBuf> ENCODER = (messageDigSound, packetBuffer) -> packetBuffer.writeInt(messageDigSound.blockPos.getX()).writeInt(messageDigSound.blockPos.getY())
           .writeInt(messageDigSound.blockPos.getZ());
-  public static final Function<PacketBuffer, MessageDigSound> DECODER = packetBuffer -> new MessageDigSound(
+  public static final Function<FriendlyByteBuf, MessageDigSound> DECODER = packetBuffer -> new MessageDigSound(
           new BlockPos(packetBuffer.readInt(), packetBuffer.readInt(), packetBuffer.readInt()));
   private BlockPos blockPos;
 

@@ -1,17 +1,19 @@
 package ak.mcmod.chaindestruction.capability;
 
 import ak.mcmod.chaindestruction.util.ModeType;
-import net.minecraft.entity.Entity;
-import net.minecraft.util.Direction;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.entity.Entity;
+import net.minecraftforge.common.util.INBTSerializable;
 
 import java.util.Set;
 
 /**
- * PlayerEntityに保持する連鎖破壊用ステータスのインターフェース
+ * Playerに保持する連鎖破壊用ステータスのインターフェース
  * Created by A.K. on 2016/09/19.
  */
-public interface ICDPlayerStatusHandler {
+public interface IAdditionalPlayerStatus extends INBTSerializable<CompoundTag> {
 
   /**
    * 破壊時の接触面取得
@@ -101,7 +103,7 @@ public interface ICDPlayerStatusHandler {
   /**
    * 連鎖破壊可能アイテムの集合
    *
-   * @return Set<String>
+   * @return Set&lt;String&gt;
    */
   Set<String> getEnableItems();
 
@@ -115,7 +117,7 @@ public interface ICDPlayerStatusHandler {
   /**
    * 連鎖破壊対象ブロックの集合
    *
-   * @return Set<String>
+   * @return Set&lt;String&gt;
    */
   Set<String> getEnableBlocks();
 
@@ -129,7 +131,7 @@ public interface ICDPlayerStatusHandler {
   /**
    * 木こりモード用連鎖破壊対象ブロックの集合
    *
-   * @return Set<String>
+   * @return Set&lt;String&gt;
    */
   Set<String> getEnableLogBlocks();
 
@@ -156,4 +158,16 @@ public interface ICDPlayerStatusHandler {
    * @return 端点クラス
    */
   BlockPos getMaxPos(BlockPos targetPos);
+
+  /**
+   * 登録禁止文字列集合の取得
+   * @return Set&lt;String&gt;
+   */
+  Set<String> getForbiddenTags();
+
+  /**
+   * 登録禁止文字列集合の設定
+   * @param forbiddenTags forbiddenTags
+   */
+  void setForbiddenTags(Set<String> forbiddenTags);
 }

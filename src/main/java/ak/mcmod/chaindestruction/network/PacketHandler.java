@@ -1,8 +1,8 @@
 package ak.mcmod.chaindestruction.network;
 
-import net.minecraft.util.ResourceLocation;
-import net.minecraftforge.fml.network.NetworkRegistry;
-import net.minecraftforge.fml.network.simple.SimpleChannel;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraftforge.fmllegacy.network.NetworkRegistry;
+import net.minecraftforge.fmllegacy.network.simple.SimpleChannel;
 
 /**
  * メッセージ登録クラス Created by A.K. on 14/06/01.
@@ -15,18 +15,19 @@ public class PacketHandler {
           .serverAcceptedVersions(e -> true).simpleChannel();
 
   public static void init() {
+    var index = 0;
     INSTANCE
-            .registerMessage(0, MessageKeyPressed.class, MessageKeyPressed.ENCODER,
+            .registerMessage(index++, MessageKeyPressed.class, MessageKeyPressed.ENCODER,
                     MessageKeyPressed.DECODER, new MessageKeyPressedHandler());
-    INSTANCE.registerMessage(1, MessageMousePressed.class, MessageMousePressed.ENCODER,
+    INSTANCE.registerMessage(index++, MessageMousePressed.class, MessageMousePressed.ENCODER,
             MessageMousePressed.DECODER,
             new MessageMousePressedHandler());
     INSTANCE
-            .registerMessage(2, MessageDigSound.class, MessageDigSound.ENCODER, MessageDigSound.DECODER,
+            .registerMessage(index++, MessageDigSound.class, MessageDigSound.ENCODER, MessageDigSound.DECODER,
                     new MessageDigSoundHandler());
     INSTANCE
-            .registerMessage(3, MessageCDStatusProperties.class, MessageCDStatusProperties.ENCODER,
-                    MessageCDStatusProperties.DECODER,
-                    new MessageCDStatusPropertiesHandler());
+            .registerMessage(index, MessageSyncAdditionalPayerStatus.class, MessageSyncAdditionalPayerStatus.ENCODER,
+                    MessageSyncAdditionalPayerStatus.DECODER,
+                    new MessageSyncAdditionalStatusHandler());
   }
 }

@@ -2,8 +2,8 @@
   "chaindestruction.key.register_item": "RegChainDestructItem",
   "chaindestruction.key.enable_digging_under": "Dig Under Key",
   "chaindestruction.key.change_mode": "Change Mode Key",
-  "chaindestruction.commands.reset_player_status": "/cdresetplayerstatus [username]...",
-  "chaindestruction.commands.copy_r_to_l": "/cdcopyrtol [username]...",
-  "chaindestruction.commands.show_player_status": "/cdshowplayerstatus [username]...",
-  "chaindestruction.commands.show_item_status": "/cdshowitemstatus [username]..."
+  "chaindestruction.commands.player_status.reset.success": "Additional Player Status reset.",
+  "chaindestruction.commands.player_status.add.forbidden_tag.success": "Added forbidden tag: %s",
+  "chaindestruction.commands.player_status.remove.forbidden_tag.success": "Removed forbidden tag: %s",
+  "chaindestruction.commands.item_status.copy.success": "Copied Additional Item Status."
 }

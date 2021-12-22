@@ -5,9 +5,9 @@ import ak.mcmod.chaindestruction.client.ClientUtils;
 import ak.mcmod.chaindestruction.network.MessageKeyPressed;
 import ak.mcmod.chaindestruction.network.MessageMousePressed;
 import ak.mcmod.chaindestruction.network.PacketHandler;
-import mcp.MethodsReturnNonnullByDefault;
+import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.client.Minecraft;
-import net.minecraft.util.math.RayTraceResult.Type;
+import net.minecraft.world.phys.HitResult;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.TickEvent.ClientTickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -32,18 +32,18 @@ public class ClientEvents {
   private byte getKeyIndex() {
     byte key = -1;
     if (ClientUtils.REGISTER_ITEM_KEY.consumeClick()) {
-      key = Constants.RegKEY;
+      key = Constants.REG_KEY;
     } else if (ClientUtils.DIG_UNDER_KEY.consumeClick()) {
-      key = Constants.DigKEY;
+      key = Constants.DIG_KEY;
     } else if (ClientUtils.TREE_KEY.consumeClick()) {
-      key = Constants.ModeKEY;
+      key = Constants.MODE_KEY;
     }
     return key;
   }
 
   private void keyPressEvent() {
     if (MC.isWindowActive() && Objects.nonNull(MC.player)) {
-      byte keyIndex = getKeyIndex();
+      var keyIndex = getKeyIndex();
       if (keyIndex != -1) {
         PacketHandler.INSTANCE.sendToServer(new MessageKeyPressed(keyIndex));
       }
@@ -67,7 +67,7 @@ public class ClientEvents {
       if (mouseIndex == Constants.MIDDLE_CLICK) {
         if (mouseCounter == 0) {
           mouseCounter = 5;
-          boolean isFocusObject = (Objects.nonNull(MC.hitResult) && MC.hitResult.getType() != Type.MISS) || Objects.nonNull(MC.crosshairPickEntity);
+          boolean isFocusObject = (Objects.nonNull(MC.hitResult) && MC.hitResult.getType() != HitResult.Type.MISS) || Objects.nonNull(MC.crosshairPickEntity);
           PacketHandler.INSTANCE.sendToServer(new MessageMousePressed(mouseIndex, isFocusObject));
         }
       }

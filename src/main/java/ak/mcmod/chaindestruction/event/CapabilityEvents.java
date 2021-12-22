@@ -1,15 +1,12 @@
 package ak.mcmod.chaindestruction.event;
 
-import ak.mcmod.chaindestruction.capability.CDItemStackStatus;
-import ak.mcmod.chaindestruction.capability.CDPlayerStatus;
-import ak.mcmod.chaindestruction.capability.ICDPlayerStatusHandler;
+import ak.mcmod.chaindestruction.capability.*;
 import ak.mcmod.chaindestruction.util.ConfigUtils;
-import mcp.MethodsReturnNonnullByDefault;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.INBT;
-import net.minecraftforge.common.util.LazyOptional;
+import net.minecraft.MethodsReturnNonnullByDefault;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraftforge.common.capabilities.RegisterCapabilitiesEvent;
 import net.minecraftforge.event.AttachCapabilitiesEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -17,9 +14,9 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.Objects;
 
-import static ak.mcmod.chaindestruction.capability.CapabilityCDItemStackStatusHandler.CD_ITEM_STATUS;
-import static ak.mcmod.chaindestruction.capability.CapabilityCDPlayerStatusHandler.CAPABILITY_CHAIN_DESTRUCTION_PLAYER;
-import static ak.mcmod.chaindestruction.capability.CapabilityCDPlayerStatusHandler.CD_STATUS;
+import static ak.mcmod.chaindestruction.capability.CapabilityAdditionalItemStackStatus.CD_ITEM_STATUS;
+import static ak.mcmod.chaindestruction.capability.CapabilityAdditionalPlayerStatus.CAPABILITY;
+import static ak.mcmod.chaindestruction.capability.CapabilityAdditionalPlayerStatus.CD_STATUS;
 
 /**
  * Capability周りのイベントクラス Created by A.K. on 2017/03/25.
@@ -32,17 +29,28 @@ public class CapabilityEvents {
   /**
    * Capabilityの登録
    *
+   * @param event RegisterCapabilitiesEvent
+   */
+  @SubscribeEvent
+  public static void registerCapability(RegisterCapabilitiesEvent event) {
+    event.register(IAdditionalItemStackStatus.class);
+    event.register(IAdditionalPlayerStatus.class);
+  }
+
+  /**
+   * Capabilityの付与
+   *
    * @param event AttachCapabilitiesEvent.Entity
    */
   @SubscribeEvent
   public static void onAttachingEntity(AttachCapabilitiesEvent<Entity> event) {
-    if (event.getObject() instanceof PlayerEntity) {
-      event.addCapability(CD_STATUS, new CDPlayerStatus());
+    if (event.getObject() instanceof Player) {
+      event.addCapability(CD_STATUS, new AdditionalPlayerStatusCapabilityProvider());
     }
   }
 
   /**
-   * Capabilityの登録
+   * Capabilityの付与
    *
    * @param event AttachCapabilitiesEvent.Item
    */
@@ -51,7 +59,7 @@ public class CapabilityEvents {
     if (!event.getObject().isEmpty()
             && Objects.nonNull(ConfigUtils.COMMON.excludeItemPredicate) && !ConfigUtils.COMMON.excludeItemPredicate
             .test(event.getObject().getItem().getRegistryName())) {
-      event.addCapability(CD_ITEM_STATUS, new CDItemStackStatus());
+      event.addCapability(CD_ITEM_STATUS, new AdditionalItemStackStatusCapabilityProvider());
     }
   }
 
@@ -60,17 +68,13 @@ public class CapabilityEvents {
     //死亡時に呼ばれてるかどうか
     if (event.isWasDeath()) {
       //古いカスタムデータ
-      LazyOptional<ICDPlayerStatusHandler> oldCDS = event.getOriginal()
-              .getCapability(CAPABILITY_CHAIN_DESTRUCTION_PLAYER, null);
+      var oldCDS = event.getOriginal()
+              .getCapability(CAPABILITY, null);
       //新しいカスタムデータ
-      LazyOptional<ICDPlayerStatusHandler> newCDS = event.getPlayer()
-              .getCapability(CAPABILITY_CHAIN_DESTRUCTION_PLAYER, null);
-      INBT nbt = CAPABILITY_CHAIN_DESTRUCTION_PLAYER.getStorage()
-              .writeNBT(CAPABILITY_CHAIN_DESTRUCTION_PLAYER, oldCDS.orElse(new CDPlayerStatus()), null);
-      CAPABILITY_CHAIN_DESTRUCTION_PLAYER.getStorage()
-              .readNBT(CAPABILITY_CHAIN_DESTRUCTION_PLAYER, newCDS.orElse(new CDPlayerStatus()), null,
-                      nbt);
-
+      var newCDS = event.getPlayer()
+              .getCapability(CAPABILITY, null);
+      var nbt = oldCDS.orElse(new AdditionalPlayerStatus()).serializeNBT();
+      newCDS.orElse(new AdditionalPlayerStatus()).deserializeNBT(nbt);
     }
   }
 }

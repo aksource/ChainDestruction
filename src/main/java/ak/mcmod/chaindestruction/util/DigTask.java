@@ -2,14 +2,14 @@ package ak.mcmod.chaindestruction.util;
 
 import ak.mcmod.chaindestruction.network.MessageDigSound;
 import ak.mcmod.chaindestruction.network.PacketHandler;
-import mcp.MethodsReturnNonnullByDefault;
-import net.minecraft.block.Block;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.player.ServerPlayerEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.server.ServerWorld;
-import net.minecraftforge.fml.network.NetworkDirection;
+import net.minecraft.MethodsReturnNonnullByDefault;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.Block;
+import net.minecraftforge.fmllegacy.network.NetworkDirection;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.ArrayDeque;
@@ -24,11 +24,11 @@ import java.util.Queue;
 public class DigTask {
 
   private final Queue<BlockPos> queue = new ArrayDeque<>();
-  private final PlayerEntity digger;
+  private final Player digger;
   private final ItemStack heldItem;
   private int counter;
 
-  public DigTask(PlayerEntity player, ItemStack itemStack, Collection<BlockPos> blockPosSet) {
+  public DigTask(Player player, ItemStack itemStack, Collection<BlockPos> blockPosSet) {
     this.digger = player;
     this.heldItem = itemStack;
     this.queue.addAll(blockPosSet);
@@ -48,18 +48,17 @@ public class DigTask {
     if (queue.isEmpty()) {
       return true;
     }
-    BlockPos first = queue.poll();
-    if (!(this.digger.getCommandSenderWorld() instanceof ServerWorld)) {
+    var first = queue.poll();
+    if (!(this.digger.getCommandSenderWorld() instanceof ServerLevel world)) {
       return true;
     }
-    ServerWorld world = (ServerWorld) this.digger.getCommandSenderWorld();
     world.globalLevelEvent(2001, first, Block.getId(world.getBlockState(first)));
     PacketHandler.INSTANCE.sendTo(new MessageDigSound(first),
-            ((ServerPlayerEntity) digger).connection.getConnection(), NetworkDirection.PLAY_TO_CLIENT);
+            ((ServerPlayer) digger).connection.getConnection(), NetworkDirection.PLAY_TO_CLIENT);
     return ChainDestructionLogic.destroyBlockAtPosition(world, digger, first, heldItem);
   }
 
-  public PlayerEntity getDigger() {
+  public Player getDigger() {
     return digger;
   }
 }

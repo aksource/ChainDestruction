@@ -1,12 +1,9 @@
 package ak.mcmod.chaindestruction.network;
 
-import mcp.MethodsReturnNonnullByDefault;
-import net.minecraft.block.Block;
+import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.client.Minecraft;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
-import net.minecraftforge.fml.network.NetworkEvent.Context;
+import net.minecraft.world.level.block.Block;
+import net.minecraftforge.fmllegacy.network.NetworkEvent;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.Objects;
@@ -19,12 +16,12 @@ import java.util.function.Supplier;
  */
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
-public class MessageDigSoundHandler implements BiConsumer<MessageDigSound, Supplier<Context>> {
-  public void accept(MessageDigSound messageDigSound, Supplier<Context> contextSupplier) {
-    PlayerEntity player = Minecraft.getInstance().player;
+public class MessageDigSoundHandler implements BiConsumer<MessageDigSound, Supplier<NetworkEvent.Context>> {
+  public void accept(MessageDigSound messageDigSound, Supplier<NetworkEvent.Context> contextSupplier) {
+    var player = Minecraft.getInstance().player;
     if (Objects.nonNull(player)) {
-      World world = player.getCommandSenderWorld();
-      BlockPos blockPos = messageDigSound.getBlockPos();
+      var world = player.getCommandSenderWorld();
+      var blockPos = messageDigSound.getBlockPos();
       world.globalLevelEvent(2001, blockPos, Block.getId(world.getBlockState(blockPos)));
     }
   }

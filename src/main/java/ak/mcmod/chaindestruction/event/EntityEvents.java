@@ -1,10 +1,10 @@
 package ak.mcmod.chaindestruction.event;
 
-import ak.mcmod.chaindestruction.capability.CDPlayerStatus;
-import mcp.MethodsReturnNonnullByDefault;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.util.Util;
-import net.minecraft.util.text.StringTextComponent;
+import ak.mcmod.chaindestruction.capability.CapabilityAdditionalPlayerStatus;
+import net.minecraft.MethodsReturnNonnullByDefault;
+import net.minecraft.Util;
+import net.minecraft.network.chat.TextComponent;
+import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.event.entity.EntityJoinWorldEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 
@@ -19,15 +19,14 @@ import javax.annotation.ParametersAreNonnullByDefault;
 public class EntityEvents {
   @SubscribeEvent
   public static void joinInWorld(final EntityJoinWorldEvent event) {
-    if (!event.getWorld().isClientSide && event.getEntity() instanceof PlayerEntity) {
-      PlayerEntity player = (PlayerEntity) event.getEntity();
-      CDPlayerStatus.get(player).ifPresent(status -> {
-        String mode = status.isPrivateRegisterMode() ? "ItemStack" : "Player";
-        String s = String
+    if (!event.getWorld().isClientSide && event.getEntity() instanceof Player player) {
+      player.getCapability(CapabilityAdditionalPlayerStatus.CAPABILITY).ifPresent(status -> {
+        var mode = status.isPrivateRegisterMode() ? "ItemStack" : "Player";
+        var s = String
                 .format("ChainDestruction Info Registration:%s, Mode:%s, Range:%d", mode,
                         status.getModeType().name(),
                         status.getMaxDestroyedBlock());
-        player.sendMessage(new StringTextComponent(s), Util.NIL_UUID);
+        player.sendMessage(new TextComponent(s), Util.NIL_UUID);
       });
     }
   }

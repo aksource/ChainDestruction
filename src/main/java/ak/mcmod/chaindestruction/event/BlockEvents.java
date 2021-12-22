@@ -1,15 +1,11 @@
 package ak.mcmod.chaindestruction.event;
 
 import ak.mcmod.ak_lib.util.StringUtils;
-import ak.mcmod.chaindestruction.capability.CDItemStackStatus;
-import ak.mcmod.chaindestruction.capability.CDPlayerStatus;
+import ak.mcmod.chaindestruction.capability.CapabilityAdditionalItemStackStatus;
+import ak.mcmod.chaindestruction.capability.CapabilityAdditionalPlayerStatus;
 import ak.mcmod.chaindestruction.util.ChainDestructionLogic;
-import mcp.MethodsReturnNonnullByDefault;
-import net.minecraft.block.BlockState;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.world.World;
-import net.minecraft.world.server.ServerWorld;
+import net.minecraft.MethodsReturnNonnullByDefault;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraftforge.common.ForgeHooks;
 import net.minecraftforge.common.util.FakePlayer;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
@@ -25,18 +21,18 @@ import java.util.Set;
 public class BlockEvents {
   @SubscribeEvent
   public static void onLeftClickBlock(final PlayerInteractEvent.LeftClickBlock event) {
-    PlayerEntity player = event.getPlayer();
-    CDPlayerStatus.get(player).ifPresent(status -> {
-      Set<String> enableItems = status.getEnableItems();
-      World world = player.getCommandSenderWorld();
-      ItemStack itemStack = player.getMainHandItem();
+    var player = event.getPlayer();
+    player.getCapability(CapabilityAdditionalPlayerStatus.CAPABILITY).ifPresent(status -> {
+      var enableItems = status.getEnableItems();
+      var world = player.getCommandSenderWorld();
+      var itemStack = player.getMainHandItem();
       if (world.isClientSide || itemStack.isEmpty()) {
         return;
       }
-      String uniqueName = StringUtils.getUniqueString(itemStack.getItem().getRegistryName());
+      var uniqueName = StringUtils.getUniqueString(itemStack.getItem().getRegistryName());
       if (enableItems.contains(uniqueName)) {
-        BlockState state = world.getBlockState(event.getPos());
-        boolean canHarvestBlock = ForgeHooks.canHarvestBlock(state, player, world, event.getPos());
+        var state = world.getBlockState(event.getPos());
+        var canHarvestBlock = ForgeHooks.isCorrectToolForDrops(state, player);
         if (ChainDestructionLogic.checkBlockValidate(player, state, itemStack, canHarvestBlock)) {
           status.setFace(event.getFace());
         }
@@ -50,7 +46,7 @@ public class BlockEvents {
     if (!(event.getPlayer() instanceof FakePlayer) && !event.getWorld().isClientSide()) {
       if (ChainDestructionLogic.isChainDestructionActionable(event.getWorld(), event.getPlayer(), event.getState(), event.getPos(),
               event.getPlayer().getMainHandItem())) {
-        ChainDestructionLogic.setup(event.getState(), event.getPlayer(), (ServerWorld) event.getWorld(), event.getPos());
+        ChainDestructionLogic.setup(event.getState(), event.getPlayer(), (ServerLevel) event.getWorld(), event.getPos());
       }
     }
   }
@@ -62,25 +58,26 @@ public class BlockEvents {
    */
   @SubscribeEvent
   public static void onRightClickBlock(final PlayerInteractEvent.RightClickBlock event) {
-    PlayerEntity player = event.getPlayer();
-    CDPlayerStatus.get(player).ifPresent(status -> {
-      World world = player.getCommandSenderWorld();
-      ItemStack itemStack = player.getMainHandItem();
+    var player = event.getPlayer();
+    player.getCapability(CapabilityAdditionalPlayerStatus.CAPABILITY).ifPresent(status -> {
+      var world = player.getCommandSenderWorld();
+      var itemStack = player.getMainHandItem();
       if (world.isClientSide || itemStack.isEmpty()) {
         return;
       }
-      String uniqueName = StringUtils.getUniqueString(itemStack.getItem().getRegistryName());
+      var uniqueName = StringUtils.getUniqueString(itemStack.getItem().getRegistryName());
       if (status.getEnableItems().contains(uniqueName)) {
-        BlockState state = world.getBlockState(event.getPos());
+        var state = world.getBlockState(event.getPos());
         if (status.isPrivateRegisterMode()) {
-          CDItemStackStatus.get(itemStack).ifPresent(itemStatus -> {
+          itemStack.getCapability(CapabilityAdditionalItemStackStatus.CAPABILITY).ifPresent(itemStatus -> {
             Set<String> enableBlocks = status.isTreeMode() ? itemStatus.getEnableLogBlocks()
                     : itemStatus.getEnableBlocks();
-            ChainDestructionLogic.addAndRemoveBlocks(enableBlocks, player, state);
+            Set<String> forbiddenTags = status.getForbiddenTags();
+            ChainDestructionLogic.addAndRemoveBlocks(enableBlocks, forbiddenTags, player, state);
           });
         } else {
           ChainDestructionLogic.addAndRemoveBlocks(
-                  status.isTreeMode() ? status.getEnableLogBlocks() : status.getEnableBlocks(), player,
+                  status.isTreeMode() ? status.getEnableLogBlocks() : status.getEnableBlocks(), status.getForbiddenTags(), player,
                   state);
 
         }

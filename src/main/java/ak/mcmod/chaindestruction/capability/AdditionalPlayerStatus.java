@@ -4,50 +4,35 @@ import ak.mcmod.ak_lib.util.StringUtils;
 import ak.mcmod.chaindestruction.util.ConfigUtils;
 import ak.mcmod.chaindestruction.util.ModeType;
 import com.google.common.collect.Sets;
-import mcp.MethodsReturnNonnullByDefault;
-import net.minecraft.block.Blocks;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.nbt.INBT;
-import net.minecraft.nbt.ListNBT;
-import net.minecraft.nbt.StringNBT;
-import net.minecraft.util.Direction;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.MathHelper;
-import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.common.capabilities.ICapabilitySerializable;
-import net.minecraftforge.common.util.LazyOptional;
+import net.minecraft.MethodsReturnNonnullByDefault;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.StringTag;
+import net.minecraft.nbt.Tag;
+import net.minecraft.util.Mth;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.block.Blocks;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.Objects;
 import java.util.Set;
 
 import static ak.mcmod.chaindestruction.api.Constants.*;
-import static ak.mcmod.chaindestruction.capability.CapabilityCDPlayerStatusHandler.CAPABILITY_CHAIN_DESTRUCTION_PLAYER;
-import static net.minecraftforge.common.util.Constants.NBT.TAG_STRING;
 
 /**
  * 連鎖破壊のプレイヤー別状態保存クラス Created by A.K. on 2015/09/26.
  */
 @MethodsReturnNonnullByDefault
 @ParametersAreNonnullByDefault
-public class CDPlayerStatus implements ICDPlayerStatusHandler,
-        ICapabilitySerializable<CompoundNBT>, Capability.IStorage<ICDPlayerStatusHandler> {
+public class AdditionalPlayerStatus implements IAdditionalPlayerStatus {
 
   private Direction face = Direction.DOWN;
-  private Set<String> enableItems = Sets.newHashSet(
-          "minecraft:diamond_axe", "minecraft:golden_axe", "minecraft:iron_axe", "minecraft:stone_axe",
-          "minecraft:wooden_axe",
-          "minecraft:diamond_shovel", "minecraft:golden_shovel", "minecraft:iron_shovel",
-          "minecraft:stone_shovel", "minecraft:wooden_shovel",
-          "minecraft:diamond_pickaxe", "minecraft:golden_pickaxe", "minecraft:iron_pickaxe",
-          "minecraft:stone_pickaxe", "minecraft:wooden_pickaxe");
-  private Set<String> enableBlocks = Sets
-          .newHashSet(Objects.requireNonNull(Blocks.OBSIDIAN.getRegistryName()).toString(), "glowstone", "forge:ores");
+  private Set<String> enableItems = Sets.newHashSet("minecraft:netherite_axe", "minecraft:diamond_axe", "minecraft:golden_axe", "minecraft:iron_axe", "minecraft:stone_axe", "minecraft:wooden_axe", "minecraft:netherite_shovel", "minecraft:diamond_shovel", "minecraft:golden_shovel", "minecraft:iron_shovel", "minecraft:stone_shovel", "minecraft:wooden_shovel", "minecraft:netherite_pickaxe", "minecraft:diamond_pickaxe", "minecraft:golden_pickaxe", "minecraft:iron_pickaxe", "minecraft:stone_pickaxe", "minecraft:wooden_pickaxe");
+  private Set<String> enableBlocks = Sets.newHashSet(Objects.requireNonNull(Blocks.OBSIDIAN.getRegistryName()).toString(), "glowstone", "forge:ores/coal", "forge:ores/diamond", "forge:ores/emerald", "forge:ores/gold", "forge:ores/iron", "forge:ores/lapis", "forge:ores/netherite_scrap", "forge:ores/quartz", "forge:ores/redstone");
   private Set<String> enableLogBlocks = Sets.newHashSet("minecraft:logs", "minecraft:leaves");
+  private Set<String> forbiddenTags = Sets.newHashSet("mineable", "guarded_by", "hoglin_repellents", "needs", "replaceable", "forge:stone", "base_stone");
   private boolean digUnder = false;
   private boolean treeMode = false;
   private boolean privateRegisterMode = false;
@@ -55,43 +40,32 @@ public class CDPlayerStatus implements ICDPlayerStatusHandler,
 
   private int maxDestroyedBlock = 5;
 
-  public static LazyOptional<ICDPlayerStatusHandler> get(PlayerEntity player) {
-    return player
-            .getCapability(CAPABILITY_CHAIN_DESTRUCTION_PLAYER, null);
-  }
-
   @Override
-  @Nonnull
-  public <T> LazyOptional<T> getCapability(Capability<T> capability,
-                                           @Nullable Direction facing) {
-    return capability == CAPABILITY_CHAIN_DESTRUCTION_PLAYER
-            ? CAPABILITY_CHAIN_DESTRUCTION_PLAYER
-            .orEmpty(capability, LazyOptional.of(() -> this)) : LazyOptional.empty();
-  }
-
-  @Override
-  public CompoundNBT serializeNBT() {
-    CompoundNBT nbt = new CompoundNBT();
+  public CompoundTag serializeNBT() {
+    var nbt = new CompoundTag();
     nbt.putByte(NBT_CLICK_FACE, (byte) face.get3DDataValue());
     nbt.putBoolean(NBT_STATUS_DIG_UNDER, digUnder);
     nbt.putBoolean(NBT_STATUS_TREE_MODE, treeMode);
     nbt.putString(NBT_STATUS_MODE_TYPE, modeType.name());
     nbt.putBoolean(NBT_STATUS_PRIVATE_MODE, privateRegisterMode);
     nbt.putInt(NBT_STATUS_MAX_DESTROY_BLOCK, maxDestroyedBlock);
-    ListNBT listNBTEnableItems = new ListNBT();
-    enableItems.forEach(itemsStr -> listNBTEnableItems.add(StringNBT.valueOf(itemsStr)));
+    var listNBTEnableItems = new ListTag();
+    enableItems.forEach(itemsStr -> listNBTEnableItems.add(StringTag.valueOf(itemsStr)));
     nbt.put(NBT_STATUS_ENABLE_ITEMS, listNBTEnableItems);
-    ListNBT listNBTEnableBlocks = new ListNBT();
-    enableBlocks.forEach(blockStr -> listNBTEnableBlocks.add(StringNBT.valueOf(blockStr)));
+    var listNBTEnableBlocks = new ListTag();
+    enableBlocks.forEach(blockStr -> listNBTEnableBlocks.add(StringTag.valueOf(blockStr)));
     nbt.put(NBT_STATUS_ENABLE_BLOCKS, listNBTEnableBlocks);
-    ListNBT listNBTEnableLogBlocks = new ListNBT();
-    enableLogBlocks.forEach(blockStr -> listNBTEnableLogBlocks.add(StringNBT.valueOf(blockStr)));
+    var listNBTEnableLogBlocks = new ListTag();
+    enableLogBlocks.forEach(blockStr -> listNBTEnableLogBlocks.add(StringTag.valueOf(blockStr)));
     nbt.put(NBT_STATUS_ENABLE_LOG_BLOCKS, listNBTEnableLogBlocks);
+    var listNBTForbiddenTags = new ListTag();
+    forbiddenTags.forEach(tag -> listNBTForbiddenTags.add(StringTag.valueOf(tag)));
+    nbt.put(NBT_STATUS_FORBIDDEN_TAGS, listNBTForbiddenTags);
     return nbt;
   }
 
   @Override
-  public void deserializeNBT(CompoundNBT nbt) {
+  public void deserializeNBT(CompoundTag nbt) {
     face = Direction.values()[nbt.getByte(NBT_CLICK_FACE) & 0xFF];
     digUnder = nbt.getBoolean(NBT_STATUS_DIG_UNDER);
     treeMode = nbt.getBoolean(NBT_STATUS_TREE_MODE);
@@ -99,22 +73,24 @@ public class CDPlayerStatus implements ICDPlayerStatusHandler,
     privateRegisterMode = nbt.getBoolean(NBT_STATUS_PRIVATE_MODE);
     maxDestroyedBlock = nbt.getInt(NBT_STATUS_MAX_DESTROY_BLOCK);
     enableItems = Sets.newHashSet();
-    ListNBT listNBTEnableItems = nbt
-            .getList(NBT_STATUS_ENABLE_ITEMS, TAG_STRING);
-    for (int i = 0; i < listNBTEnableItems.size(); i++) {
+    var listNBTEnableItems = nbt.getList(NBT_STATUS_ENABLE_ITEMS, Tag.TAG_STRING);
+    for (var i = 0; i < listNBTEnableItems.size(); i++) {
       enableItems.add(listNBTEnableItems.getString(i));
     }
     enableBlocks = Sets.newHashSet();
-    ListNBT listNBTEnableBlocks = nbt
-            .getList(NBT_STATUS_ENABLE_BLOCKS, TAG_STRING);
-    for (int i = 0; i < listNBTEnableBlocks.size(); i++) {
+    var listNBTEnableBlocks = nbt.getList(NBT_STATUS_ENABLE_BLOCKS, Tag.TAG_STRING);
+    for (var i = 0; i < listNBTEnableBlocks.size(); i++) {
       enableBlocks.add(listNBTEnableBlocks.getString(i));
     }
     enableLogBlocks = Sets.newHashSet();
-    ListNBT listNBTEnableLogBlocks = nbt
-            .getList(NBT_STATUS_ENABLE_LOG_BLOCKS, TAG_STRING);
-    for (int i = 0; i < listNBTEnableLogBlocks.size(); i++) {
+    var listNBTEnableLogBlocks = nbt.getList(NBT_STATUS_ENABLE_LOG_BLOCKS, Tag.TAG_STRING);
+    for (var i = 0; i < listNBTEnableLogBlocks.size(); i++) {
       enableLogBlocks.add(listNBTEnableLogBlocks.getString(i));
+    }
+    forbiddenTags = Sets.newHashSet();
+    var listNBTForbiddenTags = nbt.getList(NBT_STATUS_FORBIDDEN_TAGS, Tag.TAG_STRING);
+    for (var i = 0; i < listNBTForbiddenTags.size(); i++) {
+      forbiddenTags.add(listNBTForbiddenTags.getString(i));
     }
   }
 
@@ -216,50 +192,36 @@ public class CDPlayerStatus implements ICDPlayerStatusHandler,
     if (isDigUnder() && (ModeType.NORMAL == getModeType() || ModeType.TREE == getModeType())) {
       y = Math.max(MIN_Y, targetPos.getY() - maxDestroyedBlock);
     } else if (Direction.UP != getFace()) {
-      y = Math.max(MIN_Y, MathHelper.floor(entity.position().y));
+      y = Math.max(MIN_Y, Mth.floor(entity.position().y));
     } else if (maxDestroyedBlock > 0) {
-      y = Math.max(MIN_Y, MathHelper.floor(entity.position().y) - 1);
+      y = Math.max(MIN_Y, Mth.floor(entity.position().y) - 1);
     }
     int x = targetPos.getX() - maxDestroyedBlock;
     int z = targetPos.getZ() - maxDestroyedBlock;
     if (ModeType.BRANCH_MINING == getModeType()) {
       switch (getFace()) {
-        case UP:
+        case UP -> {
           x = targetPos.getX();
           y = targetPos.getY() - maxDestroyedBlock;
           z = targetPos.getZ();
-          break;
-        case DOWN:
+        }
+        case DOWN -> {
           x = targetPos.getX();
           y = targetPos.getY();
           z = targetPos.getZ();
-          break;
-        case NORTH:
-        case WEST:
+        }
+        case NORTH, WEST -> {
           x = targetPos.getX();
           z = targetPos.getZ();
-          break;
-        case SOUTH:
-          x = targetPos.getX();
-          break;
-        case EAST:
-          z = targetPos.getZ();
-          break;
+        }
+        case SOUTH -> x = targetPos.getX();
+        case EAST -> z = targetPos.getZ();
       }
     } else if (ModeType.WALL_MINING == getModeType()) {
       switch (getFace()) {
-        case UP:
-        case DOWN:
-          y = targetPos.getY();
-          break;
-        case NORTH:
-        case SOUTH:
-          z = targetPos.getZ();
-          break;
-        case WEST:
-        case EAST:
-          x = targetPos.getX();
-          break;
+        case UP, DOWN -> y = targetPos.getY();
+        case NORTH, SOUTH -> z = targetPos.getZ();
+        case WEST, EAST -> x = targetPos.getX();
       }
     }
     return new BlockPos(x, y, z);
@@ -268,65 +230,47 @@ public class CDPlayerStatus implements ICDPlayerStatusHandler,
   @Override
   public BlockPos getMaxPos(BlockPos targetPos) {
     int maxDestroyedBlock = getMaxDestroyedBlock();
-    int y =
-            (isTreeMode()) ? ConfigUtils.COMMON.maxYforTreeMode : targetPos.getY() + maxDestroyedBlock;
+    int y = (isTreeMode()) ? ConfigUtils.COMMON.maxYforTreeMode : targetPos.getY() + maxDestroyedBlock;
     int x = targetPos.getX() + maxDestroyedBlock;
     int z = targetPos.getZ() + maxDestroyedBlock;
     if (ModeType.BRANCH_MINING == getModeType()) {
       switch (getFace()) {
-        case UP:
-        case SOUTH:
-        case EAST:
+        case UP, SOUTH, EAST -> {
           x = targetPos.getX();
           y = targetPos.getY();
           z = targetPos.getZ();
-          break;
-        case DOWN:
+        }
+        case DOWN -> {
           x = targetPos.getX();
           y = targetPos.getY() + maxDestroyedBlock;
           z = targetPos.getZ();
-          break;
-        case NORTH:
+        }
+        case NORTH -> {
           x = targetPos.getX();
           y = targetPos.getY();
-          break;
-        case WEST:
+        }
+        case WEST -> {
           y = targetPos.getY();
           z = targetPos.getZ();
-          break;
+        }
       }
     } else if (ModeType.WALL_MINING == getModeType()) {
       switch (getFace()) {
-        case UP:
-        case DOWN:
-          y = targetPos.getY();
-          break;
-        case NORTH:
-        case SOUTH:
-          z = targetPos.getZ();
-          break;
-        case WEST:
-        case EAST:
-          x = targetPos.getX();
-          break;
+        case UP, DOWN -> y = targetPos.getY();
+        case NORTH, SOUTH -> z = targetPos.getZ();
+        case WEST, EAST -> x = targetPos.getX();
       }
     }
     return new BlockPos(x, y, z);
   }
 
-  @Nullable
   @Override
-  public INBT writeNBT(Capability<ICDPlayerStatusHandler> capability, ICDPlayerStatusHandler instance, Direction side) {
-    if (capability == CAPABILITY_CHAIN_DESTRUCTION_PLAYER) {
-      return serializeNBT();
-    }
-    return null;
+  public Set<String> getForbiddenTags() {
+    return this.forbiddenTags;
   }
 
   @Override
-  public void readNBT(Capability<ICDPlayerStatusHandler> capability, ICDPlayerStatusHandler instance, Direction side, INBT nbt) {
-    if (capability == CAPABILITY_CHAIN_DESTRUCTION_PLAYER) {
-      deserializeNBT((CompoundNBT) nbt);
-    }
+  public void setForbiddenTags(Set<String> forbiddenTags) {
+    this.forbiddenTags = forbiddenTags;
   }
 }

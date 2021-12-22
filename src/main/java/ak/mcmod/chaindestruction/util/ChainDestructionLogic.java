@@ -6,37 +6,34 @@ import ak.mcmod.ak_lib.util.StringUtils;
 import ak.mcmod.ak_lib.util.TailCall;
 import ak.mcmod.ak_lib.util.TailCallUtils;
 import ak.mcmod.chaindestruction.ChainDestruction;
-import ak.mcmod.chaindestruction.capability.CDItemStackStatus;
-import ak.mcmod.chaindestruction.capability.CDPlayerStatus;
-import ak.mcmod.chaindestruction.capability.ICDItemStackStatusHandler;
-import ak.mcmod.chaindestruction.capability.ICDPlayerStatusHandler;
+import ak.mcmod.chaindestruction.capability.*;
 import com.google.common.collect.Queues;
 import com.google.common.collect.Sets;
-import mcp.MethodsReturnNonnullByDefault;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.enchantment.EnchantmentHelper;
-import net.minecraft.enchantment.Enchantments;
-import net.minecraft.entity.item.ItemEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.Util;
-import net.minecraft.util.math.AxisAlignedBB;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.text.StringTextComponent;
-import net.minecraft.world.IWorld;
-import net.minecraft.world.World;
-import net.minecraft.world.server.ServerWorld;
+import net.minecraft.MethodsReturnNonnullByDefault;
+import net.minecraft.Util;
+import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.TextComponent;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.Mth;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
+import net.minecraft.world.item.enchantment.Enchantments;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
 import net.minecraftforge.common.ForgeHooks;
 
 import javax.annotation.ParametersAreNonnullByDefault;
-import java.util.*;
+import java.util.Collection;
+import java.util.LinkedHashSet;
+import java.util.Queue;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
-
-import static ak.mcmod.chaindestruction.capability.CapabilityCDItemStackStatusHandler.CAPABILITY_CHAIN_DESTRUCTION_ITEM;
 
 /**
  * Created by A.K. on 2021/09/17.
@@ -44,6 +41,7 @@ import static ak.mcmod.chaindestruction.capability.CapabilityCDItemStackStatusHa
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
 public class ChainDestructionLogic {
+
   private ChainDestructionLogic() {}
 
   /**
@@ -55,11 +53,11 @@ public class ChainDestructionLogic {
    * @param item     手持ちアイテム
    * @return 判定アイテムがnullの時やアイテムが壊れた時はtrueを返す。falseで続行。
    */
-  public static boolean destroyBlockAtPosition(ServerWorld world, PlayerEntity player,
+  public static boolean destroyBlockAtPosition(ServerLevel world, Player player,
                                                BlockPos blockPos, ItemStack item) {
-    BlockState state = world.getBlockState(blockPos);
-    boolean startBreakingBlock = item.getItem().onBlockStartBreak(item, blockPos, player);
-    boolean blockDestroyed = item.getItem()
+    var state = world.getBlockState(blockPos);
+    var startBreakingBlock = item.getItem().onBlockStartBreak(item, blockPos, player);
+    var blockDestroyed = item.getItem()
             .mineBlock(item, world, state, blockPos, player);
     if (!startBreakingBlock && blockDestroyed) {
       if (world.removeBlock(blockPos, false)) {
@@ -72,7 +70,7 @@ public class ChainDestructionLogic {
           dropItemNearPlayer(world, player, blockPos);
         }
         if (EnchantmentHelper.getItemEnchantmentLevel(Enchantments.SILK_TOUCH, item) == 0) {
-          int exp = state.getBlock().getExpDrop(state, world, blockPos,
+          var exp = state.getBlock().getExpDrop(state, world, blockPos,
                   EnchantmentHelper.getItemEnchantmentLevel(Enchantments.BLOCK_FORTUNE, item),
                   EnchantmentHelper.getItemEnchantmentLevel(Enchantments.SILK_TOUCH, item));
           state.getBlock()
@@ -95,21 +93,20 @@ public class ChainDestructionLogic {
    * @param player   プレイヤー
    * @param blockPos 破壊したブロックの座標
    */
-  private static void dropItemNearPlayer(World world, PlayerEntity player,
+  private static void dropItemNearPlayer(Level world, Player player,
                                          BlockPos blockPos) {
-    List<ItemEntity> entityItemList = world
-            .getEntitiesOfClass(ItemEntity.class, new AxisAlignedBB(
+    var entityItemList = world
+            .getEntitiesOfClass(ItemEntity.class, new AABB(
                     blockPos.getX(), blockPos.getY(), blockPos.getZ(),
                     blockPos.getX() + 1, blockPos.getY() + 1, blockPos.getZ() + 1)
                     .inflate(1, 1, 1));
-    double d0, d1, d2;
-    float f1 = player.yRot * (float) (2 * Math.PI / 360);
-    for (ItemEntity eItem : entityItemList) {
+    var f1 = player.getYRot() * (float) (2 * Math.PI / 360);
+    for (var eItem : entityItemList) {
       eItem.setNoPickUpDelay();
-      d0 = player.position().x - MathHelper.sin(f1) * 0.5D;
-      d1 = player.position().y + 0.5D;
-      d2 = player.position().z + MathHelper.cos(f1) * 0.5D;
-      eItem.setPos(d0, d1, d2);
+      var posX = player.position().x - Mth.sin(f1) * 0.5D;
+      var posY = player.position().y + 0.5D;
+      var posZ = player.position().z + Mth.cos(f1) * 0.5D;
+      eItem.setPos(posX, posY, posZ);
     }
   }
 
@@ -132,17 +129,17 @@ public class ChainDestructionLogic {
    * @param canHarvestBlock 手持ちアイテムで対象ブロックを採掘可能か
    * @return 破壊対象かどうか
    */
-  public static boolean checkBlockValidate(PlayerEntity player, BlockState state, ItemStack heldItem, boolean canHarvestBlock) {
-    return CDPlayerStatus.get(player).map(status -> {
+  public static boolean checkBlockValidate(Player player, BlockState state, ItemStack heldItem, boolean canHarvestBlock) {
+    return player.getCapability(CapabilityAdditionalPlayerStatus.CAPABILITY).map(status -> {
       if (heldItem.isEmpty()) {
         return false;
       }
       if (status.getModeType() == ModeType.BRANCH_MINING || status.getModeType() == ModeType.WALL_MINING) {
         return canHarvestBlock;
       } else if (status.isPrivateRegisterMode() && heldItem
-              .getCapability(CAPABILITY_CHAIN_DESTRUCTION_ITEM, null).isPresent()) {
-        ICDItemStackStatusHandler itemStatus = CDItemStackStatus.get(heldItem)
-                .orElse(new CDItemStackStatus(heldItem));
+              .getCapability(CapabilityAdditionalItemStackStatus.CAPABILITY, null).isPresent()) {
+        var itemStatus = heldItem.getCapability(CapabilityAdditionalItemStackStatus.CAPABILITY)
+                .orElse(new AdditionalItemStackStatus(heldItem));
         return StringUtils.match(
                 status.isTreeMode() ? itemStatus.getEnableLogBlocks() : itemStatus.getEnableBlocks(),
                 state) && canHarvestBlock;
@@ -160,33 +157,33 @@ public class ChainDestructionLogic {
    * @param player プレイヤー
    * @param state  対象ブロックのIBlockState
    */
-  public static void addAndRemoveBlocks(Set<String> set, PlayerEntity player, BlockState state) {
-    Block block = state.getBlock();
+  public static void addAndRemoveBlocks(Set<String> set, Set<String> forbiddenTags, Player player, BlockState state) {
+    var block = state.getBlock();
     //ブロックの固有文字列
-    String uidStr = StringUtils.getUniqueString(block.getRegistryName());
+    var uidStr = StringUtils.getUniqueString(block.getRegistryName());
     //Meta値付き固有文字列
-    String uidMetaStr = state.toString();
+    var uidMetaStr = state.toString();
     //鉱石辞書名かMeta値付き固有文字列のリスト
-    List<String> oreNames = StringUtils.makeStringDataFromBlockState(state);
-    String chat;
+    var tags = StringUtils.makeStringDataFromBlockState(state).stream().filter(tag -> forbiddenTags.stream().noneMatch(tag::contains)).toList();
+    var chat = "";
     if (player.isShiftKeyDown()) {
       //鉱石辞書名かBlockState付き固有文字列があって、登録されて無ければ、そちらを登録。
-      if (!StringUtils.matchOreNames(set, oreNames)) {
-        set.addAll(oreNames);
-        chat = String.format("Add Block : %s", oreNames);
-        player.sendMessage(new StringTextComponent(chat), Util.NIL_UUID);
+      if (!StringUtils.matchOreNames(set, tags)) {
+        set.addAll(tags);
+        chat = String.format("Add Block : %s", tags);
+        player.sendMessage(new TextComponent(chat), Util.NIL_UUID);
       }
-      if (!oreNames.contains(uidStr)) {
+      if (!tags.contains(uidStr)) {
         set.remove(uidStr);
       }
     } else {
       //文字列がマッチした場合のみ、チャット出力。
       if (StringUtils.match(set, state)) {
-        chat = String.format("Remove Block and its OreDictionary Names: %s", uidMetaStr);
-        player.sendMessage(new StringTextComponent(chat), Util.NIL_UUID);
+        chat = String.format("Remove Block and its tag Names: %s", uidMetaStr);
+        player.sendMessage(new TextComponent(chat), Util.NIL_UUID);
       }
       set.remove(uidStr);
-      oreNames.forEach(set::remove);
+      tags.forEach(set::remove);
     }
   }
 
@@ -198,14 +195,9 @@ public class ChainDestructionLogic {
    * @return 同じ鉱石辞書名を含む場合はtrue
    */
   private static boolean matchTwoBlocks(BlockState pair1, BlockState pair2) {
-    List<String> targetOreNames = StringUtils.makeStringDataFromBlockState(pair1);
-    List<String> checkOreNames = StringUtils.makeStringDataFromBlockState(pair2);
-    for (String str : checkOreNames) {
-      if (targetOreNames.contains(str)) {
-        return true;
-      }
-    }
-    return false;
+    var targetTagNames = StringUtils.makeStringDataFromBlockState(pair1).stream().filter(tag -> !tag.contains("mineable")).toList();
+    var checkTagNames = StringUtils.makeStringDataFromBlockState(pair2).stream().filter(tag -> !tag.contains("mineable")).toList();
+    return checkTagNames.stream().anyMatch(targetTagNames::contains);
   }
 
   /**
@@ -218,16 +210,17 @@ public class ChainDestructionLogic {
    * @param heldItem 手持ちアイテム
    * @return 連鎖破壊処理が動くならtrue
    */
-  public static boolean isChainDestructionActionable(IWorld world, PlayerEntity player, BlockState state, BlockPos blockPos, ItemStack heldItem) {
-    return CDPlayerStatus.get(player).map(status -> checkBlockValidate(player, state, heldItem, ForgeHooks.canHarvestBlock(state, player, world, blockPos))
-            && status.getEnableItems()
-            .contains(StringUtils.getUniqueString(heldItem.getItem().getRegistryName()))).orElse(false);
+  public static boolean isChainDestructionActionable(LevelAccessor world, Player player, BlockState state, BlockPos blockPos, ItemStack heldItem) {
+    return player.getCapability(CapabilityAdditionalPlayerStatus.CAPABILITY).map(
+            status -> checkBlockValidate(player, state, heldItem, ForgeHooks.isCorrectToolForDrops(state, player))
+                    && status.getEnableItems()
+                    .contains(StringUtils.getUniqueString(heldItem.getItem().getRegistryName()))).orElse(false);
   }
 
-  public static void setup(BlockState firstBrokenBlockState, PlayerEntity player, ServerWorld world,
+  public static void setup(BlockState firstBrokenBlockState, Player player, ServerLevel world,
                            BlockPos blockPos) {
-    CDPlayerStatus.get(player).ifPresent(status -> {
-      LinkedHashSet<BlockPos> searchedBlockSet = searchBlock(world, status, player, firstBrokenBlockState,
+    player.getCapability(CapabilityAdditionalPlayerStatus.CAPABILITY).ifPresent(status -> {
+      var searchedBlockSet = searchBlock(world, status, player, firstBrokenBlockState,
               blockPos);
       if (!ConfigUtils.COMMON.destroyingSequentially) {
         destroyBlock(world, player, player.getMainHandItem(), searchedBlockSet);
@@ -247,17 +240,17 @@ public class ChainDestructionLogic {
    * @param targetPos 最初に破壊したブロックの座標
    * @return 最初に破壊したブロックと同種ブロックの座標集合
    */
-  private static LinkedHashSet<BlockPos> searchBlock(World world, ICDPlayerStatusHandler status,
-                                                     PlayerEntity player, BlockState target, BlockPos targetPos) {
-    BlockPos minPos = status.getMinPos(player, targetPos);
-    BlockPos maxPos = status.getMaxPos(targetPos);
-    int distance = status.isTreeMode() ? 3 : 2;
+  private static LinkedHashSet<BlockPos> searchBlock(Level world, IAdditionalPlayerStatus status,
+                                                     Player player, BlockState target, BlockPos targetPos) {
+    var minPos = status.getMinPos(player, targetPos);
+    var maxPos = status.getMaxPos(targetPos);
+    var distance = status.isTreeMode() ? 3 : 2;
     Queue<BlockPos> blockPosQueue = Queues.newArrayDeque();
     blockPosQueue.add(targetPos);
     Predicate<BlockPos> checkPredicate = (blockPos) -> checkBlock(status, target, world.getBlockState(blockPos),
-            player.getMainHandItem(), ForgeHooks.canHarvestBlock(world.getBlockState(blockPos), player, world, blockPos));
+            player.getMainHandItem(), ForgeHooks.isCorrectToolForDrops(world.getBlockState(blockPos), player));
     Predicate<BlockPos> rangePredicate = (blockPos) -> {
-      boolean ret = blockPos.getX() >= minPos.getX() && blockPos.getY() >= minPos.getY() && blockPos.getZ() >= minPos.getZ();
+      var ret = blockPos.getX() >= minPos.getX() && blockPos.getY() >= minPos.getY() && blockPos.getZ() >= minPos.getZ();
       ret &= blockPos.getX() <= maxPos.getX() && blockPos.getY() <= maxPos.getY() && blockPos.getZ() <= maxPos.getZ();
       return ret;
     };
@@ -280,7 +273,7 @@ public class ChainDestructionLogic {
                                                                    Predicate<BlockPos> rangePredicate,
                                                                    Function<BlockPos, Collection<BlockPos>> nextTargetGetter,
                                                                    Queue<BlockPos> queue, LinkedHashSet<BlockPos> set) {
-    BlockPos blockPos = queue.poll();
+    var blockPos = queue.poll();
     if (rangePredicate.test(blockPos) && checkPredicate.test(blockPos) && !set.contains(blockPos)) {
       set.add(blockPos);
       queue.addAll(nextTargetGetter.apply(blockPos));
@@ -297,9 +290,9 @@ public class ChainDestructionLogic {
    * @param item              手持ちアイテム
    * @param connectedBlockSet つながっているブロックの座標集合
    */
-  private static void destroyBlock(ServerWorld world, PlayerEntity player, ItemStack item,
+  private static void destroyBlock(ServerLevel world, Player player, ItemStack item,
                                    Collection<BlockPos> connectedBlockSet) {
-    for (BlockPos blockPos : connectedBlockSet) {
+    for (var blockPos : connectedBlockSet) {
       if (destroyBlockAtPosition(world, player, blockPos, item)) {
         break;
       }
@@ -316,24 +309,22 @@ public class ChainDestructionLogic {
    * @param canHarvestBlock 手持ちアイテムで対象ブロックを採掘可能か
    * @return 同種ならtrue
    */
-  private static boolean checkBlock(ICDPlayerStatusHandler status, BlockState target,
+  private static boolean checkBlock(IAdditionalPlayerStatus status, BlockState target,
                                     BlockState check, ItemStack heldItem, boolean canHarvestBlock) {
     if (check.getBlock() == Blocks.AIR) {
       return false;
     }
     if (status.getModeType() == ModeType.BRANCH_MINING || status.getModeType() == ModeType.WALL_MINING) {
       return canHarvestBlock;
+    } else if (status.isPrivateRegisterMode() && heldItem
+            .getCapability(CapabilityAdditionalItemStackStatus.CAPABILITY, null).isPresent()) {
+      var itemStatus = heldItem.getCapability(CapabilityAdditionalItemStackStatus.CAPABILITY)
+              .orElse(new AdditionalItemStackStatus(heldItem));
+      return StringUtils.match(
+              status.isTreeMode() ? itemStatus.getEnableLogBlocks() : itemStatus.getEnableBlocks(), check) && canHarvestBlock;
     } else if (status.isTreeMode()) {
-      if (status.isPrivateRegisterMode() && heldItem
-              .getCapability(CAPABILITY_CHAIN_DESTRUCTION_ITEM, null).isPresent()) {
-        ICDItemStackStatusHandler itemStatus = CDItemStackStatus.get(heldItem)
-                .orElse(new CDItemStackStatus(heldItem));
-        return StringUtils.match(
-                status.isTreeMode() ? itemStatus.getEnableLogBlocks() : itemStatus.getEnableBlocks(),
-                check) && canHarvestBlock;
-      }
       return StringUtils.match(status.getEnableLogBlocks(), check) && canHarvestBlock;
     }
-    return matchTwoBlocks(target, check) && canHarvestBlock;
+    return StringUtils.match(status.getEnableBlocks(), check) && canHarvestBlock;
   }
 }

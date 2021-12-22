@@ -1,8 +1,8 @@
 package ak.mcmod.chaindestruction.event;
 
 import ak.mcmod.chaindestruction.util.DigTask;
-import mcp.MethodsReturnNonnullByDefault;
-import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.MethodsReturnNonnullByDefault;
+import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
@@ -38,7 +38,7 @@ public class DigTaskEvents {
 
   @SubscribeEvent
   public void deleteDigTaskOnDeath(LivingDeathEvent event) {
-    if (event.getEntityLiving() instanceof PlayerEntity && !(event.getEntityLiving()).getCommandSenderWorld().isClientSide) {
+    if (event.getEntityLiving() instanceof Player && !(event.getEntityLiving()).getCommandSenderWorld().isClientSide) {
       for (DigTask digTask : digTaskSet) {
         if (digTask.getDigger() == event.getEntityLiving()) {
           digTaskRemoveSet.add(digTask);
