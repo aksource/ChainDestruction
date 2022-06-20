@@ -11,6 +11,7 @@ import net.minecraftforge.common.util.FakePlayer;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.world.BlockEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.registries.ForgeRegistries;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.Set;
@@ -29,7 +30,7 @@ public class BlockEvents {
       if (world.isClientSide || itemStack.isEmpty()) {
         return;
       }
-      var uniqueName = StringUtils.getUniqueString(itemStack.getItem().getRegistryName());
+      var uniqueName = StringUtils.getUniqueString(ForgeRegistries.ITEMS.getKey(itemStack.getItem()));
       if (enableItems.contains(uniqueName)) {
         var state = world.getBlockState(event.getPos());
         var canHarvestBlock = ForgeHooks.isCorrectToolForDrops(state, player);
@@ -65,7 +66,7 @@ public class BlockEvents {
       if (world.isClientSide || itemStack.isEmpty()) {
         return;
       }
-      var uniqueName = StringUtils.getUniqueString(itemStack.getItem().getRegistryName());
+      var uniqueName = StringUtils.getUniqueString(ForgeRegistries.ITEMS.getKey(itemStack.getItem()));
       if (status.getEnableItems().contains(uniqueName)) {
         var state = world.getBlockState(event.getPos());
         if (status.isPrivateRegisterMode()) {

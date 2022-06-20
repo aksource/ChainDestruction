@@ -4,12 +4,10 @@ import ak.mcmod.chaindestruction.capability.CapabilityAdditionalItemStackStatus;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.minecraft.MethodsReturnNonnullByDefault;
-import net.minecraft.Util;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.EntityArgument;
-import net.minecraft.network.chat.TextComponent;
-import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 
@@ -54,7 +52,7 @@ public class CommandItemCDStatus {
       var sb = new StringBuilder();
       playerEntity.getMainHandItem().getCapability(CapabilityAdditionalItemStackStatus.CAPABILITY).ifPresent(status ->
               sb.append(CapabilityAdditionalItemStackStatus.makeItemsStatusToString(status)));
-      playerEntity.sendMessage(new TextComponent(sb.toString()), Util.NIL_UUID);
+      playerEntity.sendSystemMessage(Component.literal(sb.toString()));
     } else {
       return 1;
     }
@@ -79,7 +77,7 @@ public class CommandItemCDStatus {
                       itemOffHand.getCapability(CapabilityAdditionalItemStackStatus.CAPABILITY).ifPresent(
                               (copyTo) -> CapabilityAdditionalItemStackStatus
                                       .copyItemState(copyFrom, copyTo)));
-      commandSource.sendSuccess(new TranslatableComponent(COMMAND_ITEM_STATUS_COPY_SUCCESS), true);
+      commandSource.sendSuccess(Component.translatable(COMMAND_ITEM_STATUS_COPY_SUCCESS), true);
     } else {
       return 1;
     }

@@ -4,11 +4,11 @@ import ak.mcmod.ak_lib.util.StringUtils;
 import ak.mcmod.chaindestruction.api.Constants;
 import ak.mcmod.chaindestruction.capability.CapabilityAdditionalPlayerStatus;
 import net.minecraft.MethodsReturnNonnullByDefault;
-import net.minecraft.Util;
-import net.minecraft.network.chat.TextComponent;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.network.NetworkEvent;
+import net.minecraftforge.registries.ForgeRegistries;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.Objects;
@@ -36,7 +36,7 @@ public class MessageMousePressedHandler implements
     try {
       player.getCapability(CapabilityAdditionalPlayerStatus.CAPABILITY).ifPresent(status -> {
         if (!status.getEnableItems()
-                .contains(StringUtils.getUniqueString(item.getItem().getRegistryName()))) {
+                .contains(StringUtils.getUniqueString(ForgeRegistries.ITEMS.getKey(item.getItem())))) {
           return;
         }
         var chat = "";
@@ -48,7 +48,7 @@ public class MessageMousePressedHandler implements
             status.setMaxDestroyedBlock(++maxDestroyedBlock);
           }
           chat = String.format("New Max Destroyed : %d", maxDestroyedBlock);
-          player.sendMessage(new TextComponent(chat), Util.NIL_UUID);
+          player.sendSystemMessage(Component.literal(chat));
         }
       });
     } catch (Exception e) {

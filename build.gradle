@@ -1,28 +1,15 @@
-buildscript {
-    repositories {
-        maven { url = 'https://files.minecraftforge.net/maven' }
-        mavenCentral()
-    }
-    dependencies {
-        classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '5.1.+', changing: true
-    }
+plugins {
+    id 'eclipse'
+    id 'idea'
+    id 'net.minecraftforge.gradle' version '5.1.+'
 }
-apply plugin: 'net.minecraftforge.gradle'
-apply from: 'https://raw.githubusercontent.com/SizableShrimp/Forge-Class-Remapper/main/classremapper.gradle'
-//Only edit below this line, the above code adds and enables the necessary things for Forge to be setup.
-apply plugin: 'eclipse'
-apply plugin: 'idea'
-
-def mc_version = '1.18.1'
-def forge_version = '39.0.7'
-def aklib_version = '1.0.2.1'
+def mc_version = '1.19'
+def forge_version = '41.0.38'
+def aklib_version = '1.0.3.0'
 def mod_id = 'chaindestruction'
-version = "${mc_version}-1.6.6.1" as Object
+version = "${mc_version}-1.6.6.2" as Object
 group = 'ak.mcmod' // http://maven.apache.org/guides/mini/guide-naming-conventions.html
 archivesBaseName = 'chain-destruction'
-tasks.withType(JavaCompile) {
-    options.encoding = 'UTF-8'
-}
 java.toolchain.languageVersion = JavaLanguageVersion.of(17)
 
 minecraft {
@@ -123,7 +110,6 @@ dependencies {
 
     implementation(fg.deobf("ak.mcmod:aklib-${mc_version}:${aklib_version}"))
 }
-sourceSets.main.resources { srcDir 'src/generated/resources' }
 jar.finalizedBy('reobfJar')
 // Example for how to get properties into the manifest for reading by the runtime..
 jar {
@@ -136,4 +122,7 @@ jar {
                     "Implementation-Vendor" :"ak",
                     "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")],)
     }
+}
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8' // Use the UTF-8 charset for Java compilation
 }

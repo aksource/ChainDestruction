@@ -2,8 +2,7 @@ package ak.mcmod.chaindestruction.event;
 
 import ak.mcmod.chaindestruction.capability.CapabilityAdditionalPlayerStatus;
 import net.minecraft.MethodsReturnNonnullByDefault;
-import net.minecraft.Util;
-import net.minecraft.network.chat.TextComponent;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.event.entity.EntityJoinWorldEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -26,7 +25,7 @@ public class EntityEvents {
                 .format("ChainDestruction Info Registration:%s, Mode:%s, Range:%d", mode,
                         status.getModeType().name(),
                         status.getMaxDestroyedBlock());
-        player.sendMessage(new TextComponent(s), Util.NIL_UUID);
+        player.sendSystemMessage(Component.literal(s));
       });
     }
   }

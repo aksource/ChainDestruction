@@ -6,19 +6,20 @@ import ak.mcmod.ak_lib.util.StringUtils;
 import ak.mcmod.ak_lib.util.TailCall;
 import ak.mcmod.ak_lib.util.TailCallUtils;
 import ak.mcmod.chaindestruction.ChainDestruction;
-import ak.mcmod.chaindestruction.capability.*;
+import ak.mcmod.chaindestruction.capability.AdditionalItemStackStatus;
+import ak.mcmod.chaindestruction.capability.CapabilityAdditionalItemStackStatus;
+import ak.mcmod.chaindestruction.capability.CapabilityAdditionalPlayerStatus;
+import ak.mcmod.chaindestruction.capability.IAdditionalPlayerStatus;
 import com.google.common.collect.Queues;
 import com.google.common.collect.Sets;
 import net.minecraft.MethodsReturnNonnullByDefault;
-import net.minecraft.Util;
 import net.minecraft.core.BlockPos;
-import net.minecraft.network.chat.TextComponent;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
@@ -26,6 +27,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraftforge.common.ForgeHooks;
+import net.minecraftforge.registries.ForgeRegistries;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.Collection;
@@ -69,10 +71,10 @@ public class ChainDestructionLogic {
         if (ConfigUtils.COMMON.destroyingSequentially) {
           dropItemNearPlayer(world, player, blockPos);
         }
-        if (EnchantmentHelper.getItemEnchantmentLevel(Enchantments.SILK_TOUCH, item) == 0) {
-          var exp = state.getBlock().getExpDrop(state, world, blockPos,
-                  EnchantmentHelper.getItemEnchantmentLevel(Enchantments.BLOCK_FORTUNE, item),
-                  EnchantmentHelper.getItemEnchantmentLevel(Enchantments.SILK_TOUCH, item));
+        if (item.getEnchantmentLevel(Enchantments.SILK_TOUCH) == 0) {
+          var exp = state.getBlock().getExpDrop(state, world, world.random, blockPos,
+                  item.getEnchantmentLevel(Enchantments.BLOCK_FORTUNE),
+                  item.getEnchantmentLevel(Enchantments.SILK_TOUCH));
           state.getBlock()
                   .popExperience(world, new BlockPos(player.position().x, player.position().y, player.position().z), exp);
         }
@@ -160,7 +162,7 @@ public class ChainDestructionLogic {
   public static void addAndRemoveBlocks(Set<String> set, Set<String> forbiddenTags, Player player, BlockState state) {
     var block = state.getBlock();
     //ブロックの固有文字列
-    var uidStr = StringUtils.getUniqueString(block.getRegistryName());
+    var uidStr = StringUtils.getUniqueString(ForgeRegistries.BLOCKS.getKey(block));
     //Meta値付き固有文字列
     var uidMetaStr = state.toString();
     //鉱石辞書名かMeta値付き固有文字列のリスト
@@ -171,7 +173,7 @@ public class ChainDestructionLogic {
       if (!StringUtils.matchTagNames(set, tags)) {
         set.addAll(tags);
         chat = String.format("Add Block : %s", tags);
-        player.sendMessage(new TextComponent(chat), Util.NIL_UUID);
+        player.sendSystemMessage(Component.literal(chat));
       }
       if (!tags.contains(uidStr)) {
         set.remove(uidStr);
@@ -180,7 +182,7 @@ public class ChainDestructionLogic {
       //文字列がマッチした場合のみ、チャット出力。
       if (StringUtils.match(set, state)) {
         chat = String.format("Remove Block and its tag Names: %s", uidMetaStr);
-        player.sendMessage(new TextComponent(chat), Util.NIL_UUID);
+        player.sendSystemMessage(Component.literal(chat));
       }
       set.remove(uidStr);
       tags.forEach(set::remove);
@@ -214,7 +216,7 @@ public class ChainDestructionLogic {
     return player.getCapability(CapabilityAdditionalPlayerStatus.CAPABILITY).map(
             status -> checkBlockValidate(player, state, heldItem, ForgeHooks.isCorrectToolForDrops(state, player))
                     && status.getEnableItems()
-                    .contains(StringUtils.getUniqueString(heldItem.getItem().getRegistryName()))).orElse(false);
+                    .contains(StringUtils.getUniqueString(ForgeRegistries.ITEMS.getKey(heldItem.getItem())))).orElse(false);
   }
 
   public static void setup(BlockState firstBrokenBlockState, Player player, ServerLevel world,

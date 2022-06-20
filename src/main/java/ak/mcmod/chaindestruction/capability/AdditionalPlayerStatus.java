@@ -14,6 +14,7 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraftforge.registries.ForgeRegistries;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.Objects;
@@ -30,9 +31,9 @@ public class AdditionalPlayerStatus implements IAdditionalPlayerStatus {
 
   private Direction face = Direction.DOWN;
   private Set<String> enableItems = Sets.newHashSet("minecraft:netherite_axe", "minecraft:diamond_axe", "minecraft:golden_axe", "minecraft:iron_axe", "minecraft:stone_axe", "minecraft:wooden_axe", "minecraft:netherite_shovel", "minecraft:diamond_shovel", "minecraft:golden_shovel", "minecraft:iron_shovel", "minecraft:stone_shovel", "minecraft:wooden_shovel", "minecraft:netherite_pickaxe", "minecraft:diamond_pickaxe", "minecraft:golden_pickaxe", "minecraft:iron_pickaxe", "minecraft:stone_pickaxe", "minecraft:wooden_pickaxe");
-  private Set<String> enableBlocks = Sets.newHashSet(Objects.requireNonNull(Blocks.OBSIDIAN.getRegistryName()).toString(), "glowstone", "forge:ores/coal", "forge:ores/diamond", "forge:ores/emerald", "forge:ores/gold", "forge:ores/iron", "forge:ores/lapis", "forge:ores/netherite_scrap", "forge:ores/quartz", "forge:ores/redstone");
+  private Set<String> enableBlocks = Sets.newHashSet(Objects.requireNonNull(ForgeRegistries.BLOCKS.getKey(Blocks.OBSIDIAN)).toString(), "glowstone", "forge:ores/coal", "forge:ores/diamond", "forge:ores/emerald", "forge:ores/gold", "forge:ores/iron", "forge:ores/lapis", "forge:ores/netherite_scrap", "forge:ores/quartz", "forge:ores/redstone");
   private Set<String> enableLogBlocks = Sets.newHashSet("minecraft:logs", "minecraft:leaves");
-  private Set<String> forbiddenTags = Sets.newHashSet("mineable", "guarded_by", "hoglin_repellents", "needs", "replaceable", "forge:stone", "base_stone");
+  private Set<String> forbiddenTags = Sets.newHashSet("mineable", "guarded_by", "hoglin_repellents", "needs", "replaceable", "forge:stone", "base_stone", "ore_rates", "snaps_goat_horn");
   private boolean digUnder = false;
   private boolean treeMode = false;
   private boolean privateRegisterMode = false;

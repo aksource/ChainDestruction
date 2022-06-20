@@ -4,13 +4,13 @@ import ak.mcmod.ak_lib.util.StringUtils;
 import ak.mcmod.chaindestruction.api.Constants;
 import ak.mcmod.chaindestruction.capability.CapabilityAdditionalPlayerStatus;
 import net.minecraft.MethodsReturnNonnullByDefault;
-import net.minecraft.Util;
-import net.minecraft.network.chat.TextComponent;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.network.NetworkDirection;
 import net.minecraftforge.network.NetworkEvent;
+import net.minecraftforge.registries.ForgeRegistries;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -41,22 +41,22 @@ public class MessageKeyPressedHandler implements BiConsumer<MessageKeyPressed, S
       }
       if (key == Constants.REG_KEY && !item.isEmpty()) {
         var enableItems = status.getEnableItems();
-        var uniqueName = StringUtils.getUniqueString(item.getItem().getRegistryName());
+        var uniqueName = StringUtils.getUniqueString(ForgeRegistries.ITEMS.getKey(item.getItem()));
         if (player.isShiftKeyDown() && enableItems.contains(uniqueName)) {
           enableItems.remove(uniqueName);
           chat = String.format("Remove Tool : %s", uniqueName);
-          player.sendMessage(new TextComponent(chat), Util.NIL_UUID);
+          player.sendSystemMessage(Component.literal(chat));
         }
         if (!player.isShiftKeyDown() && !enableItems.contains(uniqueName)) {
           enableItems.add(uniqueName);
           chat = String.format("Add Tool : %s", uniqueName);
-          player.sendMessage(new TextComponent(chat), Util.NIL_UUID);
+          player.sendSystemMessage(Component.literal(chat));
         }
       }
       if (key == Constants.DIG_KEY) {
         status.setDigUnder(!status.isDigUnder());
         chat = String.format("Dig Under %b", status.isDigUnder());
-        player.sendMessage(new TextComponent(chat), Util.NIL_UUID);
+        player.sendSystemMessage(Component.literal(chat));
       }
       if (key == Constants.MODE_KEY) {
         if (player.isShiftKeyDown()) {
@@ -66,7 +66,7 @@ public class MessageKeyPressedHandler implements BiConsumer<MessageKeyPressed, S
           status.setModeType(status.getModeType().getNextModeType());
           chat = String.format("Mode %s", status.getModeType().name());
         }
-        player.sendMessage(new TextComponent(chat), Util.NIL_UUID);
+        player.sendSystemMessage(Component.literal(chat));
       }
       PacketHandler.INSTANCE.sendTo(new MessageSyncAdditionalPayerStatus(player),
               ((ServerPlayer) player).connection.getConnection(),

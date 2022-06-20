@@ -10,6 +10,7 @@ import net.minecraftforge.common.capabilities.RegisterCapabilitiesEvent;
 import net.minecraftforge.event.AttachCapabilitiesEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.registries.ForgeRegistries;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.Objects;
@@ -58,7 +59,7 @@ public class CapabilityEvents {
   public static void onAttachingItemStack(AttachCapabilitiesEvent<ItemStack> event) {
     if (!event.getObject().isEmpty()
             && Objects.nonNull(ConfigUtils.COMMON.excludeItemPredicate) && !ConfigUtils.COMMON.excludeItemPredicate
-            .test(event.getObject().getItem().getRegistryName())) {
+            .test(ForgeRegistries.ITEMS.getKey(event.getObject().getItem()))) {
       event.addCapability(CD_ITEM_STATUS, new AdditionalItemStackStatusCapabilityProvider());
     }
   }
