@@ -72,7 +72,7 @@ public class CapabilityEvents {
       var oldCDS = event.getOriginal()
               .getCapability(CAPABILITY, null);
       //新しいカスタムデータ
-      var newCDS = event.getPlayer()
+      var newCDS = event.getEntity()
               .getCapability(CAPABILITY, null);
       var nbt = oldCDS.orElse(new AdditionalPlayerStatus()).serializeNBT();
       newCDS.orElse(new AdditionalPlayerStatus()).deserializeNBT(nbt);

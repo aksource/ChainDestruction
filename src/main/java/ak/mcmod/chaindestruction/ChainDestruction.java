@@ -12,6 +12,7 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig.Type;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 
 @Mod(ChainDestruction.MOD_ID)
 public class ChainDestruction extends ForgeModEntryPoint {
@@ -37,6 +38,9 @@ public class ChainDestruction extends ForgeModEntryPoint {
   @Override
   protected void setupClient(final FMLClientSetupEvent event) {
     super.setupClient(event);
+    final var modEventBus =
+            FMLJavaModLoadingContext.get().getModEventBus();
+    modEventBus.addListener(ClientUtils::registerKeyBinding);
     ClientUtils.registerClientInfo();
   }
 }

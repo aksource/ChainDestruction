@@ -9,7 +9,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraftforge.common.ForgeHooks;
 import net.minecraftforge.common.util.FakePlayer;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
-import net.minecraftforge.event.world.BlockEvent;
+import net.minecraftforge.event.level.BlockEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.registries.ForgeRegistries;
 
@@ -22,7 +22,7 @@ import java.util.Set;
 public class BlockEvents {
   @SubscribeEvent
   public static void onLeftClickBlock(final PlayerInteractEvent.LeftClickBlock event) {
-    var player = event.getPlayer();
+    var player = event.getEntity();
     player.getCapability(CapabilityAdditionalPlayerStatus.CAPABILITY).ifPresent(status -> {
       var enableItems = status.getEnableItems();
       var world = player.getCommandSenderWorld();
@@ -44,10 +44,10 @@ public class BlockEvents {
   /*偽装しているブロックへの対応含めこちらで処理したほうが良い*/
   @SubscribeEvent
   public static void blockBreakingEvent(final BlockEvent.BreakEvent event) {
-    if (!(event.getPlayer() instanceof FakePlayer) && !event.getWorld().isClientSide()) {
-      if (ChainDestructionLogic.isChainDestructionActionable(event.getWorld(), event.getPlayer(), event.getState(), event.getPos(),
+    if (!(event.getPlayer() instanceof FakePlayer) && !event.getLevel().isClientSide()) {
+      if (ChainDestructionLogic.isChainDestructionActionable(event.getLevel(), event.getPlayer(), event.getState(), event.getPos(),
               event.getPlayer().getMainHandItem())) {
-        ChainDestructionLogic.setup(event.getState(), event.getPlayer(), (ServerLevel) event.getWorld(), event.getPos());
+        ChainDestructionLogic.setup(event.getState(), event.getPlayer(), (ServerLevel) event.getLevel(), event.getPos());
       }
     }
   }
@@ -59,7 +59,7 @@ public class BlockEvents {
    */
   @SubscribeEvent
   public static void onRightClickBlock(final PlayerInteractEvent.RightClickBlock event) {
-    var player = event.getPlayer();
+    var player = event.getEntity();
     player.getCapability(CapabilityAdditionalPlayerStatus.CAPABILITY).ifPresent(status -> {
       var world = player.getCommandSenderWorld();
       var itemStack = player.getMainHandItem();

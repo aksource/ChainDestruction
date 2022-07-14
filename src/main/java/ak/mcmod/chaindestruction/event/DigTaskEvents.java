@@ -38,9 +38,9 @@ public class DigTaskEvents {
 
   @SubscribeEvent
   public void deleteDigTaskOnDeath(LivingDeathEvent event) {
-    if (event.getEntityLiving() instanceof Player && !(event.getEntityLiving()).getCommandSenderWorld().isClientSide) {
+    if (event.getEntity() instanceof Player && !(event.getEntity()).getCommandSenderWorld().isClientSide) {
       for (DigTask digTask : digTaskSet) {
-        if (digTask.getDigger() == event.getEntityLiving()) {
+        if (digTask.getDigger() == event.getEntity()) {
           digTaskRemoveSet.add(digTask);
         }
       }
@@ -51,9 +51,9 @@ public class DigTaskEvents {
 
   @SubscribeEvent
   public void deleteDigTaskOnLogOut(PlayerEvent.PlayerLoggedOutEvent event) {
-    if (!event.getPlayer().getCommandSenderWorld().isClientSide) {
+    if (!event.getEntity().getCommandSenderWorld().isClientSide) {
       for (DigTask digTask : digTaskSet) {
-        if (digTask.getDigger() == event.getPlayer()) {
+        if (digTask.getDigger() == event.getEntity()) {
           digTaskRemoveSet.add(digTask);
         }
       }
