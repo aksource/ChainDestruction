@@ -8,7 +8,7 @@ credits="Thanks for Minecraft Forge developers" #optional
 authors="A.K." #optional
 [[mods]] #mandatory
 modId="chaindestruction" #mandatory
-version="1.19-1.6.6.3" #mandatory
+version="1.19-1.6.6.4" #mandatory
 displayName="ChainDestruction" #mandatory
 updateJSONURL="https://raw.githubusercontent.com/aksource/ChainDestruction/master/update.json" #optional
 description='''

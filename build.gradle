@@ -5,10 +5,10 @@ plugins {
 }
 //apply from: 'https://raw.githubusercontent.com/SizableShrimp/ForgeUpdatesRemapper/main/remapper.gradle'
 def mc_version = '1.19'
-def forge_version = '41.0.98'
-def aklib_version = '1.0.3.1'
+def forge_version = '41.1.0'
+def aklib_version = '1.0.3.2'
 def mod_id = 'chaindestruction'
-version = "${mc_version}-1.6.6.3" as Object
+version = "${mc_version}-1.6.6.4" as Object
 group = 'ak.mcmod' // http://maven.apache.org/guides/mini/guide-naming-conventions.html
 archivesBaseName = 'chain-destruction'
 java.toolchain.languageVersion = JavaLanguageVersion.of(17)

@@ -1,7 +1,7 @@
 {
   "homepage": "https://github.com/aksource/ChainDestruction",
   "1.19": {
-    "1.6.6.3": "bump up to MC 1.19"
+    "1.6.6.4": "bump up to forge 41.1.0"
   },
   "promos": {
     "1.18.1-recommended": "1.6.6.1",
