@@ -55,6 +55,7 @@ public class ConfigUtils {
       }
       return COMMON.excludeRegisterItemList.stream().anyMatch(s -> resourceLocation.toString().matches(s));
     };
+    COMMON.breakBedrock = COMMON.breakBedrockValue.get();
   }
 
   public static class Common {
@@ -64,6 +65,7 @@ public class ConfigUtils {
     private final IntValue digTaskMaxCounterConfigValue;
     private final BooleanValue notToDestroyItemConfigValue;
     private final ConfigValue<String> excludeRegisterItemsConfigValue;
+    private final BooleanValue breakBedrockValue;
     public int maxYforTreeMode;
     public boolean destroyingSequentially;
     public int digTaskMaxCounter;
@@ -72,6 +74,7 @@ public class ConfigUtils {
     public boolean dropOnPlayer = true;
     public List<String> excludeRegisterItemList;
     public Predicate<ResourceLocation> excludeItemPredicate;
+    public boolean breakBedrock;
 
     Common(Builder builder) {
       builder.comment("Common settings")
@@ -90,6 +93,8 @@ public class ConfigUtils {
       excludeRegisterItemsConfigValue = builder
               .comment("Exclude Item to register chain destruction.")
               .define("excludeRegisterItem", "");
+      breakBedrockValue = builder.comment("Break Bedrock when BranchMining/Wall Mode.")
+                      .define("breakBedrock", false);
       builder.pop();
     }
 

@@ -37,6 +37,8 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+import static ak.mcmod.chaindestruction.util.ConfigUtils.COMMON;
+
 /**
  * Created by A.K. on 2021/09/17.
  */
@@ -58,6 +60,10 @@ public class ChainDestructionLogic {
   public static boolean destroyBlockAtPosition(ServerLevel world, Player player,
                                                BlockPos blockPos, ItemStack item) {
     var state = world.getBlockState(blockPos);
+    if (!COMMON.breakBedrock &&
+            state.getDestroySpeed(world, blockPos) < 0) {
+      return true;
+    }
     var startBreakingBlock = item.getItem().onBlockStartBreak(item, blockPos, player);
     var blockDestroyed = item.getItem()
             .mineBlock(item, world, state, blockPos, player);
@@ -68,7 +74,7 @@ public class ChainDestructionLogic {
         state.getBlock()
                 .playerDestroy(world, player, new BlockPos(player.position().x, player.position().y, player.position().z), state,
                         null, item);
-        if (ConfigUtils.COMMON.destroyingSequentially) {
+        if (COMMON.destroyingSequentially) {
           dropItemNearPlayer(world, player, blockPos);
         }
         if (item.getEnchantmentLevel(Enchantments.SILK_TOUCH) == 0) {
@@ -119,7 +125,7 @@ public class ChainDestructionLogic {
    * @return 壊れない設定でかつ耐久が1以下の場合true
    */
   private static boolean isItemBreakingSoon(ItemStack itemStack) {
-    return ConfigUtils.COMMON.notToDestroyItem && (itemStack.getMaxDamage() - itemStack.getDamageValue() <= 1);
+    return COMMON.notToDestroyItem && (itemStack.getMaxDamage() - itemStack.getDamageValue() <= 1);
   }
 
   /**
@@ -224,7 +230,7 @@ public class ChainDestructionLogic {
     player.getCapability(CapabilityAdditionalPlayerStatus.CAPABILITY).ifPresent(status -> {
       var searchedBlockSet = searchBlock(world, status, player, firstBrokenBlockState,
               blockPos);
-      if (!ConfigUtils.COMMON.destroyingSequentially) {
+      if (!COMMON.destroyingSequentially) {
         destroyBlock(world, player, player.getMainHandItem(), searchedBlockSet);
       } else {
         ChainDestruction.digTaskEvent.digTaskSet
