@@ -8,7 +8,7 @@ credits="Thanks for Minecraft Forge developers"
 authors="A.K."
 [[mods]]
 modId="chaindestruction"
-version="[${file.jarVersion}]"
+version="${file.jarVersion}"
 displayName="ChainDestruction"
 updateJSONURL="https://raw.githubusercontent.com/aksource/ChainDestruction/master/update.json"
 description='''
@@ -19,6 +19,6 @@ You can register blocks and tools in game.
 [[dependencies.chaindestruction]]
 modId = "ak_lib"
 mandatory = true
-versionRange = "[1.0.3,)"
+versionRange = "[1.19-1.0.3,)"
 ordering = "NONE"
 side = "BOTH"
