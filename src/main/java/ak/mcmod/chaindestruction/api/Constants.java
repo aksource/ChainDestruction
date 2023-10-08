@@ -9,7 +9,7 @@ public class Constants {
   public static final byte DIG_KEY = 1;
   public static final byte MODE_KEY = 2;
   public static final byte MIDDLE_CLICK = 2;
-  public static final int MIN_Y = 0;
+  public static final int MIN_Y = -64;
   public static final String KEY_CATEGORY = "ChainDestruction";
 
   public static final String COMMAND_PLAYER_CD_STATUS = "cdplayerstatus";
